@@ -5,68 +5,122 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>إدارة EA Luxury</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-body{font-family:Arial;background:#f5f2eb;margin:0;color:#222}
-header{background:#111;color:#d6b36a;padding:22px;text-align:center;font-size:24px;font-weight:bold}
-main{max-width:650px;margin:25px auto;padding:15px}
-section{background:white;padding:20px;margin-bottom:20px;border-radius:12px}
-h2{color:#9b793e}
-input,select,button{width:100%;padding:13px;margin:8px 0;box-sizing:border-box;border:1px solid #ddd;border-radius:7px;font-size:16px}
-button{background:#171717;color:#d6b36a;border:0;font-weight:bold}
-.order{border-bottom:1px solid #ddd;padding:12px 0}
-.stock{font-weight:bold;color:#287a36}
-.out{font-weight:bold;color:#c62828}
+body {
+  font-family: Arial;
+  background: #f5f2eb;
+  margin: 0;
+  color: #222;
+}
+header {
+  background: #111;
+  color: #d6b36a;
+  padding: 22px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+}
+main {
+  max-width: 650px;
+  margin: 25px auto;
+  padding: 15px;
+}
+section {
+  background: white;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+}
+h2 { color: #9b793e; }
+input, select, button {
+  width: 100%;
+  padding: 13px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+  border-radius: 7px;
+  font-size: 16px;
+}
+button {
+  background: #171717;
+  color: #d6b36a;
+  border: 0;
+  font-weight: bold;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: .5;
+}
+.order {
+  border-bottom: 1px solid #ddd;
+  padding: 12px 0;
+}
+.stock {
+  font-weight: bold;
+  color: #287a36;
+}
+.out {
+  font-weight: bold;
+  color: #c62828;
+}
+small {
+  display: block;
+  color: #666;
+}
 </style>
 </head>
 
 <body>
+
 <header>EA Luxury - لوحة الإدارة</header>
+
 <main>
 
 <section id="login">
-<h2>تسجيل دخول الإدارة</h2>
-<input id="email" type="email" placeholder="البريد الإلكتروني">
-<input id="password" type="password" placeholder="كلمة المرور">
-<button onclick="login()">دخول</button>
-<p id="loginMsg"></p>
+  <h2>تسجيل دخول الإدارة</h2>
+  <input id="email" type="email" placeholder="البريد الإلكتروني">
+  <input id="password" type="password" placeholder="كلمة المرور">
+  <button type="button" onclick="login()">دخول</button>
+  <p id="loginMsg"></p>
 </section>
 
 <div id="dashboard" hidden>
 
 <section>
-<h2>إضافة منتج جديد</h2>
+  <h2>إضافة منتج جديد</h2>
 
-<input id="name" placeholder="اسم المنتج">
+  <input id="name" placeholder="اسم المنتج">
 
-<select id="category">
-<option value="حريمي">ملابس حريمي</option>
-<option value="رجالي">ملابس رجالي</option>
-</select>
+  <select id="category">
+    <option value="حريمي">ملابس حريمي</option>
+    <option value="رجالي">ملابس رجالي</option>
+  </select>
 
-<input id="price" type="number" min="1" placeholder="السعر بالجنيه">
-<input id="stock" type="number" min="0" step="1" placeholder="الكمية المتاحة">
-<input id="sizes" placeholder="المقاسات مثال: M, L, XL">
-<input id="colors" placeholder="الألوان">
+  <input id="price" type="number" min="1" placeholder="السعر بالجنيه">
+  <input id="stock" type="number" min="0" step="1" placeholder="الكمية المتاحة">
+  <input id="sizes" placeholder="المقاسات مثال: M, L, XL">
+  <input id="colors" placeholder="الألوان">
 
-<label>صورة المنتج:</label>
-<input id="photo" type="file" accept="image/*" multiple>
-<small>يمكنك اختيار حتى 5 صور للمنتج الواحد.</small>
+  <label>صور المنتج:</label>
+  <input id="photo" type="file" accept="image/*" multiple>
+  <small>يمكنك اختيار حتى 5 صور للمنتج الواحد.</small>
 
-<button onclick="addProduct()">حفظ المنتج</button>
-<p id="productMsg"></p>
+  <button type="button" onclick="addProduct()">حفظ المنتج</button>
+  <p id="productMsg"></p>
 </section>
 
 <section>
-<h2>المنتجات والمخزون</h2>
-<div id="productsList">جاري التحميل...</div>
+  <h2>المنتجات والمخزون</h2>
+  <div id="productsList">جاري التحميل...</div>
 </section>
 
 <section>
-<h2>طلبات العملاء</h2>
-<button onclick="loadOrders()">تحديث الطلبات</button>
-<div id="ordersList">اضغط تحديث الطلبات.</div>
+  <h2>طلبات العملاء</h2>
+  <button type="button" onclick="loadOrders()">تحديث الطلبات</button>
+  <div id="ordersList">اضغط تحديث الطلبات.</div>
 </section>
 
 </div>
@@ -78,7 +132,11 @@ button{background:#171717;color:#d6b36a;border:0;font-weight:bold}
 const SUPABASE_URL = "https://jezqohivdiziuzfmllvq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_hrP0-e5_ou1HHeKZpCu8jw_ORY_-zdh";
 
-const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const client = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
 let adminReady = false;
 
 async function login() {
@@ -94,10 +152,15 @@ async function login() {
   msg.textContent = "جاري الاتصال...";
 
   try {
-    const result = await client.auth.signInWithPassword({email, password});
+    const result = await client.auth.signInWithPassword({
+      email: email,
+      password: password
+    });
+
     if (result.error) throw result.error;
 
     msg.textContent = "جاري فحص الصلاحيات...";
+
     await checkAdmin(result.data.user.id);
 
   } catch (error) {
@@ -107,7 +170,7 @@ async function login() {
 }
 
 async function checkAdmin(userId) {
-  const {data, error} = await client
+  const { data, error } = await client
     .from("store_admins")
     .select("user_id")
     .eq("user_id", userId)
@@ -115,29 +178,32 @@ async function checkAdmin(userId) {
 
   if (error || !data) {
     document.getElementById("loginMsg").textContent =
-      error ? "خطأ في الصلاحيات: " + error.message :
-‎      "الحساب ليس لديه صلاحية الإدارة.";
+      error
+        ? "خطأ في الصلاحيات: " + error.message
+        : "الحساب ليس لديه صلاحية الإدارة.";
 
     await client.auth.signOut();
     return;
   }
 
   adminReady = true;
+
   document.getElementById("login").hidden = true;
   document.getElementById("dashboard").hidden = false;
 
-  loadProducts();
-  loadOrders();
+  await loadProducts();
+  await loadOrders();
 }
-
 
 async function addProduct() {
   if (!adminReady) return;
 
   const msg = document.getElementById("productMsg");
+
   const name = document.getElementById("name").value.trim();
   const category = document.getElementById("category").value;
   const price = Number(document.getElementById("price").value);
+
   const stockValue = document.getElementById("stock").value;
   const stock = Number(stockValue);
 
@@ -151,9 +217,15 @@ async function addProduct() {
     document.getElementById("photo").files
   );
 
-  if (!name || !Number.isFinite(price) || price <= 0 ||
-      stockValue === "" || !Number.isInteger(stock) ||
-      stock < 0 || files.length === 0) {
+  if (
+    !name ||
+    !Number.isFinite(price) ||
+    price <= 0 ||
+    stockValue === "" ||
+    !Number.isInteger(stock) ||
+    stock < 0 ||
+    files.length === 0
+  ) {
     msg.textContent = "اكتب الاسم والسعر والكمية واختر صورة واحدة على الأقل.";
     return;
   }
@@ -179,7 +251,8 @@ async function addProduct() {
       const file = files[i];
 
       const safeName = file.name.replace(
-        /[^a-zA-Z0-9._-]/g, "_"
+        /[^a-zA-Z0-9._-]/g,
+        "_"
       );
 
       const path = Date.now() + "-" +
@@ -204,12 +277,12 @@ async function addProduct() {
     msg.textContent = "جاري حفظ بيانات المنتج...";
 
     const { error } = await client.from("products").insert({
-      name,
-      category,
-      price,
-      stock,
-      sizes,
-      colors,
+      name: name,
+      category: category,
+      price: price,
+      stock: stock,
+      sizes: sizes,
+      colors: colors,
       image_url: imageUrls[0],
       image_urls: imageUrls,
       active: true
@@ -218,21 +291,22 @@ async function addProduct() {
     if (error) throw error;
 
     msg.textContent =
-‎      "تم إضافة المنتج بنجاح وحفظ " +
+      "تم إضافة المنتج بنجاح وحفظ " +
       imageUrls.length + " صور.";
 
-    ["name", "price", "stock", "sizes", "colors", "photo"]
-      .forEach(id => {
-        document.getElementById(id).value = "";
-      });
+    document.getElementById("name").value = "";
+    document.getElementById("price").value = "";
+    document.getElementById("stock").value = "";
+    document.getElementById("sizes").value = "";
+    document.getElementById("colors").value = "";
+    document.getElementById("photo").value = "";
 
     await loadProducts();
 
   } catch (error) {
     console.error(error);
 
-‎    // حذف الصور المرفوعة إذا فشل حفظ المنتج
-    if (uploadedPaths.length) {
+    if (uploadedPaths.length > 0) {
       await client.storage
         .from("product-images")
         .remove(uploadedPaths);
@@ -248,10 +322,10 @@ async function loadProducts() {
   const box = document.getElementById("productsList");
   box.textContent = "جاري تحميل المنتجات...";
 
-  const {data, error} = await client
+  const { data, error } = await client
     .from("products")
     .select("*")
-    .order("created_at", {ascending: false});
+    .order("created_at", { ascending: false });
 
   if (error) {
     box.textContent = "خطأ في تحميل المنتجات: " + error.message;
@@ -260,7 +334,7 @@ async function loadProducts() {
 
   box.innerHTML = "";
 
-  if (!data.length) {
+  if (!data || data.length === 0) {
     box.textContent = "لا توجد منتجات.";
     return;
   }
@@ -273,14 +347,20 @@ async function loadProducts() {
     title.textContent = p.name + " - " + p.price + " جنيه";
 
     const detail = document.createElement("p");
-    detail.textContent = p.category + " | " +
-      (p.active ? "نشط" : "مخفي");
+    detail.textContent =
+      p.category + " | " + (p.active ? "نشط" : "مخفي");
 
     const quantityLabel = document.createElement("p");
-    quantityLabel.className = p.stock > 0 ? "stock" : "out";
-    quantityLabel.textContent = p.stock > 0
-‎      ? "الكمية المتاحة: " + p.stock
-‎      : "نفد المخزون";
+    quantityLabel.className = Number(p.stock) > 0 ? "stock" : "out";
+
+    quantityLabel.textContent = Number(p.stock) > 0
+      ? "الكمية المتاحة: " + p.stock
+      : "نفد المخزون";
+
+    const imageCount = document.createElement("p");
+    const images = Array.isArray(p.image_urls) ? p.image_urls : [];
+    imageCount.textContent =
+      "عدد الصور: " + (images.length || (p.image_url ? 1 : 0));
 
     const stockInput = document.createElement("input");
     stockInput.type = "number";
@@ -290,18 +370,25 @@ async function loadProducts() {
     stockInput.placeholder = "الكمية الجديدة";
 
     const saveButton = document.createElement("button");
+    saveButton.type = "button";
     saveButton.textContent = "حفظ الكمية";
     saveButton.onclick = () =>
       updateStock(p.id, stockInput.value);
 
     const activeButton = document.createElement("button");
-    activeButton.textContent = p.active ? "إخفاء المنتج" : "إظهار المنتج";
-    activeButton.onclick = () => toggleProduct(p.id, !p.active);
+    activeButton.type = "button";
+    activeButton.textContent = p.active
+      ? "إخفاء المنتج"
+      : "إظهار المنتج";
+
+    activeButton.onclick = () =>
+      toggleProduct(p.id, !p.active);
 
     div.append(
       title,
       detail,
       quantityLabel,
+      imageCount,
       stockInput,
       saveButton,
       activeButton
@@ -321,9 +408,9 @@ async function updateStock(id, value) {
     return;
   }
 
-  const {error} = await client
+  const { error } = await client
     .from("products")
-    .update({stock})
+    .update({ stock: stock })
     .eq("id", id);
 
   if (error) {
@@ -332,15 +419,15 @@ async function updateStock(id, value) {
   }
 
   alert("تم تحديث كمية المنتج.");
-  loadProducts();
+  await loadProducts();
 }
 
 async function toggleProduct(id, active) {
   if (!adminReady) return;
 
-  const {error} = await client
+  const { error } = await client
     .from("products")
-    .update({active})
+    .update({ active: active })
     .eq("id", id);
 
   if (error) {
@@ -348,7 +435,7 @@ async function toggleProduct(id, active) {
     return;
   }
 
-  loadProducts();
+  await loadProducts();
 }
 
 async function loadOrders() {
@@ -357,10 +444,10 @@ async function loadOrders() {
   const box = document.getElementById("ordersList");
   box.textContent = "جاري تحميل الطلبات...";
 
-  const {data, error} = await client
+  const { data, error } = await client
     .from("orders")
     .select("*, order_items(*)")
-    .order("created_at", {ascending: false});
+    .order("created_at", { ascending: false });
 
   if (error) {
     box.textContent = "تعذر تحميل الطلبات: " + error.message;
@@ -369,7 +456,7 @@ async function loadOrders() {
 
   box.innerHTML = "";
 
-  if (!data.length) {
+  if (!data || data.length === 0) {
     box.textContent = "لا توجد طلبات حتى الآن.";
     return;
   }
@@ -382,8 +469,9 @@ async function loadOrders() {
     title.textContent = "طلب من: " + o.customer_name;
 
     const details = document.createElement("p");
-    details.textContent = "الهاتف: " + o.phone +
-‎      " | المحافظة: " + o.governorate;
+    details.textContent =
+      "الهاتف: " + o.phone +
+      " | المحافظة: " + o.governorate;
 
     const address = document.createElement("p");
     address.textContent = "العنوان: " + o.address;
@@ -391,23 +479,43 @@ async function loadOrders() {
     const total = document.createElement("p");
     total.textContent = "الإجمالي: " + o.total + " جنيه";
 
+    const items = document.createElement("div");
+    items.textContent = "المنتجات: " +
+      (o.order_items || []).map(item =>
+        item.product_name + " × " + item.quantity
+      ).join("، ");
+
     const status = document.createElement("p");
     status.textContent = "الحالة الحالية: " + o.status;
 
     const select = document.createElement("select");
 
-‎    ["جديد", "قيد التجهيز", "تم الشحن", "مكتمل", "ملغي"]
+    ["جديد", "قيد التجهيز", "تم الشحن", "مكتمل", "ملغي"]
       .forEach(s => {
         const option = document.createElement("option");
         option.value = s;
         option.textContent = s;
-        if (s === o.status) option.selected = true;
+
+        if (s === o.status) {
+          option.selected = true;
+        }
+
         select.append(option);
       });
 
-    select.onchange = () => updateOrder(o.id, select.value);
+    select.onchange = () =>
+      updateOrder(o.id, select.value);
 
-    div.append(title, details, address, total, status, select);
+    div.append(
+      title,
+      details,
+      address,
+      total,
+      items,
+      status,
+      select
+    );
+
     box.append(div);
   });
 }
@@ -415,9 +523,9 @@ async function loadOrders() {
 async function updateOrder(id, status) {
   if (!adminReady) return;
 
-  const {error} = await client
+  const { error } = await client
     .from("orders")
-    .update({status})
+    .update({ status: status })
     .eq("id", id);
 
   if (error) {
@@ -426,7 +534,7 @@ async function updateOrder(id, status) {
   }
 
   alert("تم تحديث حالة الطلب.");
-  loadOrders();
+  await loadOrders();
 }
 
 window.login = login;
@@ -435,5 +543,6 @@ window.loadOrders = loadOrders;
 
 })();
 </script>
+
 </body>
 </html>

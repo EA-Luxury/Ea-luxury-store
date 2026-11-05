@@ -51,7 +51,8 @@ button{background:#171717;color:#d6b36a;border:0;font-weight:bold}
 <input id="colors" placeholder="الألوان">
 
 <label>صورة المنتج:</label>
-<input id="photo" type="file" accept="image/*">
+<input id="photo" type="file" accept="image/*" multiple>
+<small>يمكنك اختيار حتى 5 صور للمنتج الواحد.</small>
 
 <button onclick="addProduct()">حفظ المنتج</button>
 <p id="productMsg"></p>
@@ -115,7 +116,7 @@ async function checkAdmin(userId) {
   if (error || !data) {
     document.getElementById("loginMsg").textContent =
       error ? "خطأ في الصلاحيات: " + error.message :
-      "الحساب ليس لديه صلاحية الإدارة.";
+‎      "الحساب ليس لديه صلاحية الإدارة.";
 
     await client.auth.signOut();
     return;
@@ -128,6 +129,7 @@ async function checkAdmin(userId) {
   loadProducts();
   loadOrders();
 }
+
 
 async function addProduct() {
   if (!adminReady) return;
@@ -145,53 +147,97 @@ async function addProduct() {
   const colors = document.getElementById("colors").value
     .split(",").map(x => x.trim()).filter(Boolean);
 
-  const file = document.getElementById("photo").files[0];
+  const files = Array.from(
+    document.getElementById("photo").files
+  );
 
   if (!name || !Number.isFinite(price) || price <= 0 ||
-      stockValue === "" || !Number.isInteger(stock) || stock < 0 || !file) {
-    msg.textContent = "اكتب الاسم والسعر والكمية الصحيحة واختر صورة.";
+      stockValue === "" || !Number.isInteger(stock) ||
+      stock < 0 || files.length === 0) {
+    msg.textContent = "اكتب الاسم والسعر والكمية واختر صورة واحدة على الأقل.";
     return;
   }
 
+  if (files.length > 5) {
+    msg.textContent = "يمكن اختيار 5 صور فقط للمنتج.";
+    return;
+  }
+
+  if (files.some(file => !file.type.startsWith("image/"))) {
+    msg.textContent = "اختر ملفات صور فقط.";
+    return;
+  }
+
+  const uploadedPaths = [];
+
   try {
-    msg.textContent = "جاري رفع الصورة...";
+    msg.textContent = "جاري رفع الصور...";
 
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const path = Date.now() + "-" +
-      Math.random().toString(36).slice(2) + "-" + safeName;
+    const imageUrls = [];
 
-    const {error: uploadError} = await client.storage
-      .from("product-images")
-      .upload(path, file);
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
 
-    if (uploadError) throw uploadError;
+      const safeName = file.name.replace(
+        /[^a-zA-Z0-9._-]/g, "_"
+      );
 
-    const {data: imageData} = client.storage
-      .from("product-images")
-      .getPublicUrl(path);
+      const path = Date.now() + "-" +
+        Math.random().toString(36).slice(2) +
+        "-" + i + "-" + safeName;
 
-    const {error} = await client.from("products").insert({
+      const { error: uploadError } = await client.storage
+        .from("product-images")
+        .upload(path, file);
+
+      if (uploadError) throw uploadError;
+
+      uploadedPaths.push(path);
+
+      const { data: imageData } = client.storage
+        .from("product-images")
+        .getPublicUrl(path);
+
+      imageUrls.push(imageData.publicUrl);
+    }
+
+    msg.textContent = "جاري حفظ بيانات المنتج...";
+
+    const { error } = await client.from("products").insert({
       name,
       category,
       price,
       stock,
       sizes,
       colors,
-      image_url: imageData.publicUrl,
+      image_url: imageUrls[0],
+      image_urls: imageUrls,
       active: true
     });
 
     if (error) throw error;
 
-    msg.textContent = "تم إضافة المنتج والكمية بنجاح.";
+    msg.textContent =
+‎      "تم إضافة المنتج بنجاح وحفظ " +
+      imageUrls.length + " صور.";
 
     ["name", "price", "stock", "sizes", "colors", "photo"]
-      .forEach(id => document.getElementById(id).value = "");
+      .forEach(id => {
+        document.getElementById(id).value = "";
+      });
 
-    loadProducts();
+    await loadProducts();
 
   } catch (error) {
     console.error(error);
+
+‎    // حذف الصور المرفوعة إذا فشل حفظ المنتج
+    if (uploadedPaths.length) {
+      await client.storage
+        .from("product-images")
+        .remove(uploadedPaths);
+    }
+
     msg.textContent = "تعذر إضافة المنتج: " + error.message;
   }
 }
@@ -233,8 +279,8 @@ async function loadProducts() {
     const quantityLabel = document.createElement("p");
     quantityLabel.className = p.stock > 0 ? "stock" : "out";
     quantityLabel.textContent = p.stock > 0
-      ? "الكمية المتاحة: " + p.stock
-      : "نفد المخزون";
+‎      ? "الكمية المتاحة: " + p.stock
+‎      : "نفد المخزون";
 
     const stockInput = document.createElement("input");
     stockInput.type = "number";
@@ -337,7 +383,7 @@ async function loadOrders() {
 
     const details = document.createElement("p");
     details.textContent = "الهاتف: " + o.phone +
-      " | المحافظة: " + o.governorate;
+‎      " | المحافظة: " + o.governorate;
 
     const address = document.createElement("p");
     address.textContent = "العنوان: " + o.address;
@@ -350,7 +396,7 @@ async function loadOrders() {
 
     const select = document.createElement("select");
 
-    ["جديد", "قيد التجهيز", "تم الشحن", "مكتمل", "ملغي"]
+‎    ["جديد", "قيد التجهيز", "تم الشحن", "مكتمل", "ملغي"]
       .forEach(s => {
         const option = document.createElement("option");
         option.value = s;

@@ -12,6 +12,83 @@ const grid = document.getElementById("productGrid");
 const cartCount = document.getElementById("cartCount");
 const cartSection = document.getElementById("cartSection");
 
+// إنشاء نافذة تكبير الصور
+const imageViewer = document.createElement("div");
+imageViewer.id = "imageViewer";
+
+imageViewer.style.cssText = `
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.92);
+  z-index:99999;
+  align-items:center;
+  justify-content:center;
+  padding:15px;
+`;
+
+imageViewer.innerHTML = `
+  <button id="closeImageViewer"
+    style="
+      position:absolute;
+      top:20px;
+      right:20px;
+      background:#fff;
+      color:#222;
+      border:0;
+      border-radius:50%;
+      width:42px;
+      height:42px;
+      font-size:28px;
+      cursor:pointer;
+      z-index:2;
+    ">×</button>
+
+  <img id="largeProductImage"
+    style="
+      max-width:100%;
+      max-height:85vh;
+      object-fit:contain;
+      border-radius:8px;
+    ">
+`;
+
+document.body.appendChild(imageViewer);
+
+function closeImageViewer() {
+  imageViewer.style.display = "none";
+  document.getElementById("largeProductImage").src = "";
+}
+
+function openImageViewer(src) {
+  if (!src) return;
+
+  document.getElementById("largeProductImage").src = src;
+  imageViewer.style.display = "flex";
+}
+
+document.getElementById("closeImageViewer")
+  .addEventListener("click", closeImageViewer);
+
+imageViewer.addEventListener("click", event => {
+  if (event.target === imageViewer) {
+    closeImageViewer();
+  }
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    closeImageViewer();
+  }
+});
+
+// عند الضغط على صورة المنتج
+grid.addEventListener("click", event => {
+  if (event.target.tagName === "IMG") {
+    openImageViewer(event.target.src);
+  }
+});
+
 async function loadProducts() {
   grid.innerHTML = "<p>جاري تحميل المنتجات...</p>";
 
@@ -57,9 +134,12 @@ function showProducts() {
 
     return `
       <article class="product">
-        <img src="${escapeHTML(p.image_url || "")}"
-             alt="${escapeHTML(p.name)}"
-             onerror="this.style.display='none'">
+        <img
+          src="${escapeHTML(p.image_url || "")}"
+          alt="${escapeHTML(p.name)}"
+          style="cursor:zoom-in"
+          onerror="this.style.display='none'"
+        >
 
         <h3>${escapeHTML(p.name)}</h3>
 
@@ -67,7 +147,7 @@ function showProducts() {
 
         <p>المقاسات: ${
           Array.isArray(p.sizes)
-            ? p.sizes.join(" - ")
+            ? p.sizes.map(escapeHTML).join(" - ")
             : "حسب المتاح"
         }</p>
 

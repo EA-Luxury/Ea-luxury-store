@@ -1,1 +1,1 @@
-# Ea-luxury-store.
+# Ea-luxury-store

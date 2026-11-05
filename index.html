@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111111">
+  <title>EA Luxury | متجر الملابس</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">EA <span>Luxury</span></div>
+  <button id="cartButton">🛒 السلة <span id="cartCount">0</span></button>
+</header>
+
+<section class="hero">
+  <h1>أناقتك تبدأ من هنا</h1>
+  <p>اكتشف أحدث الملابس الحريمي والرجالي</p>
+  <a href="#products" class="shopButton">تسوق الآن</a>
+</section>
+
+<nav class="categories">
+  <button class="category active" data-category="الكل">الكل</button>
+  <button class="category" data-category="حريمي">حريمي</button>
+  <button class="category" data-category="رجالي">رجالي</button>
+</nav>
+
+<main id="products">
+  <h2>منتجاتنا</h2>
+  <div id="productGrid" class="productGrid">
+    <p>جاري تحميل المنتجات...</p>
+  </div>
+</main>
+
+<section id="cartSection" class="cartSection" hidden>
+  <h2>سلة المشتريات</h2>
+  <div id="cartItems"></div>
+  <h3>الإجمالي: <span id="cartTotal">0</span> جنيه</h3>
+
+  <h2>بيانات التوصيل</h2>
+  <form id="checkoutForm">
+    <input name="customer_name" placeholder="الاسم بالكامل" required>
+    <input name="phone" type="tel" placeholder="رقم الموبايل" required>
+    <input name="governorate" placeholder="المحافظة" required>
+    <textarea name="address" placeholder="العنوان بالتفصيل" required></textarea>
+    <button type="submit">تأكيد الطلب - الدفع عند الاستلام</button>
+  </form>
+  <p id="orderMessage"></p>
+</section>
+
+<footer>
+  <h2>EA Luxury</h2>
+  <p>ملابس حريمي ورجالي - توصيل لجميع محافظات مصر</p>
+  <p>الدفع عند الاستلام</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+</body>
+</html>

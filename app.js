@@ -846,12 +846,45 @@ if (trackingForm) {
         : "";
 
       resultBox.classList.add("found");
+      const canCancel = ["جديد", "قيد التجهيز"].includes(order.status);
       resultBox.innerHTML = `
         <div class="trackingOrderNumber">طلبك رقم #${escapeHTML(order.order_id)}</div>
         <div class="trackingStatus">${escapeHTML(statusLabel)}</div>
         ${dateText ? `<p>تاريخ الطلب: ${escapeHTML(dateText)}</p>` : ""}
+        ${canCancel ? '<button type="button" id="customerCancelOrderButton" class="customerCancelOrderButton">إلغاء الطلب</button>' : ""}
         <p class="trackingNote">شكرًا لاختيارك EA Luxury</p>
       `;
+
+      const cancelButton = document.getElementById("customerCancelOrderButton");
+      if (cancelButton) {
+        cancelButton.addEventListener("click", async () => {
+          if (!window.confirm("هل أنت متأكد من إلغاء هذا الطلب؟ سيتم إرجاع الكمية إلى المخزون.")) return;
+
+          cancelButton.disabled = true;
+          cancelButton.textContent = "جاري إلغاء الطلب...";
+          try {
+            const { data: cancelResult, error: cancelError } = await db.rpc("customer_cancel_order", {
+              p_order_id: orderId,
+              p_phone: values.phone
+            });
+            if (cancelError) throw cancelError;
+
+            resultBox.classList.remove("notFound");
+            resultBox.classList.add("found");
+            resultBox.innerHTML = `
+              <div class="trackingOrderNumber">طلبك رقم #${escapeHTML(order.order_id)}</div>
+              <div class="trackingStatus">تم إلغاء الطلب بنجاح</div>
+              <p>تم تسجيل الإلغاء وإرجاع الكمية إلى المخزون.</p>
+              <p class="trackingNote">شكرًا لاختيارك EA Luxury</p>
+            `;
+          } catch (cancelError) {
+            console.error("خطأ إلغاء الطلب:", cancelError);
+            cancelButton.disabled = false;
+            cancelButton.textContent = "إلغاء الطلب";
+            resultBox.insertAdjacentHTML("beforeend", `<p class="trackingCancelError">${escapeHTML(cancelError.message || "تعذر إلغاء الطلب حاليًا. حاول مرة أخرى.")}</p>`);
+          }
+        });
+      }
     } catch (error) {
       console.error("خطأ متابعة الطلب:", error);
       resultBox.classList.add("notFound");

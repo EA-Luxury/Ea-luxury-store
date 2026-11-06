@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=6">
 </head>
 
 <body>
@@ -59,11 +59,18 @@
   </section>
 
 
-  <section id="trackOrder" class="trackingSection">
-    <div class="sectionHeading">
-      <span>EA LUXURY ORDER SERVICE</span>
-      <h2>تابع طلبك</h2>
-      <p>اكتب رقم الطلب ورقم الموبايل المسجل عند الشراء لمعرفة آخر حالة لطلبك</p>
+  <div class="trackingEntry">
+    <button id="openTrackingButton" class="trackingOpenButton" type="button">📦 تتبع طلبك</button>
+  </div>
+
+  <section id="trackOrder" class="trackingSection" hidden>
+    <div class="trackingSectionTop">
+      <div class="sectionHeading">
+        <span>EA LUXURY ORDER SERVICE</span>
+        <h2>تابع طلبك</h2>
+        <p>اكتب رقم الطلب ورقم الموبايل المسجل عند الشراء لمعرفة آخر حالة لطلبك</p>
+      </div>
+      <button id="closeTrackingButton" class="trackingCloseButton" type="button" aria-label="إغلاق">×</button>
     </div>
     <form id="trackingForm" class="trackingForm">
       <input name="order_id" type="number" min="1" step="1" inputmode="numeric" placeholder="رقم الطلب" required>
@@ -184,7 +191,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@5/dist/email.min.js"></script>
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=11"></script>
 
 </body>
 </html>

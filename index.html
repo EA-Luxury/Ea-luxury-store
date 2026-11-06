@@ -5,58 +5,168 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#111111">
-  <title>EA Luxury | متجر الملابس</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta name="description" content="EA Luxury - أحدث الملابس الحريمي والرجالي">
+  <title>EA Luxury | أناقتك تبدأ من هنا</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
+
 <body>
 
-<header class="header">
-  <div class="logo">EA <span>Luxury</span></div>
-  <button id="cartButton">🛒 السلة <span id="cartCount">0</span></button>
-</header>
-
-<section class="hero">
-  <h1>أناقتك تبدأ من هنا</h1>
-  <p>اكتشف أحدث الملابس الحريمي والرجالي</p>
-  <a href="#products" class="shopButton">تسوق الآن</a>
-</section>
-
-<nav class="categories">
-  <button class="category active" data-category="الكل">الكل</button>
-  <button class="category" data-category="حريمي">حريمي</button>
-  <button class="category" data-category="رجالي">رجالي</button>
-</nav>
-
-<main id="products">
-  <h2>منتجاتنا</h2>
-  <div id="productGrid" class="productGrid">
-    <p>جاري تحميل المنتجات...</p>
+  <div class="announcement">
+    <span>EA LUXURY</span>
+    <span>أناقة تليق بك - توصيل لجميع محافظات مصر</span>
   </div>
-</main>
 
-<section id="cartSection" class="cartSection" hidden>
-  <h2>سلة المشتريات</h2>
-  <div id="cartItems"></div>
-  <h3>الإجمالي: <span id="cartTotal">0</span> جنيه</h3>
+  <header class="header">
+    <a href="#" class="logo">
+      <span class="logo-main">EA</span>
+      <span class="logo-sub">LUXURY</span>
+    </a>
 
-  <h2>بيانات التوصيل</h2>
-  <form id="checkoutForm">
-    <input name="customer_name" placeholder="الاسم بالكامل" required>
-    <input name="phone" type="tel" placeholder="رقم الموبايل" required>
-    <input name="governorate" placeholder="المحافظة" required>
-    <textarea name="address" placeholder="العنوان بالتفصيل" required></textarea>
-    <button type="submit">تأكيد الطلب - الدفع عند الاستلام</button>
-  </form>
-  <p id="orderMessage"></p>
-</section>
+    <nav class="mainNav">
+      <a href="#">الرئيسية</a>
+      <a href="#products">المنتجات</a>
+      <a href="#categories">الأقسام</a>
+      <a href="#eaContact">تواصل معنا</a>
+    </nav>
 
-<footer>
-  <h2>EA Luxury</h2>
-  <p>ملابس حريمي ورجالي - توصيل لجميع محافظات مصر</p>
-  <p>الدفع عند الاستلام</p>
-</footer>
+    <button id="cartButton" class="cartButton">
+      <span>🛒</span>
+      <span>السلة</span>
+      <span id="cartCount" class="cartCount">0</span>
+    </button>
+  </header>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=3"></script>
+  <section class="hero">
+    <div class="heroOverlay"></div>
+    <div class="heroContent">
+      <span class="heroEyebrow">WELCOME TO EA LUXURY</span>
+      <h1>أناقتك تبدأ من هنا</h1>
+      <p>اكتشف أحدث صيحات الموضة الحريمي والرجالي</p>
+      <a href="#products" class="shopButton">اكتشف مجموعتنا</a>
+    </div>
+    <div class="heroBottom">
+      <span>FASHION</span>
+      <span class="heroLine"></span>
+      <span>STYLE</span>
+      <span class="heroLine"></span>
+      <span>ELEGANCE</span>
+    </div>
+  </section>
+
+  <section class="benefits">
+    <div class="benefit">
+      <span class="benefitIcon">✦</span>
+      <div>
+        <strong>اختيارات مميزة</strong>
+        <small>أحدث صيحات الموضة</small>
+      </div>
+    </div>
+
+    <div class="benefit">
+      <span class="benefitIcon">♧</span>
+      <div>
+        <strong>توصيل لجميع مصر</strong>
+        <small>لحد باب بيتك</small>
+      </div>
+    </div>
+
+    <div class="benefit">
+      <span class="benefitIcon">✓</span>
+      <div>
+        <strong>دفع عند الاستلام</strong>
+        <small>تسوق بكل سهولة</small>
+      </div>
+    </div>
+  </section>
+
+  <section id="categories" class="categorySection">
+    <div class="sectionHeading">
+      <span>DISCOVER YOUR STYLE</span>
+      <h2>تسوق حسب القسم</h2>
+      <p>اختار إطلالتك المفضلة</p>
+    </div>
+
+    <nav class="categories">
+      <button class="category active" data-category="الكل">الكل</button>
+      <button class="category" data-category="حريمي">حريمي</button>
+      <button class="category" data-category="رجالي">رجالي</button>
+    </nav>
+  </section>
+
+  <main id="products" class="productsSection">
+    <div class="sectionHeading">
+      <span>EA LUXURY COLLECTION</span>
+      <h2>منتجاتنا</h2>
+      <p>اكتشف تشكيلتنا المختارة بعناية</p>
+    </div>
+
+    <div id="productGrid" class="productGrid">
+      <p>جاري تحميل المنتجات...</p>
+    </div>
+  </main>
+
+  <section class="shoppingBanner">
+    <div>
+      <span>YOUR STYLE, YOUR CHOICE</span>
+      <h2>اختار اللي يشبهك</h2>
+      <p>تسوق الآن واستمتع بتجربة EA Luxury</p>
+    </div>
+    <a href="#products">تسوق الآن</a>
+  </section>
+
+  <section id="cartSection" class="cartSection" hidden>
+    <div class="sectionHeading">
+      <span>YOUR SHOPPING BAG</span>
+      <h2>سلة المشتريات</h2>
+    </div>
+
+    <div id="cartItems"></div>
+
+    <div class="cartSummary">
+      <h3>الإجمالي: <span id="cartTotal">0</span> جنيه</h3>
+    </div>
+
+    <div class="checkoutHeading">
+      <h2>بيانات التوصيل</h2>
+      <p>من فضلك أدخل بياناتك لتأكيد الطلب</p>
+    </div>
+
+    <form id="checkoutForm">
+      <input name="customer_name" placeholder="الاسم بالكامل" required>
+      <input name="phone" type="tel" placeholder="رقم الموبايل" required>
+      <input name="governorate" placeholder="المحافظة" required>
+      <textarea name="address" placeholder="العنوان بالتفصيل" required></textarea>
+      <button type="submit">تأكيد الطلب - الدفع عند الاستلام</button>
+    </form>
+
+    <p id="orderMessage"></p>
+  </section>
+
+  <section class="newsletter">
+    <span>EA LUXURY</span>
+    <h2>الأناقة في كل تفصيلة</h2>
+    <p>شكرًا لاختيارك EA Luxury</p>
+    <a href="#products">ابدأ التسوق</a>
+  </section>
+
+  <footer>
+    <div class="footerLogo">EA <span>LUXURY</span></div>
+    <p>ملابس حريمي ورجالي - توصيل لجميع محافظات مصر</p>
+    <p>الدفع عند الاستلام</p>
+    <div class="footerLinks">
+      <a href="#products">المنتجات</a>
+      <a href="#categories">الأقسام</a>
+      <a href="#eaContact">تواصل معنا</a>
+    </div>
+    <small>© EA Luxury - جميع الحقوق محفوظة</small>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js?v=3"></script>
+
 </body>
 </html>

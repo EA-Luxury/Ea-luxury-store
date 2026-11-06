@@ -91,6 +91,8 @@ let products = [];
 let productVariants = [];
 let cart = (() => { try { const saved = JSON.parse(localStorage.getItem("eaLuxuryCart") || "[]"); return Array.isArray(saved) ? saved.filter(item => item && item.id != null && Number(item.quantity) > 0) : []; } catch (_) { return []; } })();
 let selectedCategory = "الكل";
+let productSearchTerm = "";
+let productSortMode = "default";
 
 const grid = document.getElementById("productGrid");
 const cartCount = document.getElementById("cartCount");
@@ -383,12 +385,41 @@ function renderProductPrice(product) {
 
 // عرض المنتجات ومعرض الصور
 function showProducts() {
-  const filtered = selectedCategory === "الكل"
-    ? products
+  let filtered = selectedCategory === "الكل"
+    ? [...products]
     : products.filter(p => p.category === selectedCategory);
 
+  if (productSearchTerm) {
+    const term = productSearchTerm.toLocaleLowerCase("ar");
+    filtered = filtered.filter(p =>
+      [p.name, p.description, p.category].some(value =>
+        String(value || "").toLocaleLowerCase("ar").includes(term)
+      )
+    );
+  }
+
+  if (productSortMode === "offers") {
+    filtered = filtered.filter(p => getEffectiveProductPrice(p) < Number(p.price || 0));
+  } else if (productSortMode === "available") {
+    filtered = filtered.filter(p => {
+      const variants = productVariants.filter(v => String(v.product_id) === String(p.id));
+      return variants.length
+        ? variants.some(v => Number(v.stock) > 0)
+        : Number(p.stock || 0) > 0;
+    });
+  } else if (productSortMode === "price-asc") {
+    filtered.sort((a, b) => getEffectiveProductPrice(a) - getEffectiveProductPrice(b));
+  } else if (productSortMode === "price-desc") {
+    filtered.sort((a, b) => getEffectiveProductPrice(b) - getEffectiveProductPrice(a));
+  } else if (productSortMode === "newest") {
+    filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  }
+
+  const count = document.getElementById("productResultsCount");
+  if (count) count.textContent = "عدد المنتجات: " + filtered.length;
+
   if (!filtered.length) {
-    grid.innerHTML = "<p>لا توجد منتجات حاليًا.</p>";
+    grid.innerHTML = '<div class="store-empty-state"><strong>ملقيناش منتجات مطابقة</strong><span>جرّب تغيّر كلمة البحث أو اختيار الترتيب.</span></div>';
     return;
   }
 
@@ -768,6 +799,22 @@ if (categoryNavigation) {
     categoryNavigation.querySelectorAll(".category").forEach(item =>
       item.classList.toggle("active", item === button)
     );
+    showProducts();
+  });
+}
+
+// البحث وترتيب المنتجات — يعملان مع الأقسام دون إعادة تحميل الصفحة.
+const productSearchInput = document.getElementById("productSearch");
+if (productSearchInput) {
+  productSearchInput.addEventListener("input", event => {
+    productSearchTerm = event.target.value.trim();
+    showProducts();
+  });
+}
+const productSortSelect = document.getElementById("productSort");
+if (productSortSelect) {
+  productSortSelect.addEventListener("change", event => {
+    productSortMode = event.target.value || "default";
     showProducts();
   });
 }

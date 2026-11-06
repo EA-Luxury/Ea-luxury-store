@@ -5,6 +5,7 @@ const SUPABASE_KEY = "sb_publishable_hrP0-e5_ou1HHeKZpCu8jw_ORY_-zdh";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let products = [];
+let productVariants = [];
 let cart = [];
 let selectedCategory = "الكل";
 
@@ -200,6 +201,19 @@ async function loadProducts() {
   }
 
   products = data || [];
+
+  const variantsResult = await db
+    .from("product_variants")
+    .select("id,product_id,size,color,stock,is_active")
+    .eq("is_active", true);
+
+  if (variantsResult.error) {
+    console.error("تعذر تحميل المقاسات والألوان:", variantsResult.error);
+    productVariants = [];
+  } else {
+    productVariants = variantsResult.data || [];
+  }
+
   showProducts();
 }
 
@@ -226,8 +240,39 @@ function showProducts() {
   }
 
   grid.innerHTML = filtered.map(p => {
-    const stock = Number(p.stock ?? 0);
-    const unavailable = stock <= 0;
+    const variants = productVariants.filter(
+      v => String(v.product_id) === String(p.id)
+    );
+    const hasVariants = variants.length > 0;
+    const availableVariants = variants.filter(v => Number(v.stock) > 0);
+    const stock = hasVariants
+      ? availableVariants.reduce((sum, v) => sum + Number(v.stock), 0)
+      : Number(p.stock ?? 0);
+    const unavailable = hasVariants
+      ? availableVariants.length === 0
+      : stock <= 0;
+    const firstAvailableVariant = availableVariants[0];
+    const variantOptions = hasVariants
+      ? `
+        <label style="display:block;margin:10px 0 5px;font-weight:bold">اختار المقاس واللون:</label>
+        <select class="product-variant-select"
+          data-product-id="${escapeHTML(p.id)}"
+          style="width:100%;padding:10px;border:1px solid #ccc;border-radius:7px">
+          ${variants.map(v => {
+            const label = [
+              v.size || "بدون مقاس",
+              v.color || "بدون لون",
+              "المتاح: " + Number(v.stock)
+            ].join(" - ");
+            return `<option value="${escapeHTML(v.id)}"
+              ${Number(v.stock) <= 0 ? "disabled" : ""}
+              ${firstAvailableVariant && String(v.id) === String(firstAvailableVariant.id) ? "selected" : ""}>
+              ${escapeHTML(label)}
+            </option>`;
+          }).join("")}
+        </select>
+      `
+      : "";
     const images = getProductImages(p);
     const mainImage = images[0] || "";
 
@@ -291,17 +336,18 @@ function showProducts() {
           ${Number(p.price).toLocaleString("ar-EG")} جنيه
         </p>
 
-        <p>المقاسات: ${
-          Array.isArray(p.sizes)
-            ? p.sizes.map(escapeHTML).join(" - ")
-            : "حسب المتاح"
-        }</p>
+        ${hasVariants ? variantOptions : `
+          <p>المقاسات: ${
+            Array.isArray(p.sizes)
+              ? p.sizes.map(escapeHTML).join(" - ")
+              : "حسب المتاح"
+          }</p>
+          <p>المتاح: ${stock} قطعة</p>
+        `}
 
-        <p>
-          ${unavailable
-            ? "غير متوفر حاليًا"
-            : `المتاح: ${stock} قطعة`}
-        </p>
+        ${hasVariants && !unavailable
+          ? `<p>إجمالي المتاح من الاختيارات: ${stock} قطعة</p>`
+          : ""}
 
         <button type="button"
           ${unavailable ? "disabled" : ""}
@@ -361,7 +407,7 @@ grid.addEventListener("click", event => {
   }
 });
 
-// إضافة للسلة مع مراعاة المخزون
+// إضافة للسلة مع مراعاة مخزون المقاس واللون
 function addToCart(id) {
   const product = products.find(
     p => String(p.id) === String(id)
@@ -372,28 +418,54 @@ function addToCart(id) {
     return;
   }
 
-  const stock = Number(product.stock ?? 0);
+  const variants = productVariants.filter(
+    v => String(v.product_id) === String(id)
+  );
+  let selectedVariant = null;
+
+  if (variants.length) {
+    const selector = grid.querySelector(
+      `.product-variant-select[data-product-id="${CSS.escape(String(id))}"]`
+    );
+    const variantId = selector?.value;
+    selectedVariant = variants.find(v => String(v.id) === String(variantId));
+
+    if (!selectedVariant || Number(selectedVariant.stock) <= 0) {
+      alert("من فضلك اختار مقاسًا ولونًا متاحين.");
+      return;
+    }
+  }
+
+  const stock = selectedVariant
+    ? Number(selectedVariant.stock)
+    : Number(product.stock ?? 0);
 
   if (stock <= 0) {
     alert("هذا المنتج غير متوفر حاليًا.");
     return;
   }
 
-  const item = cart.find(
-    i => String(i.id) === String(id)
-  );
-
+  const cartKey = String(id) + "_" + (selectedVariant ? String(selectedVariant.id) : "base");
+  const item = cart.find(i => i.cartKey === cartKey);
   const currentQuantity = item ? item.quantity : 0;
 
   if (currentQuantity >= stock) {
-    alert("وصلت للكمية المتاحة من هذا المنتج.");
+    alert("وصلت للكمية المتاحة من هذا الاختيار.");
     return;
   }
 
   if (item) {
     item.quantity++;
   } else {
-    cart.push({ ...product, quantity: 1 });
+    cart.push({
+      ...product,
+      quantity: 1,
+      cartKey,
+      variant_id: selectedVariant ? selectedVariant.id : null,
+      selected_size: selectedVariant?.size || null,
+      selected_color: selectedVariant?.color || null,
+      availableStock: stock
+    });
   }
 
   updateCart();
@@ -412,7 +484,11 @@ function updateCart() {
     cart.map(item => `
       <div class="cartItem">
         <span>
-          ${escapeHTML(item.name)} × ${item.quantity}
+          ${escapeHTML(item.name)}
+          ${item.selected_size || item.selected_color
+            ? ` (${escapeHTML(item.selected_size || "")}${item.selected_size && item.selected_color ? " / " : ""}${escapeHTML(item.selected_color || "")})`
+            : ""}
+          × ${item.quantity}
         </span>
 
         <span>
@@ -421,7 +497,7 @@ function updateCart() {
         </span>
 
         <button type="button"
-          onclick="removeFromCart('${escapeHTML(item.id)}')">
+          onclick="removeFromCart('${escapeHTML(item.cartKey || String(item.id) + "_base")}')">
           حذف
         </button>
       </div>
@@ -438,9 +514,9 @@ function updateCart() {
 }
 
 // حذف منتج من السلة
-function removeFromCart(id) {
+function removeFromCart(cartKey) {
   cart = cart.filter(
-    item => String(item.id) !== String(id)
+    item => (item.cartKey || String(item.id) + "_base") !== String(cartKey)
   );
 
   updateCart();
@@ -494,7 +570,7 @@ document.getElementById("checkoutForm")
       );
 
       const { data, error } = await db.rpc(
-        "create_order_with_stock",
+        "create_order_with_variants",
         {
           p_customer_name: values.customer_name,
           p_phone: values.phone,
@@ -502,7 +578,8 @@ document.getElementById("checkoutForm")
           p_address: values.address,
           p_items: cart.map(item => ({
             id: item.id,
-            quantity: item.quantity
+            quantity: item.quantity,
+            variant_id: item.variant_id
           }))
         }
       );

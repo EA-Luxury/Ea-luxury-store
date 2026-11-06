@@ -1130,3 +1130,13 @@ footer small {
 .homeCollectionEmpty { grid-column: 1/-1; text-align: center; color: #888; }
 @media (max-width: 900px) { .homeCollectionGrid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; } .homeCollectionImage { height: 230px; } }
 @media (max-width: 480px) { .homeCollectionSection { padding: 38px 4% 20px; } .homeCollectionGrid { gap: 10px; } .homeCollectionImage { height: 175px; } .homeCollectionDetails { padding: 11px; } .homeCollectionDetails strong { font-size: 13px; } .homeCollectionDetails > span { font-size: 13px; } }
+
+
+/* EA Luxury sale pricing */
+.product-price-wrap{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;margin:10px 0}
+.product-sale-price{color:#b89550;font-size:1.12em;font-weight:900}
+.product-old-price{color:#888;font-size:.9em;font-weight:500}
+.product-discount-badge{display:inline-block;background:#8b1e2d;color:#fff;border-radius:5px;padding:3px 8px;font-size:12px;font-weight:800}
+.product-regular-price{font-weight:800;margin:10px 0}
+.product-detail-price .product-sale-price{font-size:1.35em}
+.product-detail-price .product-discount-badge{margin-inline-start:5px}

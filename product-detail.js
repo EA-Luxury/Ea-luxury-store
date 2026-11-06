@@ -194,9 +194,12 @@ function detailRender() {
           <span>المتاح: ${totalStock} قطعة</span>
         </div>
         ${variantControl}
-        <button id="detailAddToCart" class="product-detail-add" type="button" ${totalStock <= 0 ? "disabled" : ""}>
-          ${totalStock <= 0 ? "غير متوفر حاليًا" : "أضف إلى السلة"}
-        </button>
+        <div class="product-detail-actions">
+          <button id="detailAddToCart" class="product-detail-add" type="button" ${totalStock <= 0 ? "disabled" : ""}>
+            ${totalStock <= 0 ? "غير متوفر حاليًا" : "أضف إلى السلة"}
+          </button>
+          <button id="detailBuyNow" class="product-detail-buy-now" type="button" ${totalStock <= 0 ? "disabled" : ""}>اشتري الآن</button>
+        </div>
         <p id="detailMessage" class="product-detail-message" role="status" aria-live="polite"></p>
         <a class="product-detail-back" href="index.html#products">← الرجوع إلى المنتجات</a>
       </div>
@@ -217,11 +220,12 @@ function detailRender() {
   }
   document.getElementById("detailPrevImage")?.addEventListener("click", () => detailShowImage((detailSelectedImage - 1 + detailImages.length) % detailImages.length));
   document.getElementById("detailNextImage")?.addEventListener("click", () => detailShowImage((detailSelectedImage + 1) % detailImages.length));
-  document.getElementById("detailAddToCart").addEventListener("click", detailAddToCart);
+  document.getElementById("detailAddToCart").addEventListener("click", () => detailAddToCart(false));
+  document.getElementById("detailBuyNow").addEventListener("click", () => detailAddToCart(true));
   detailRenderLightbox();
 }
 
-function detailAddToCart() {
+function detailAddToCart(buyNow = false) {
   const p = detailProduct;
   const hasVariants = detailVariants.length > 0;
   let selectedVariant = null;
@@ -265,6 +269,10 @@ function detailAddToCart() {
 
   localStorage.setItem("eaLuxuryCart", JSON.stringify(saved));
   detailUpdateCartCount();
+  if (buyNow) {
+    window.location.href = "cart.html";
+    return;
+  }
   document.getElementById("detailMessage").textContent = "تمت إضافة المنتج إلى السلة.";
 }
 
@@ -295,6 +303,43 @@ async function detailLoadProduct() {
   detailSelectedVariantId = detailVariants.find(v => Number(v.stock) > 0)?.id ?? null;
   document.title = data.name + " | EA Luxury";
   detailRender();
+  detailLoadRelatedProducts();
+}
+
+async function detailLoadRelatedProducts() {
+  if (!detailProduct?.category) return;
+  const { data, error } = await detailDb.from("products")
+    .select("id,name,price,sale_price,image_url,image_urls,category,active")
+    .eq("active", true).eq("category", detailProduct.category)
+    .neq("id", detailProduct.id).limit(4);
+  if (error) {
+    console.error("Related products load error:", error);
+    return;
+  }
+  const products = (data || []).filter(product => product.id != null);
+  if (!products.length) return;
+  const section = document.createElement("section");
+  section.className = "product-related-section";
+  section.innerHTML = `
+    <div class="product-related-heading">
+      <span>EA LUXURY</span>
+      <h2>منتجات قد تعجبك</h2>
+      <p>اكتشف المزيد من نفس القسم</p>
+    </div>
+    <div class="product-related-grid">
+      ${products.map(product => {
+        const images = detailGetImages(product);
+        const imageMarkup = images.length
+          ? `<img src="${detailEscape(images[0])}" alt="${detailEscape(product.name)}" loading="lazy">`
+          : `<span class="product-related-placeholder">EA</span>`;
+        return `<a class="product-related-card" href="product.html?id=${encodeURIComponent(product.id)}">
+          <div class="product-related-image">${imageMarkup}</div>
+          <div class="product-related-info"><strong>${detailEscape(product.name)}</strong>
+            <span>${detailPriceMarkup(product)}</span><small>عرض التفاصيل</small></div>
+        </a>`;
+      }).join("")}
+    </div>`;
+  detailRoot.append(section);
 }
 
 document.getElementById("detailCartButton").addEventListener("click", () => {

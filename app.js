@@ -552,27 +552,6 @@ function addToCart(id) {
   }
 
   updateCart();
-  const addNotice = document.getElementById("cartAddNotice");
-  if (addNotice) {
-    addNotice.innerHTML = `
-      <span>تمت إضافة المنتج إلى السلة بنجاح</span>
-      <div class="cartAddNoticeActions">
-        <button type="button" id="goToCartFromNotice">الذهاب إلى السلة</button>
-        <button type="button" id="keepShoppingFromNotice">متابعة التسوق</button>
-      </div>
-    `;
-    addNotice.hidden = false;
-    document.getElementById("goToCartFromNotice").addEventListener("click", () => {
-      addNotice.hidden = true;
-      checkoutPanel.hidden = true;
-      cartActions.hidden = false;
-      cartSection.hidden = false;
-      cartSection.scrollIntoView({ behavior: "smooth" });
-    });
-    document.getElementById("keepShoppingFromNotice").addEventListener("click", () => {
-      addNotice.hidden = true;
-    });
-  }
 }
 
 // تحديث السلة

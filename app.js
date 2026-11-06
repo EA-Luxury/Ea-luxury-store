@@ -91,6 +91,7 @@ let products = [];
 let productVariants = [];
 let cart = (() => { try { const saved = JSON.parse(localStorage.getItem("eaLuxuryCart") || "[]"); return Array.isArray(saved) ? saved.filter(item => item && item.id != null && Number(item.quantity) > 0) : []; } catch (_) { return []; } })();
 let selectedCategory = "الكل";
+let storefrontSettings = {};
 let productSearchTerm = "";
 let productSortMode = "default";
 
@@ -129,6 +130,8 @@ async function loadStoreSettings() {
     if (error) throw error;
 
     const settings = data?.settings || {};
+    storefrontSettings = settings;
+    applyStoreContactSettings(settings);
 
     renderStoreCategories(settings.productCategories);
 
@@ -1028,7 +1031,7 @@ contactSection.innerHTML = `
     gap:12px;
   ">
 
-    <a href="tel:01065938516"
+    <a id="storePhoneLink" href="tel:01065938516"
       style="
         background:#d6b36a;
         color:#111;
@@ -1040,7 +1043,7 @@ contactSection.innerHTML = `
       📞 اتصل بنا
     </a>
 
-    <a href="https://wa.me/201065938516"
+    <a id="storeWhatsappLink" href="https://wa.me/201065938516"
       target="_blank"
       rel="noopener"
       style="
@@ -1054,7 +1057,7 @@ contactSection.innerHTML = `
       واتساب
     </a>
 
-    <a href="https://www.facebook.com/share/1F6UFaUhmj/?mibextid=wwXIfr"
+    <a id="storeFacebookLink" href="https://www.facebook.com/share/1F6UFaUhmj/?mibextid=wwXIfr"
       target="_blank"
       rel="noopener"
       style="
@@ -1079,7 +1082,58 @@ contactSection.innerHTML = `
   </p>
 `;
 
+function applyStoreContactSettings(settings = {}) {
+  const phone = String(settings.storePhone || "").trim();
+  const whatsapp = String(settings.storeWhatsapp || "").trim();
+  const facebook = String(settings.storeFacebook || "").trim();
+  const tiktok = String(settings.storeTiktok || "").trim();
+  const phoneLink = document.getElementById("storePhoneLink");
+  const whatsappLink = document.getElementById("storeWhatsappLink");
+  const facebookLink = document.getElementById("storeFacebookLink");
+
+  if (phoneLink && phone) {
+    phoneLink.href = "tel:" + phone.replace(/[^+0-9]/g, "");
+  }
+  if (whatsappLink && whatsapp) {
+    let number = whatsapp.replace(/[^0-9]/g, "");
+    if (number.startsWith("0")) number = "20" + number.slice(1);
+    else if (number.startsWith("20")) number = number;
+    whatsappLink.href = "https://wa.me/" + number;
+  }
+  const safeExternalUrl = value => {
+    if (!value) return "";
+    try {
+      const url = new URL(/^https?:\/\//i.test(value) ? value : "https://" + value);
+      return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+    } catch (_) {
+      return "";
+    }
+  };
+  if (facebookLink && facebook) {
+    const url = safeExternalUrl(facebook);
+    if (url) facebookLink.href = url;
+  }
+  if (tiktok) {
+    const url = safeExternalUrl(tiktok);
+    if (url) {
+      let tiktokLink = document.getElementById("storeTiktokLink");
+      if (!tiktokLink) {
+        tiktokLink = document.createElement("a");
+        tiktokLink.id = "storeTiktokLink";
+        tiktokLink.target = "_blank";
+        tiktokLink.rel = "noopener";
+        tiktokLink.textContent = "TikTok";
+        tiktokLink.style.cssText = "background:#292929;color:#fff;padding:13px 20px;border-radius:8px;text-decoration:none;font-weight:bold;";
+        const links = contactSection.querySelector("div");
+        if (links) links.appendChild(tiktokLink);
+      }
+      tiktokLink.href = url;
+    }
+  }
+}
+
 document.body.appendChild(contactSection);
+applyStoreContactSettings(storefrontSettings);
 
 
 

@@ -136,10 +136,11 @@
     </div>
 
     <form id="checkoutForm">
-      <input name="customer_name" placeholder="الاسم بالكامل" required>
-      <input name="phone" type="tel" placeholder="رقم الموبايل" required>
-      <input name="governorate" placeholder="المحافظة" required>
-      <textarea name="address" placeholder="العنوان بالتفصيل" required></textarea>
+      <input name="customer_name" placeholder="الاسم بالكامل" autocomplete="name" required>
+      <input name="phone" type="tel" placeholder="رقم الموبايل" autocomplete="tel" required>
+      <input name="customer_email" type="email" placeholder="البريد الإلكتروني لاستلام تأكيد الطلب" autocomplete="email" required>
+      <input name="governorate" placeholder="المحافظة" autocomplete="address-level1" required>
+      <textarea name="address" placeholder="العنوان بالتفصيل" autocomplete="street-address" required></textarea>
       <button type="submit">تأكيد الطلب - الدفع عند الاستلام</button>
     </form>
 
@@ -166,7 +167,7 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 
 </body>
 </html>

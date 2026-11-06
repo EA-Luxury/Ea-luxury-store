@@ -587,7 +587,8 @@ document.getElementById("checkoutForm")
       if (error) throw error;
 
       message.textContent =
-        "تم استلام طلبك بنجاح. سنتواصل معك لتأكيده.";
+        "تم استلام طلبك بنجاح! رقم طلبك: #" + data +
+        ". احتفظ بالرقم لمتابعة طلبك، وسنتواصل معك لتأكيده.";
 
       cart = [];
       updateCart();

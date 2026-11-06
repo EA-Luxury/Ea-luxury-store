@@ -13,7 +13,7 @@ header{background:#111;color:#d6b36a;padding:22px;text-align:center;font-size:24
 main{max-width:750px;margin:25px auto;padding:15px}
 section{background:white;padding:20px;margin-bottom:20px;border-radius:12px}
 h2,h3{color:#9b793e}
-input,select,button{width:100%;padding:13px;margin:8px 0;border:1px solid #ddd;border-radius:7px;font-size:16px}
+input,select,textarea,button{width:100%;padding:13px;margin:8px 0;border:1px solid #ddd;border-radius:7px;font-size:16px;font-family:inherit}
 button{background:#171717;color:#d6b36a;border:0;font-weight:bold;cursor:pointer}
 button:disabled{opacity:.5}
 .order,.variant-row{border-bottom:1px solid #ddd;padding:12px 0}
@@ -53,6 +53,7 @@ small{display:block;color:#666}
 </select>
 <input id="price" type="number" min="1" placeholder="السعر بالجنيه">
 <input id="stock" type="number" min="0" step="1" placeholder="الكمية الإجمالية القديمة للمنتج">
+<textarea id="description" rows="4" placeholder="وصف المنتج وتفاصيل الخامة والتصميم..."></textarea>
 <input id="sizes" placeholder="المقاسات مثال: M, L, XL">
 <input id="colors" placeholder="الألوان مثال: أسود, أبيض">
 <label>صور المنتج:</label>
@@ -266,6 +267,7 @@ const category=document.getElementById("category").value;
 const price=Number(document.getElementById("price").value);
 const stockValue=document.getElementById("stock").value;
 const stock=Number(stockValue);
+const description=document.getElementById("description").value.trim();
 
 const sizes=document.getElementById("sizes").value.split(",").map(x=>x.trim()).filter(Boolean);
 const colors=document.getElementById("colors").value.split(",").map(x=>x.trim()).filter(Boolean);
@@ -313,6 +315,7 @@ name:name,
 category:category,
 price:price,
 stock:stock,
+description:description,
 sizes:sizes,
 colors:colors,
 image_url:imageUrls[0],
@@ -324,7 +327,7 @@ if(error)throw error;
 
 msg.textContent="تم إضافة المنتج بنجاح وحفظ "+imageUrls.length+" صور.";
 
-["name","price","stock","sizes","colors","photo"].forEach(id=>{
+["name","price","stock","description","sizes","colors","photo"].forEach(id=>{
 document.getElementById(id).value="";
 });
 

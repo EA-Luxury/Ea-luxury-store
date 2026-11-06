@@ -68,10 +68,10 @@ a {
 .logo-main {
   position: relative;
   display: block;
-  width: 58px;
-  height: 42px;
+  width: 64px;
+  height: 46px;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 39px;
+  font-size: 44px;
   font-weight: 700;
   color: #d6b36a;
   line-height: 1;
@@ -87,14 +87,15 @@ a {
 }
 
 .logo-e {
-  left: 3px;
+  left: 0;
   z-index: 1;
+  transform: scaleX(1.04);
 }
 
 .logo-a {
-  left: 21px;
+  left: 14px;
   z-index: 2;
-  transform: scale(1.04);
+  transform: scale(1.08);
 }
 
 .logo-sub {
@@ -652,13 +653,13 @@ footer small {
   }
 
   .logo-main {
-    width: 49px;
-    height: 34px;
-    font-size: 32px;
+    width: 54px;
+    height: 38px;
+    font-size: 36px;
   }
 
   .logo-a {
-    left: 18px;
+    left: 12px;
   }
 
   .logo-sub {

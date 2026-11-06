@@ -927,3 +927,105 @@ footer small {
   line-height: 1;
   cursor: pointer;
 }
+
+
+/* تجربة السلة وإتمام الطلب */
+.cartAddNotice {
+  margin: 12px auto;
+  padding: 10px 14px;
+  max-width: 320px;
+  text-align: center;
+  color: #72551f;
+  background: #fbf6e9;
+  border: 1px solid #ead9b8;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.cartActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+.cartActions button,
+.backToCartButton {
+  min-height: 44px;
+  padding: 11px 20px;
+  border-radius: 7px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.continueShoppingButton,
+.backToCartButton {
+  color: #222;
+  background: #fff;
+  border: 1px solid #c9b17f;
+}
+.proceedCheckoutButton {
+  color: #d6b36a;
+  background: #171717;
+  border: 1px solid #171717;
+}
+.checkoutPanel {
+  margin-top: 22px;
+  padding: 22px;
+  border: 1px solid #ead9b8;
+  border-radius: 10px;
+  background: #fffdf8;
+}
+.checkoutPanel[hidden],
+.cartActions[hidden],
+.cartAddNotice[hidden] {
+  display: none !important;
+}
+.checkoutPanel .backToCartButton {
+  margin-bottom: 16px;
+}
+.checkoutPanel .checkoutHeading {
+  margin-bottom: 16px;
+}
+#checkoutForm {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+#checkoutForm input,
+#checkoutForm textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid #ddd;
+  border-radius: 7px;
+  font: inherit;
+  box-sizing: border-box;
+}
+#checkoutForm textarea {
+  grid-column: 1 / -1;
+  min-height: 95px;
+  resize: vertical;
+}
+#checkoutForm button {
+  grid-column: 1 / -1;
+  min-height: 46px;
+  border: 0;
+  border-radius: 7px;
+  color: #d6b36a;
+  background: #171717;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+#checkoutForm button:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+@media (max-width: 650px) {
+  .cartActions { flex-direction: column; }
+  .cartActions button { width: 100%; }
+  .checkoutPanel { padding: 15px; }
+  #checkoutForm { grid-template-columns: 1fr; }
+  #checkoutForm textarea,
+  #checkoutForm button { grid-column: 1; }
+}

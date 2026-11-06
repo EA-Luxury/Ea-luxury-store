@@ -95,6 +95,24 @@ let selectedCategory = "الكل";
 const grid = document.getElementById("productGrid");
 const cartCount = document.getElementById("cartCount");
 const cartSection = document.getElementById("cartSection");
+// إنشاء أزرار الأقسام من إعدادات لوحة الإدارة.
+function renderStoreCategories(names) {
+  const nav = document.getElementById("categoryNavigation");
+  if (!nav) return;
+  const cleanNames = [...new Set((Array.isArray(names) ? names : [])
+    .map(name => String(name || "").trim()).filter(Boolean))];
+  if (!cleanNames.length) cleanNames.push("حريمي", "رجالي");
+  if (selectedCategory !== "الكل" && !cleanNames.includes(selectedCategory)) {
+    selectedCategory = "الكل";
+  }
+  nav.innerHTML = [
+    '<button class="category' + (selectedCategory === "الكل" ? " active" : "") + '" data-category="الكل">الكل</button>',
+    ...cleanNames.map(name =>
+      '<button class="category' + (selectedCategory === name ? " active" : "") + '" data-category="' + escapeHTML(name) + '">' + escapeHTML(name) + '</button>'
+    )
+  ].join("");
+}
+
 // تحميل صورة غلاف المتجر من Supabase
 async function loadStoreSettings() {
   const hero = document.querySelector(".hero");
@@ -109,6 +127,8 @@ async function loadStoreSettings() {
     if (error) throw error;
 
     const settings = data?.settings || {};
+
+    renderStoreCategories(settings.productCategories);
 
     const announcementBar = document.getElementById("storeAnnouncementBar");
     const announcementText = document.getElementById("storeAnnouncementText");
@@ -671,19 +691,19 @@ function removeFromCart(cartKey) {
 window.addToCart = addToCart;
 window.removeFromCart = removeFromCart;
 
-// تصنيف المنتجات
-document.querySelectorAll(".category").forEach(button => {
-  button.addEventListener("click", () => {
-    selectedCategory = button.dataset.category;
-
-    document.querySelectorAll(".category").forEach(b =>
-      b.classList.remove("active")
+// تصنيف المنتجات: event delegation حتى تعمل الأزرار التي تُنشأ من إعدادات الإدارة.
+const categoryNavigation = document.getElementById("categoryNavigation");
+if (categoryNavigation) {
+  categoryNavigation.addEventListener("click", event => {
+    const button = event.target.closest(".category");
+    if (!button || !categoryNavigation.contains(button)) return;
+    selectedCategory = button.dataset.category || "الكل";
+    categoryNavigation.querySelectorAll(".category").forEach(item =>
+      item.classList.toggle("active", item === button)
     );
-
-    button.classList.add("active");
     showProducts();
   });
-});
+}
 
 // التنقل بين السلة وخطوة إتمام الطلب
 const checkoutPanel = document.getElementById("checkoutPanel");

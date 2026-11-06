@@ -82,7 +82,8 @@ async function sendOrderEmails(orderId, values, orderItems, orderTotal) {
     return { sent: true, configured: true };
   } catch (error) {
     console.error("تعذر إرسال تأكيد الطلب بالبريد:", error);
-    return { sent: false, configured: true };
+    const detail = error?.text || error?.message || error?.status || "خطأ غير معروف من خدمة البريد";
+    return { sent: false, configured: true, error: String(detail).slice(0, 220) };
   }
 }
 
@@ -684,7 +685,7 @@ document.getElementById("checkoutForm")
       } else if (emailResult.sent) {
         message.textContent += " تم إرسال تأكيد الطلب، وستصلك نسخة على بريد المتجر.";
       } else {
-        message.textContent += " تم حفظ الطلب، لكن تعذر إرسال رسالة البريد.";
+        message.textContent += " تم حفظ الطلب، لكن تعذر إرسال رسالة البريد. سبب الخطأ: " + (emailResult.error || "غير معروف");
       }
 
       cart = [];

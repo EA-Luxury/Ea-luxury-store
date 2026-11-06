@@ -488,9 +488,7 @@ function showProducts() {
 
         <h3><a class="product-detail-link" href="product.html?id=${encodeURIComponent(String(p.id))}">${escapeHTML(p.name)}</a></h3>
 
-        <p>
-          ${renderProductPrice(p)}
-        </p>
+        ${renderProductPrice(p)}
 
         ${hasVariants ? variantOptions : `
           <p>المقاسات: ${

@@ -318,6 +318,24 @@ async function loadProducts() {
 
   products = data || [];
 
+  // تحديث أسعار السلة المحفوظة عند فتح المتجر حتى لا يظهر سعر قديم بعد بدء/انتهاء عرض.
+  cart = cart.map(item => {
+    const currentProduct = products.find(product => String(product.id) === String(item.id));
+    if (!currentProduct) return item;
+    return {
+      ...item,
+      ...currentProduct,
+      price: getEffectiveProductPrice(currentProduct),
+      quantity: item.quantity,
+      cartKey: item.cartKey,
+      variant_id: item.variant_id,
+      selected_size: item.selected_size,
+      selected_color: item.selected_color,
+      availableStock: item.availableStock
+    };
+  });
+  updateCart();
+
   const variantsResult = await db
     .from("product_variants")
     .select("id,product_id,size,color,stock,is_active")

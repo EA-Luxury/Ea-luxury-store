@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 
 <body>
@@ -30,6 +30,7 @@
       <a href="#">الرئيسية</a>
       <a href="#products">المنتجات</a>
       <a href="#categories">الأقسام</a>
+      <a href="#trackOrder">متابعة الطلب</a>
       <a href="#eaContact">تواصل معنا</a>
     </nav>
 
@@ -55,6 +56,21 @@
       <span class="heroLine"></span>
       <span>ELEGANCE</span>
     </div>
+  </section>
+
+
+  <section id="trackOrder" class="trackingSection">
+    <div class="sectionHeading">
+      <span>EA LUXURY ORDER SERVICE</span>
+      <h2>تابع طلبك</h2>
+      <p>اكتب رقم الطلب ورقم الموبايل المسجل عند الشراء لمعرفة آخر حالة لطلبك</p>
+    </div>
+    <form id="trackingForm" class="trackingForm">
+      <input name="order_id" type="number" min="1" step="1" inputmode="numeric" placeholder="رقم الطلب" required>
+      <input name="phone" type="tel" inputmode="tel" minlength="10" placeholder="رقم الموبايل المسجل بالطلب" required>
+      <button type="submit">عرض حالة الطلب</button>
+    </form>
+    <div id="trackingResult" class="trackingResult" role="status" aria-live="polite"></div>
   </section>
 
   <section class="benefits">
@@ -168,7 +184,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@5/dist/email.min.js"></script>
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
 
 </body>
 </html>

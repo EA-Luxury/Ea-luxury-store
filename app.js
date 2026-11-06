@@ -654,6 +654,7 @@ document.getElementById("cartButton").addEventListener("click", () => {
 document.getElementById("continueShoppingButton").addEventListener("click", () => {
   checkoutPanel.hidden = true;
   cartActions.hidden = false;
+  cartSection.hidden = true;
   document.getElementById("products").scrollIntoView({ behavior: "smooth" });
 });
 

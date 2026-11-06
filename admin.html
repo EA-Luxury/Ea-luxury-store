@@ -106,6 +106,11 @@ small{display:block;color:#666}
 
 <section id="settingsSection">
 <h2>⚙️ إعدادات المتجر</h2>
+<h3>إدارة أقسام المنتجات</h3>
+<label>أسماء الأقسام (افصل بين كل قسم بفاصلة)</label>
+<textarea id="productCategories" rows="3" placeholder="حريمي, رجالي, أحذية, شنط, إكسسوارات"></textarea>
+<small>الأقسام هنا هي التي تظهر للعملاء ويمكنك اختيارها عند إضافة أي منتج.</small>
+<hr>
 <h3>شريط الإعلان أعلى المتجر</h3>
 <label>نص الإعلان</label>
 <input id="storeAnnouncement" maxlength="180" placeholder="مثال: عروض EA Luxury لفترة محدودة - توصيل لجميع المحافظات">
@@ -892,6 +897,20 @@ const {data}=client.storage.from("product-images").getPublicUrl(path);
 return data.publicUrl;
 }
 
+function updateProductCategoryOptions(names){
+const select=document.getElementById("category");
+if(!select)return;
+const current=select.value;
+select.innerHTML="";
+names.forEach(name=>{
+const option=document.createElement("option");
+option.value=name;
+option.textContent=name;
+select.appendChild(option);
+});
+if(names.includes(current))select.value=current;
+}
+
 async function loadSettings(){
 const msg=document.getElementById("settingsMsg");
 
@@ -904,10 +923,15 @@ return;
 
 const s=data?.settings||{};
 
+const categoryNames=Array.isArray(s.productCategories)&&s.productCategories.length?s.productCategories:["حريمي","رجالي"];
+document.getElementById("productCategories").value=categoryNames.join(", ");
+updateProductCategoryOptions(categoryNames);
+
 logoUrl=s.storeLogo||"";
 coverUrl=s.storeCover||"";
 
 const fields={
+productCategories:Array.isArray(s.productCategories)?s.productCategories.join(", "):"حريمي, رجالي",
 storeAnnouncement:s.storeAnnouncement,
 announcementEnabled:s.announcementEnabled===undefined?"true":String(s.announcementEnabled),
 storeName:s.storeName,
@@ -968,7 +992,12 @@ const uploadedCover=await uploadImage(coverFile,"store");
 if(uploadedCover)coverUrl=uploadedCover;
 }
 
+const categoryNames=[...new Set(document.getElementById("productCategories").value.split(",").map(x=>x.trim()).filter(Boolean))];
+if(!categoryNames.length)throw new Error("لازم تسيب قسم واحد على الأقل.");
+if(categoryNames.some(name=>name.length>60))throw new Error("اسم القسم لا يزيد عن 60 حرفًا.");
+
 const settings={
+productCategories:categoryNames,
 storeAnnouncement:document.getElementById("storeAnnouncement").value.trim(),
 announcementEnabled:document.getElementById("announcementEnabled").value==="true",
 storeName:document.getElementById("storeName").value,

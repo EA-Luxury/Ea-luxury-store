@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111111">
+  <meta name="description" content="تفاصيل المنتج من EA Luxury">
+  <title>تفاصيل المنتج | EA Luxury</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=12">
+</head>
+<body class="product-detail-page">
+  <div class="announcement">
+    <span>EA LUXURY</span>
+    <span>أناقة تليق بك - توصيل لجميع محافظات مصر</span>
+  </div>
+  <header class="header">
+    <a href="index.html" class="logo" aria-label="EA Luxury - الرئيسية">
+      <span class="logo-main" aria-label="EA"><span class="logo-e">E</span><span class="logo-a">A</span></span>
+      <span class="logo-sub">LUXURY</span>
+    </a>
+    <nav class="mainNav">
+      <a href="index.html">الرئيسية</a>
+      <a href="index.html#products">المنتجات</a>
+      <a href="index.html#categories">الأقسام</a>
+      <a href="index.html#trackOrder">متابعة الطلب</a>
+    </nav>
+    <button id="detailCartButton" class="cartButton" type="button">
+      <span>🛒</span><span>السلة</span><span id="detailCartCount" class="cartCount">0</span>
+    </button>
+  </header>
+
+  <main class="product-detail-main">
+    <p class="product-detail-breadcrumb"><a href="index.html">الرئيسية</a> / <a href="index.html#products">المنتجات</a> / تفاصيل المنتج</p>
+    <div id="productDetails" class="product-detail-loading">جاري تحميل تفاصيل المنتج...</div>
+  </main>
+
+  <footer>
+    <div class="footerLogo">EA <span>LUXURY</span></div>
+    <p>ملابس حريمي ورجالي - توصيل لجميع محافظات مصر</p>
+    <p>الدفع عند الاستلام</p>
+    <small>© EA Luxury - جميع الحقوق محفوظة</small>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="product-detail.js?v=1"></script>
+</body>
+</html>

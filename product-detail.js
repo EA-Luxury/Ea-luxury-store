@@ -40,8 +40,71 @@ function detailShowImage(index) {
   if (main) main.src = detailImages[index];
   document.querySelectorAll(".product-detail-thumbnail").forEach((button, i) => {
     button.classList.toggle("active", i === index);
+    button.setAttribute("aria-pressed", String(i === index));
   });
+  const count = document.getElementById("detailImageCount");
+  if (count) count.textContent = (index + 1) + " / " + detailImages.length;
+  const lightboxCount = document.getElementById("detailLightboxCount");
+  if (lightboxCount) lightboxCount.textContent = (index + 1) + " / " + detailImages.length;
+  const lightboxImage = document.getElementById("detailLightboxImage");
+  if (lightboxImage) lightboxImage.src = detailImages[index];
 }
+
+let detailSelectedVariantId = null;
+
+function detailSelectVariant(id) {
+  const variant = detailVariants.find(v => String(v.id) === String(id));
+  if (!variant || Number(variant.stock) <= 0) return;
+  detailSelectedVariantId = variant.id;
+  document.querySelectorAll("[data-detail-variant]").forEach(button => {
+    const selected = String(button.dataset.detailVariant) === String(id);
+    button.classList.toggle("selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+  const hint = document.getElementById("detailVariantHint");
+  if (hint) hint.textContent = "اختيارك: " + (variant.size || "بدون مقاس") + " - " + (variant.color || "بدون لون") + " | متاح " + Number(variant.stock) + " قطعة";
+}
+
+function detailRenderLightbox() {
+  if (!detailImages.length || document.getElementById("detailLightbox")) return;
+  const overlay = document.createElement("div");
+  overlay.id = "detailLightbox";
+  overlay.className = "product-detail-lightbox";
+  overlay.hidden = true;
+  overlay.innerHTML = `
+    <button type="button" class="product-detail-lightbox-close" aria-label="إغلاق">×</button>
+    <button type="button" class="product-detail-lightbox-nav prev" aria-label="الصورة السابقة">‹</button>
+    <img id="detailLightboxImage" src="${detailEscape(detailImages[0])}" alt="صورة المنتج مكبرة">
+    <button type="button" class="product-detail-lightbox-nav next" aria-label="الصورة التالية">›</button>
+    <span class="product-detail-lightbox-count" id="detailLightboxCount">1 / ${detailImages.length}</span>`;
+  document.body.append(overlay);
+  overlay.querySelector(".product-detail-lightbox-close").addEventListener("click", detailCloseLightbox);
+  overlay.querySelector(".prev").addEventListener("click", () => detailShowImage((detailSelectedImage - 1 + detailImages.length) % detailImages.length));
+  overlay.querySelector(".next").addEventListener("click", () => detailShowImage((detailSelectedImage + 1) % detailImages.length));
+  overlay.addEventListener("click", event => { if (event.target === overlay) detailCloseLightbox(); });
+}
+
+function detailOpenLightbox() {
+  const overlay = document.getElementById("detailLightbox");
+  if (!overlay) return;
+  overlay.hidden = false;
+  document.body.classList.add("detail-lightbox-open");
+  detailShowImage(detailSelectedImage);
+}
+
+function detailCloseLightbox() {
+  const overlay = document.getElementById("detailLightbox");
+  if (overlay) overlay.hidden = true;
+  document.body.classList.remove("detail-lightbox-open");
+}
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") detailCloseLightbox();
+  if (document.getElementById("detailLightbox")?.hidden === false && detailImages.length > 1) {
+    if (event.key === "ArrowLeft") detailShowImage((detailSelectedImage + 1) % detailImages.length);
+    if (event.key === "ArrowRight") detailShowImage((detailSelectedImage - 1 + detailImages.length) % detailImages.length);
+  }
+});
 
 function detailEffectivePrice(product) {
   const regular = Number(product?.price || 0);
@@ -74,32 +137,50 @@ function detailRender() {
   const sizes = Array.isArray(p.sizes) ? p.sizes.filter(Boolean) : [];
   const colors = Array.isArray(p.colors) ? p.colors.filter(Boolean) : [];
 
+  const firstAvailableVariant = availableVariants[0] || null;
   const variantControl = hasVariants ? `
     <div class="product-detail-options">
-      <label for="detailVariant">اختار المقاس واللون</label>
-      <select id="detailVariant">
+      <div class="product-detail-options-heading">
+        <label>اختار المقاس واللون</label>
+        <span id="detailVariantHint">${firstAvailableVariant ? "اختار التركيبة المناسبة لك" : "نفدت جميع الاختيارات"}</span>
+      </div>
+      <div class="product-detail-variant-list" role="group" aria-label="اختيارات المقاس واللون">
         ${detailVariants.map(v => `
-          <option value="${detailEscape(v.id)}" ${Number(v.stock) <= 0 ? "disabled" : ""}>
-            ${detailEscape(v.size || "بدون مقاس")} - ${detailEscape(v.color || "بدون لون")} - المتاح: ${Number(v.stock)}
-          </option>
+          <button type="button"
+            class="product-detail-variant ${firstAvailableVariant && String(v.id) === String(firstAvailableVariant.id) ? "selected" : ""}"
+            data-detail-variant="${detailEscape(v.id)}"
+            aria-pressed="${firstAvailableVariant && String(v.id) === String(firstAvailableVariant.id) ? "true" : "false"}"
+            ${Number(v.stock) <= 0 ? "disabled" : ""}>
+            <strong>${detailEscape(v.size || "بدون مقاس")}</strong>
+            <span>${detailEscape(v.color || "بدون لون")}</span>
+            <small>${Number(v.stock) > 0 ? "متاح " + Number(v.stock) + " قطعة" : "غير متاح"}</small>
+          </button>
         `).join("")}
-      </select>
+      </div>
     </div>` : "";
 
   detailRoot.className = "";
   detailRoot.innerHTML = `
     <section class="product-detail-layout">
       <div class="product-detail-gallery">
-        <img id="detailMainImage" class="product-detail-main-image"
-          src="${detailEscape(detailImages[0] || "")}" alt="${detailEscape(p.name)}"
-          ${detailImages.length ? "" : "hidden"}>
+        <div class="product-detail-image-stage">
+          <img id="detailMainImage" class="product-detail-main-image"
+            src="${detailEscape(detailImages[0] || "")}" alt="${detailEscape(p.name)}"
+            ${detailImages.length ? "" : "hidden"} ${detailImages.length ? 'tabindex="0" role="button" aria-label="تكبير صورة المنتج"' : ""}>
+          ${detailImages.length > 1 ? `
+            <button type="button" class="product-detail-image-nav prev" id="detailPrevImage" aria-label="الصورة السابقة">‹</button>
+            <button type="button" class="product-detail-image-nav next" id="detailNextImage" aria-label="الصورة التالية">›</button>
+            <span class="product-detail-image-count" id="detailImageCount">1 / ${detailImages.length}</span>` : ""}
+          ${!detailImages.length ? '<div class="product-detail-no-image">EA LUXURY</div>' : ""}
+        </div>
         ${detailImages.length > 1 ? `
-          <div class="product-detail-thumbnails">
+          <div class="product-detail-thumbnails" aria-label="صور المنتج">
             ${detailImages.map((url, i) => `
-              <button type="button" class="product-detail-thumbnail ${i === 0 ? "active" : ""}" data-detail-image="${i}" aria-label="عرض الصورة ${i + 1}">
-                <img src="${detailEscape(url)}" alt="صورة ${i + 1}">
+              <button type="button" class="product-detail-thumbnail ${i === 0 ? "active" : ""}" data-detail-image="${i}" aria-label="عرض الصورة ${i + 1}" aria-pressed="${i === 0 ? "true" : "false"}">
+                <img src="${detailEscape(url)}" alt="صورة ${i + 1}" loading="lazy">
               </button>`).join("")}
           </div>` : ""}
+        <p class="product-detail-gallery-note">اضغط على الصورة لمشاهدتها بحجم أكبر</p>
       </div>
       <div class="product-detail-info">
         <span class="product-detail-category">${detailEscape(p.category || "EA LUXURY")}</span>
@@ -124,7 +205,20 @@ function detailRender() {
   detailRoot.querySelectorAll("[data-detail-image]").forEach(button => {
     button.addEventListener("click", () => detailShowImage(Number(button.dataset.detailImage)));
   });
+  detailRoot.querySelectorAll("[data-detail-variant]").forEach(button => {
+    button.addEventListener("click", () => detailSelectVariant(button.dataset.detailVariant));
+  });
+  const mainImage = document.getElementById("detailMainImage");
+  if (mainImage && detailImages.length) {
+    mainImage.addEventListener("click", detailOpenLightbox);
+    mainImage.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); detailOpenLightbox(); }
+    });
+  }
+  document.getElementById("detailPrevImage")?.addEventListener("click", () => detailShowImage((detailSelectedImage - 1 + detailImages.length) % detailImages.length));
+  document.getElementById("detailNextImage")?.addEventListener("click", () => detailShowImage((detailSelectedImage + 1) % detailImages.length));
   document.getElementById("detailAddToCart").addEventListener("click", detailAddToCart);
+  detailRenderLightbox();
 }
 
 function detailAddToCart() {
@@ -133,8 +227,7 @@ function detailAddToCart() {
   let selectedVariant = null;
 
   if (hasVariants) {
-    const selectedId = document.getElementById("detailVariant")?.value;
-    selectedVariant = detailVariants.find(v => String(v.id) === String(selectedId));
+    selectedVariant = detailVariants.find(v => String(v.id) === String(detailSelectedVariantId));
     if (!selectedVariant || Number(selectedVariant.stock) <= 0) {
       document.getElementById("detailMessage").textContent = "اختار مقاسًا ولونًا متاحين.";
       return;
@@ -199,6 +292,7 @@ async function detailLoadProduct() {
 
   if (variantsError) console.error("Variant load error:", variantsError);
   detailVariants = variantsError ? [] : (variants || []);
+  detailSelectedVariantId = detailVariants.find(v => Number(v.stock) > 0)?.id ?? null;
   document.title = data.name + " | EA Luxury";
   detailRender();
 }

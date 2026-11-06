@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -6,26 +7,32 @@
 <title>إدارة EA Luxury</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+*{box-sizing:border-box}
 body{font-family:Arial;background:#f5f2eb;margin:0;color:#222}
 header{background:#111;color:#d6b36a;padding:22px;text-align:center;font-size:24px;font-weight:bold}
-main{max-width:650px;margin:25px auto;padding:15px}
+main{max-width:750px;margin:25px auto;padding:15px}
 section{background:white;padding:20px;margin-bottom:20px;border-radius:12px}
-h2{color:#9b793e}
-input,select,button{width:100%;padding:13px;margin:8px 0;box-sizing:border-box;border:1px solid #ddd;border-radius:7px;font-size:16px}
+h2,h3{color:#9b793e}
+input,select,button{width:100%;padding:13px;margin:8px 0;border:1px solid #ddd;border-radius:7px;font-size:16px}
 button{background:#171717;color:#d6b36a;border:0;font-weight:bold;cursor:pointer}
 button:disabled{opacity:.5}
-.order{border-bottom:1px solid #ddd;padding:12px 0}
+.order,.variant-row{border-bottom:1px solid #ddd;padding:12px 0}
 .stock{font-weight:bold;color:#287a36}
 .out{font-weight:bold;color:#c62828}
 small{display:block;color:#666}
 .image-preview{width:100%;max-height:220px;object-fit:contain;background:#f5f2eb;border-radius:8px;margin:8px 0;display:none}
 .file-button{display:block;background:#171717;color:#d6b36a;padding:13px;text-align:center;border-radius:7px;margin:8px 0;font-weight:bold;cursor:pointer}
 .file-input{display:none}
+.variant-row button{margin-top:5px}
+.secondary{background:#eee;color:#222}
+.danger{background:#a52a2a;color:white}
+.status-text{font-size:14px;color:#666}
 </style>
 </head>
 <body>
 <header>EA Luxury - لوحة الإدارة</header>
 <main>
+
 <section id="login">
 <h2>تسجيل دخول الإدارة</h2>
 <input id="email" type="email" placeholder="البريد الإلكتروني">
@@ -33,7 +40,9 @@ small{display:block;color:#666}
 <button type="button" onclick="login()">دخول</button>
 <p id="loginMsg"></p>
 </section>
+
 <div id="dashboard" hidden>
+
 <section>
 <h2>إضافة منتج جديد</h2>
 <input id="name" placeholder="اسم المنتج">
@@ -42,19 +51,57 @@ small{display:block;color:#666}
 <option value="رجالي">ملابس رجالي</option>
 </select>
 <input id="price" type="number" min="1" placeholder="السعر بالجنيه">
-<input id="stock" type="number" min="0" step="1" placeholder="الكمية المتاحة">
+<input id="stock" type="number" min="0" step="1" placeholder="الكمية الإجمالية القديمة للمنتج">
 <input id="sizes" placeholder="المقاسات مثال: M, L, XL">
-<input id="colors" placeholder="الألوان">
+<input id="colors" placeholder="الألوان مثال: أسود, أبيض">
 <label>صور المنتج:</label>
 <input id="photo" type="file" accept="image/*" multiple>
 <small>يمكنك اختيار حتى 5 صور للمنتج الواحد.</small>
 <button type="button" onclick="addProduct()">حفظ المنتج</button>
 <p id="productMsg"></p>
 </section>
+
 <section>
 <h2>المنتجات والمخزون</h2>
 <div id="productsList">جاري التحميل...</div>
 </section>
+
+<!-- إدارة المتغيرات -->
+<section id="variantsSection">
+<h2>إدارة المقاسات والألوان والمخزون</h2>
+<p class="status-text">اختر المنتج، ثم أضف كل تركيبة مقاس ولون وحدد الكمية المتاحة منها.</p>
+
+<label>اختر المنتج</label>
+<select id="variantProduct" onchange="loadVariants()">
+<option value="">اختر المنتج</option>
+</select>
+
+<hr>
+
+<h3 id="variantFormTitle">إضافة تركيبة جديدة</h3>
+<input id="variantId" type="hidden">
+
+<label>المقاس</label>
+<input id="variantSize" placeholder="مثال: M أو L أو XL">
+
+<label>اللون</label>
+<input id="variantColor" placeholder="مثال: أسود أو أبيض">
+
+<label>الكمية المتاحة لهذه التركيبة</label>
+<input id="variantStock" type="number" min="0" step="1" placeholder="مثال: 5">
+
+<label>كود المنتج (اختياري)</label>
+<input id="variantSku" placeholder="SKU">
+
+<button type="button" onclick="saveVariant()">حفظ التركيبة</button>
+<button type="button" class="secondary" onclick="resetVariantForm()">إلغاء التعديل</button>
+<p id="variantMsg"></p>
+
+<hr>
+<h3>التركيبات المسجلة</h3>
+<div id="variantsList">اختر منتجًا لعرض المقاسات والألوان.</div>
+</section>
+
 <section id="settingsSection">
 <h2>⚙️ إعدادات المتجر</h2>
 <label>اسم المتجر</label>
@@ -69,18 +116,21 @@ small{display:block;color:#666}
 <input id="storeFacebook" placeholder="رابط الصفحة">
 <label>رابط تيك توك</label>
 <input id="storeTiktok" placeholder="رابط الحساب">
+
 <hr>
 <h3>صورة شعار المتجر</h3>
 <label class="file-button" for="storeLogoFile">📷 اختيار صورة الشعار</label>
 <input class="file-input" id="storeLogoFile" type="file" accept="image/*">
 <img id="logoPreview" class="image-preview" alt="معاينة الشعار">
 <small id="logoStatus">لم يتم اختيار صورة جديدة.</small>
+
 <hr>
 <h3>صورة غلاف المتجر</h3>
 <label class="file-button" for="storeCoverFile">📷 اختيار صورة الغلاف</label>
 <input class="file-input" id="storeCoverFile" type="file" accept="image/*">
 <img id="coverPreview" class="image-preview" alt="معاينة الغلاف">
 <small id="coverStatus">لم يتم اختيار صورة جديدة.</small>
+
 <hr>
 <label>مصاريف الشحن بالجنيه</label>
 <input id="shippingFee" type="number" min="0" value="0">
@@ -95,62 +145,80 @@ small{display:block;color:#666}
 <button type="button" id="saveSettingsButton" onclick="saveSettings()">حفظ إعدادات المتجر</button>
 <p id="settingsMsg"></p>
 </section>
+
 <section>
 <h2>طلبات العملاء</h2>
 <button type="button" onclick="loadOrders()">تحديث الطلبات</button>
 <div id="ordersList">اضغط تحديث الطلبات.</div>
 </section>
+
 </div>
 </main>
+
 <script>
 (function(){
+
 const SUPABASE_URL="https://jezqohivdiziuzfmllvq.supabase.co";
 const SUPABASE_KEY="sb_publishable_hrP0-e5_ou1HHeKZpCu8jw_ORY_-zdh";
 const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
 let adminReady=false;
 let logoUrl="";
 let coverUrl="";
+
 function previewImage(inputId,previewId,statusId){
 const input=document.getElementById(inputId);
 const preview=document.getElementById(previewId);
 const status=document.getElementById(statusId);
+
 input.addEventListener("change",function(){
 const file=this.files[0];
 if(!file)return;
+
 if(!file.type.startsWith("image/")){
 alert("من فضلك اختر ملف صورة صحيح.");
 this.value="";
 return;
 }
+
 preview.src=URL.createObjectURL(file);
 preview.style.display="block";
 status.textContent="تم اختيار: "+file.name;
 });
 }
+
 previewImage("storeLogoFile","logoPreview","logoStatus");
 previewImage("storeCoverFile","coverPreview","coverStatus");
+
 async function login(){
 const msg=document.getElementById("loginMsg");
 const email=document.getElementById("email").value.trim();
 const password=document.getElementById("password").value;
+
 if(!email||!password){
 msg.textContent="اكتب البريد الإلكتروني وكلمة المرور.";
 return;
 }
+
 msg.textContent="جاري الاتصال...";
+
 try{
 const {data,error}=await client.auth.signInWithPassword({
 email:email,
 password:password
 });
+
 if(error)throw error;
+
 msg.textContent="جاري فحص الصلاحيات...";
 await checkAdmin(data.user.id);
+
 }catch(error){
 console.error(error);
 msg.textContent="فشل تسجيل الدخول: "+error.message;
 }
 }
+
 async function checkAdmin(userId){
 try{
 const {data,error}=await client
@@ -158,63 +226,82 @@ const {data,error}=await client
 .select("user_id")
 .eq("user_id",userId)
 .maybeSingle();
+
 if(error||!data){
 document.getElementById("loginMsg").textContent=
 error?"خطأ في الصلاحيات: "+error.message:
 "الحساب ليس لديه صلاحية الإدارة.";
+
 await client.auth.signOut();
 return;
 }
+
 adminReady=true;
 document.getElementById("login").hidden=true;
 document.getElementById("dashboard").hidden=false;
+
 await loadProducts();
 await loadOrders();
 await loadSettings();
+
 }catch(error){
 console.error(error);
 document.getElementById("loginMsg").textContent=
 "حدث خطأ أثناء فحص الصلاحيات: "+error.message;
 }
 }
+
 async function addProduct(){
 if(!adminReady)return;
+
 const msg=document.getElementById("productMsg");
 const name=document.getElementById("name").value.trim();
 const category=document.getElementById("category").value;
 const price=Number(document.getElementById("price").value);
 const stockValue=document.getElementById("stock").value;
 const stock=Number(stockValue);
+
 const sizes=document.getElementById("sizes").value.split(",").map(x=>x.trim()).filter(Boolean);
 const colors=document.getElementById("colors").value.split(",").map(x=>x.trim()).filter(Boolean);
 const files=Array.from(document.getElementById("photo").files);
+
 if(!name||!Number.isFinite(price)||price<=0||stockValue===""||!Number.isInteger(stock)||stock<0||files.length===0){
 msg.textContent="اكتب الاسم والسعر والكمية واختر صورة واحدة على الأقل.";
 return;
 }
+
 if(files.length>5){
 msg.textContent="يمكن اختيار 5 صور فقط للمنتج.";
 return;
 }
+
 if(files.some(file=>!file.type.startsWith("image/"))){
 msg.textContent="اختر ملفات صور فقط.";
 return;
 }
+
 const uploadedPaths=[];
+
 try{
 msg.textContent="جاري رفع الصور...";
 const imageUrls=[];
+
 for(let i=0;i<files.length;i++){
 const file=files[i];
 const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
 const path=Date.now()+"-"+Math.random().toString(36).slice(2)+"-"+i+"-"+safeName;
+
 const {error:uploadError}=await client.storage.from("product-images").upload(path,file);
 if(uploadError)throw uploadError;
+
 uploadedPaths.push(path);
+
 const {data:imageData}=client.storage.from("product-images").getPublicUrl(path);
 imageUrls.push(imageData.publicUrl);
 }
+
 msg.textContent="جاري حفظ بيانات المنتج...";
+
 const {error}=await client.from("products").insert({
 name:name,
 category:category,
@@ -226,119 +313,384 @@ image_url:imageUrls[0],
 image_urls:imageUrls,
 active:true
 });
+
 if(error)throw error;
+
 msg.textContent="تم إضافة المنتج بنجاح وحفظ "+imageUrls.length+" صور.";
+
 ["name","price","stock","sizes","colors","photo"].forEach(id=>{
 document.getElementById(id).value="";
 });
+
 await loadProducts();
+
 }catch(error){
 console.error(error);
+
 if(uploadedPaths.length){
 await client.storage.from("product-images").remove(uploadedPaths);
 }
+
 msg.textContent="تعذر إضافة المنتج: "+error.message;
 }
 }
+
 async function loadProducts(){
 if(!adminReady)return;
+
 const box=document.getElementById("productsList");
 box.textContent="جاري تحميل المنتجات...";
+
 const {data,error}=await client.from("products").select("*").order("created_at",{ascending:false});
+
 if(error){
 box.textContent="خطأ في تحميل المنتجات: "+error.message;
 return;
 }
+
 box.innerHTML="";
+
+const select=document.getElementById("variantProduct");
+const oldValue=select.value;
+
+select.innerHTML='<option value="">اختر المنتج</option>';
+
 if(!data||data.length===0){
 box.textContent="لا توجد منتجات.";
 return;
 }
+
 data.forEach(p=>{
+const option=document.createElement("option");
+option.value=p.id;
+option.textContent=p.name+" - "+p.price+" جنيه";
+select.appendChild(option);
+
 const div=document.createElement("div");
 div.className="order";
+
 const title=document.createElement("b");
 title.textContent=p.name+" - "+p.price+" جنيه";
+
 const detail=document.createElement("p");
 detail.textContent=p.category+" | "+(p.active?"نشط":"مخفي");
+
 const quantityLabel=document.createElement("p");
 quantityLabel.className=Number(p.stock)>0?"stock":"out";
-quantityLabel.textContent=Number(p.stock)>0?"الكمية المتاحة: "+p.stock:"نفد المخزون";
-const imageCount=document.createElement("p");
+quantityLabel.textContent=Number(p.stock)>0?"الكمية الإجمالية القديمة: "+p.stock:"نفد المخزون الإجمالي";
+
 const images=Array.isArray(p.image_urls)?p.image_urls:[];
+const imageCount=document.createElement("p");
 imageCount.textContent="عدد الصور: "+(images.length||(p.image_url?1:0));
+
 const stockInput=document.createElement("input");
 stockInput.type="number";
 stockInput.min="0";
 stockInput.step="1";
 stockInput.value=p.stock;
 stockInput.placeholder="الكمية الجديدة";
+
 const saveButton=document.createElement("button");
 saveButton.type="button";
-saveButton.textContent="حفظ الكمية";
+saveButton.textContent="حفظ الكمية الإجمالية";
 saveButton.onclick=()=>updateStock(p.id,stockInput.value);
+
 const activeButton=document.createElement("button");
 activeButton.type="button";
 activeButton.textContent=p.active?"إخفاء المنتج":"إظهار المنتج";
 activeButton.onclick=()=>toggleProduct(p.id,!p.active);
-div.append(title,detail,quantityLabel,imageCount,stockInput,saveButton,activeButton);
+
+const variantsButton=document.createElement("button");
+variantsButton.type="button";
+variantsButton.textContent="إدارة المقاسات والألوان";
+variantsButton.onclick=()=>{
+select.value=String(p.id);
+loadVariants();
+document.getElementById("variantsSection").scrollIntoView({behavior:"smooth"});
+};
+
+div.append(title,detail,quantityLabel,imageCount,stockInput,saveButton,activeButton,variantsButton);
 box.append(div);
 });
+
+if(oldValue && data.some(p=>String(p.id)===oldValue)){
+select.value=oldValue;
+await loadVariants();
 }
+}
+
 async function updateStock(id,value){
 if(!adminReady)return;
+
 const stock=Number(value);
+
 if(value===""||!Number.isInteger(stock)||stock<0){
 alert("اكتب كمية صحيحة، صفر أو أكثر.");
 return;
 }
+
 const {error}=await client.from("products").update({stock:stock}).eq("id",id);
+
 if(error){
 alert("تعذر تحديث الكمية: "+error.message);
 return;
 }
-alert("تم تحديث كمية المنتج.");
+
+alert("تم تحديث الكمية الإجمالية القديمة للمنتج.");
 await loadProducts();
 }
+
 async function toggleProduct(id,active){
 if(!adminReady)return;
+
 const {error}=await client.from("products").update({active:active}).eq("id",id);
+
 if(error){
 alert("تعذر تحديث المنتج: "+error.message);
 return;
 }
+
 await loadProducts();
 }
+
+// ================================
+// إدارة المقاسات والألوان
+// ================================
+
+async function loadVariants(){
+if(!adminReady)return;
+
+const productId=document.getElementById("variantProduct").value;
+const box=document.getElementById("variantsList");
+
+resetVariantForm();
+
+if(!productId){
+box.textContent="اختر منتجًا لعرض المقاسات والألوان.";
+return;
+}
+
+box.textContent="جاري تحميل التركيبات...";
+
+const {data,error}=await client
+.from("product_variants")
+.select("*")
+.eq("product_id",productId)
+.order("id",{ascending:true});
+
+if(error){
+box.textContent="تعذر تحميل التركيبات: "+error.message;
+return;
+}
+
+box.innerHTML="";
+
+if(!data||data.length===0){
+box.textContent="لا توجد تركيبات مسجلة لهذا المنتج حتى الآن.";
+return;
+}
+
+data.forEach(v=>{
+const row=document.createElement("div");
+row.className="variant-row";
+
+const title=document.createElement("b");
+title.textContent="المقاس: "+(v.size||"غير محدد")+" | اللون: "+(v.color||"غير محدد");
+
+const stock=document.createElement("p");
+stock.className=Number(v.stock)>0?"stock":"out";
+stock.textContent="الكمية: "+v.stock;
+
+const sku=document.createElement("small");
+sku.textContent="كود المنتج: "+(v.sku||"غير محدد");
+
+const status=document.createElement("small");
+status.textContent=v.is_active?"التركيبة مفعّلة":"التركيبة متوقفة";
+
+const edit=document.createElement("button");
+edit.type="button";
+edit.textContent="تعديل";
+edit.onclick=()=>editVariant(v);
+
+const toggle=document.createElement("button");
+toggle.type="button";
+toggle.className="secondary";
+toggle.textContent=v.is_active?"إيقاف التركيبة":"تفعيل التركيبة";
+toggle.onclick=()=>toggleVariant(v.id,!v.is_active);
+
+const del=document.createElement("button");
+del.type="button";
+del.className="danger";
+del.textContent="حذف التركيبة";
+del.onclick=()=>deleteVariant(v.id);
+
+row.append(title,stock,sku,status,edit,toggle,del);
+box.append(row);
+});
+}
+
+function resetVariantForm(){
+document.getElementById("variantId").value="";
+document.getElementById("variantSize").value="";
+document.getElementById("variantColor").value="";
+document.getElementById("variantStock").value="";
+document.getElementById("variantSku").value="";
+document.getElementById("variantFormTitle").textContent="إضافة تركيبة جديدة";
+}
+
+function editVariant(v){
+document.getElementById("variantId").value=v.id;
+document.getElementById("variantSize").value=v.size||"";
+document.getElementById("variantColor").value=v.color||"";
+document.getElementById("variantStock").value=v.stock;
+document.getElementById("variantSku").value=v.sku||"";
+document.getElementById("variantFormTitle").textContent="تعديل التركيبة";
+document.getElementById("variantFormTitle").scrollIntoView({behavior:"smooth"});
+}
+
+async function saveVariant(){
+if(!adminReady)return;
+
+const msg=document.getElementById("variantMsg");
+const productId=document.getElementById("variantProduct").value;
+const id=document.getElementById("variantId").value;
+const size=document.getElementById("variantSize").value.trim();
+const color=document.getElementById("variantColor").value.trim();
+const stockValue=document.getElementById("variantStock").value;
+const stock=Number(stockValue);
+const sku=document.getElementById("variantSku").value.trim();
+
+if(!productId){
+msg.textContent="اختر المنتج أولًا.";
+return;
+}
+
+if(!size&&!color){
+msg.textContent="اكتب المقاس أو اللون على الأقل.";
+return;
+}
+
+if(stockValue===""||!Number.isInteger(stock)||stock<0){
+msg.textContent="اكتب كمية صحيحة، صفر أو أكثر.";
+return;
+}
+
+const payload={
+product_id:Number(productId),
+size:size||null,
+color:color||null,
+stock:stock,
+sku:sku||null,
+is_active:true
+};
+
+msg.textContent="جاري حفظ التركيبة...";
+
+let result;
+
+if(id){
+result=await client.from("product_variants").update({
+size:payload.size,
+color:payload.color,
+stock:payload.stock,
+sku:payload.sku
+}).eq("id",id);
+}else{
+result=await client.from("product_variants").insert(payload);
+}
+
+if(result.error){
+console.error(result.error);
+msg.textContent="تعذر الحفظ: "+result.error.message;
+return;
+}
+
+msg.textContent="تم حفظ التركيبة بنجاح.";
+resetVariantForm();
+await loadVariants();
+}
+
+async function toggleVariant(id,active){
+if(!adminReady)return;
+
+const {error}=await client.from("product_variants")
+.update({is_active:active})
+.eq("id",id);
+
+if(error){
+alert("تعذر تغيير حالة التركيبة: "+error.message);
+return;
+}
+
+await loadVariants();
+}
+
+async function deleteVariant(id){
+if(!adminReady)return;
+
+if(!confirm("هل تريد حذف هذه التركيبة؟"))return;
+
+const {error}=await client.from("product_variants")
+.delete()
+.eq("id",id);
+
+if(error){
+alert("تعذر حذف التركيبة: "+error.message);
+return;
+}
+
+alert("تم حذف التركيبة.");
+await loadVariants();
+}
+
+// ================================
+// الطلبات
+// ================================
+
 async function loadOrders(){
 if(!adminReady)return;
+
 const box=document.getElementById("ordersList");
 box.textContent="جاري تحميل الطلبات...";
+
 const {data,error}=await client.from("orders").select("*, order_items(*)").order("created_at",{ascending:false});
+
 if(error){
 box.textContent="تعذر تحميل الطلبات: "+error.message;
 return;
 }
+
 box.innerHTML="";
+
 if(!data||data.length===0){
 box.textContent="لا توجد طلبات حتى الآن.";
 return;
 }
+
 data.forEach(o=>{
 const div=document.createElement("div");
 div.className="order";
+
 const title=document.createElement("b");
 title.textContent="طلب من: "+o.customer_name;
+
 const details=document.createElement("p");
 details.textContent="الهاتف: "+o.phone+" | المحافظة: "+o.governorate;
+
 const address=document.createElement("p");
 address.textContent="العنوان: "+o.address;
+
 const total=document.createElement("p");
 total.textContent="الإجمالي: "+o.total+" جنيه";
+
 const items=document.createElement("div");
 items.textContent="المنتجات: "+(o.order_items||[]).map(item=>item.product_name+" × "+item.quantity).join("، ");
+
 const status=document.createElement("p");
 status.textContent="الحالة الحالية: "+o.status;
+
 const select=document.createElement("select");
+
 ["جديد","قيد التجهيز","تم الشحن","مكتمل","ملغي"].forEach(s=>{
 const option=document.createElement("option");
 option.value=s;
@@ -346,43 +698,65 @@ option.textContent=s;
 if(s===o.status)option.selected=true;
 select.append(option);
 });
+
 select.onchange=()=>updateOrder(o.id,select.value);
+
 div.append(title,details,address,total,items,status,select);
 box.append(div);
 });
 }
+
 async function updateOrder(id,status){
 if(!adminReady)return;
+
 const {error}=await client.from("orders").update({status:status}).eq("id",id);
+
 if(error){
 alert("تعذر تحديث الطلب: "+error.message);
 return;
 }
+
 alert("تم تحديث حالة الطلب.");
 await loadOrders();
 }
+
+// ================================
+// إعدادات المتجر
+// ================================
+
 async function uploadImage(file,folder){
 if(!file)return null;
+
 if(!file.type.startsWith("image/")){
 throw new Error("الملف المختار ليس صورة.");
 }
+
 const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
 const path=folder+"/"+Date.now()+"-"+Math.random().toString(36).slice(2)+"-"+safeName;
+
 const {error}=await client.storage.from("product-images").upload(path,file);
+
 if(error)throw error;
+
 const {data}=client.storage.from("product-images").getPublicUrl(path);
 return data.publicUrl;
 }
+
 async function loadSettings(){
 const msg=document.getElementById("settingsMsg");
+
 const {data,error}=await client.from("store_settings").select("settings").eq("id",1).maybeSingle();
+
 if(error){
 msg.textContent="تعذر تحميل الإعدادات: "+error.message;
 return;
 }
+
 const s=data?.settings||{};
+
 logoUrl=s.storeLogo||"";
 coverUrl=s.storeCover||"";
+
 const fields={
 storeName:s.storeName,
 storeDescription:s.storeDescription,
@@ -396,41 +770,52 @@ storeColor:s.storeColor,
 aboutStore:s.aboutStore,
 returnPolicy:s.returnPolicy
 };
+
 Object.entries(fields).forEach(([id,value])=>{
 if(value!==undefined&&value!==null){
 document.getElementById(id).value=value;
 }
 });
+
 if(logoUrl){
 document.getElementById("logoPreview").src=logoUrl;
 document.getElementById("logoPreview").style.display="block";
 document.getElementById("logoStatus").textContent="الشعار الحالي محفوظ.";
 }
+
 if(coverUrl){
 document.getElementById("coverPreview").src=coverUrl;
 document.getElementById("coverPreview").style.display="block";
 document.getElementById("coverStatus").textContent="الغلاف الحالي محفوظ.";
 }
 }
+
 async function saveSettings(){
 if(!adminReady)return;
+
 const msg=document.getElementById("settingsMsg");
 const button=document.getElementById("saveSettingsButton");
+
 const logoFile=document.getElementById("storeLogoFile").files[0];
 const coverFile=document.getElementById("storeCoverFile").files[0];
+
 msg.textContent="جاري حفظ الإعدادات ورفع الصور...";
 button.disabled=true;
+
 try{
+
 if(logoFile){
 msg.textContent="جاري رفع شعار المتجر...";
 const uploadedLogo=await uploadImage(logoFile,"store");
 if(uploadedLogo)logoUrl=uploadedLogo;
 }
+
 if(coverFile){
 msg.textContent="جاري رفع صورة الغلاف...";
 const uploadedCover=await uploadImage(coverFile,"store");
 if(uploadedCover)coverUrl=uploadedCover;
 }
+
 const settings={
 storeName:document.getElementById("storeName").value,
 storeDescription:document.getElementById("storeDescription").value,
@@ -446,29 +831,42 @@ storeColor:document.getElementById("storeColor").value,
 aboutStore:document.getElementById("aboutStore").value,
 returnPolicy:document.getElementById("returnPolicy").value
 };
+
 msg.textContent="جاري حفظ البيانات...";
+
 const {error}=await client.from("store_settings").upsert({
 id:1,
 settings:settings,
 updated_at:new Date().toISOString()
 });
+
 if(error)throw error;
+
 document.getElementById("storeLogoFile").value="";
 document.getElementById("storeCoverFile").value="";
+
 document.getElementById("logoStatus").textContent=logoUrl?"تم حفظ الشعار بنجاح.":"لم يتم اختيار شعار.";
 document.getElementById("coverStatus").textContent=coverUrl?"تم حفظ الغلاف بنجاح.":"لم يتم اختيار غلاف.";
+
 msg.textContent="تم حفظ إعدادات المتجر والصور بنجاح.";
+
 }catch(error){
 console.error(error);
 msg.textContent="تعذر الحفظ: "+error.message;
+
 }finally{
 button.disabled=false;
 }
 }
+
 window.login=login;
 window.addProduct=addProduct;
 window.loadOrders=loadOrders;
 window.saveSettings=saveSettings;
+window.loadVariants=loadVariants;
+window.saveVariant=saveVariant;
+window.resetVariantForm=resetVariantForm;
+
 })();
 </script>
 </body>

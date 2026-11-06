@@ -52,6 +52,7 @@ small{display:block;color:#666}
 <option value="رجالي">ملابس رجالي</option>
 </select>
 <input id="price" type="number" min="1" placeholder="السعر بالجنيه">
+<input id="salePrice" type="number" min="0.01" step="0.01" placeholder="سعر العرض بعد الخصم (اختياري)">
 <input id="stock" type="number" min="0" step="1" placeholder="الكمية الإجمالية القديمة للمنتج">
 <textarea id="description" rows="4" placeholder="وصف المنتج وتفاصيل الخامة والتصميم..."></textarea>
 <input id="sizes" placeholder="المقاسات مثال: M, L, XL">
@@ -279,6 +280,8 @@ const msg=document.getElementById("productMsg");
 const name=document.getElementById("name").value.trim();
 const category=document.getElementById("category").value;
 const price=Number(document.getElementById("price").value);
+const salePriceValue=document.getElementById("salePrice").value.trim();
+const salePrice=salePriceValue===""?null:Number(salePriceValue);
 const stockValue=document.getElementById("stock").value;
 const stock=Number(stockValue);
 const description=document.getElementById("description").value.trim();
@@ -287,7 +290,7 @@ const sizes=document.getElementById("sizes").value.split(",").map(x=>x.trim()).f
 const colors=document.getElementById("colors").value.split(",").map(x=>x.trim()).filter(Boolean);
 const files=Array.from(document.getElementById("photo").files);
 
-if(!name||!Number.isFinite(price)||price<=0||stockValue===""||!Number.isInteger(stock)||stock<0||files.length===0){
+if(!name||!Number.isFinite(price)||price<=0||(salePrice!==null&&(!Number.isFinite(salePrice)||salePrice<=0||salePrice>=price))||stockValue===""||!Number.isInteger(stock)||stock<0||files.length===0){
 msg.textContent="اكتب الاسم والسعر والكمية واختر صورة واحدة على الأقل.";
 return;
 }
@@ -328,6 +331,7 @@ const {error}=await client.from("products").insert({
 name:name,
 category:category,
 price:price,
+sale_price:salePrice,
 stock:stock,
 description:description,
 sizes:sizes,
@@ -341,7 +345,7 @@ if(error)throw error;
 
 msg.textContent="تم إضافة المنتج بنجاح وحفظ "+imageUrls.length+" صور.";
 
-["name","price","stock","description","sizes","colors","photo"].forEach(id=>{
+["name","price","salePrice","stock","description","sizes","colors","photo"].forEach(id=>{
 document.getElementById(id).value="";
 });
 
@@ -393,7 +397,7 @@ const div=document.createElement("div");
 div.className="order";
 
 const title=document.createElement("b");
-title.textContent=p.name+" - "+p.price+" جنيه";
+title.textContent=p.name+" - "+(p.sale_price?Number(p.sale_price).toLocaleString("ar-EG")+" جنيه بدل "+Number(p.price).toLocaleString("ar-EG")+" جنيه":" "+p.price+" جنيه");
 
 const detail=document.createElement("p");
 detail.textContent=p.category+" | "+(p.active?"نشط":"مخفي");
@@ -428,6 +432,18 @@ saveButton.type="button";
 saveButton.textContent="حفظ الكمية الإجمالية";
 saveButton.onclick=()=>updateStock(p.id,stockInput.value);
 
+const salePriceInput=document.createElement("input");
+salePriceInput.type="number";
+salePriceInput.min="0.01";
+salePriceInput.step="0.01";
+salePriceInput.placeholder="سعر العرض بعد الخصم (اتركه فارغًا لإلغاء العرض)";
+salePriceInput.value=p.sale_price??"";
+
+const saveSalePriceButton=document.createElement("button");
+saveSalePriceButton.type="button";
+saveSalePriceButton.textContent="حفظ سعر العرض";
+saveSalePriceButton.onclick=()=>updateProductSalePrice(p.id,p.price,salePriceInput.value);
+
 const activeButton=document.createElement("button");
 activeButton.type="button";
 activeButton.textContent=p.active?"إخفاء المنتج":"إظهار المنتج";
@@ -448,7 +464,7 @@ loadVariants();
 document.getElementById("variantsSection").scrollIntoView({behavior:"smooth"});
 };
 
-div.append(title,detail,quantityLabel,imageCount,descriptionInput,saveDescriptionButton,stockInput,saveButton,activeButton,variantsButton,deleteButton);
+div.append(title,detail,quantityLabel,imageCount,descriptionInput,saveDescriptionButton,stockInput,saveButton,salePriceInput,saveSalePriceButton,activeButton,variantsButton,deleteButton);
 box.append(div);
 });
 
@@ -476,6 +492,19 @@ return;
 }
 
 alert("تم تحديث الكمية الإجمالية القديمة للمنتج.");
+await loadProducts();
+}
+
+async function updateProductSalePrice(id,regularPrice,value){
+if(!adminReady)return;
+const salePrice=String(value??"").trim()===""?null:Number(value);
+if(salePrice!==null&&(!Number.isFinite(salePrice)||salePrice<=0||salePrice>=Number(regularPrice))){
+alert("سعر العرض لازم يكون أكبر من صفر وأقل من السعر الأصلي. اتركه فارغًا لإلغاء الخصم.");
+return;
+}
+const {error}=await client.from("products").update({sale_price:salePrice}).eq("id",id);
+if(error){alert("تعذر حفظ سعر العرض: "+error.message);return;}
+alert(salePrice===null?"تم إلغاء العرض لهذا المنتج.":"تم حفظ سعر العرض بنجاح.");
 await loadProducts();
 }
 

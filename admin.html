@@ -18,6 +18,9 @@ button:disabled{opacity:.5}
 .stock{font-weight:bold;color:#287a36}
 .out{font-weight:bold;color:#c62828}
 small{display:block;color:#666}
+.image-preview{width:100%;max-height:220px;object-fit:contain;background:#f5f2eb;border-radius:8px;margin:8px 0;display:none}
+.file-button{display:block;background:#171717;color:#d6b36a;padding:13px;text-align:center;border-radius:7px;margin:8px 0;font-weight:bold;cursor:pointer}
+.file-input{display:none}
 </style>
 </head>
 <body>
@@ -66,10 +69,19 @@ small{display:block;color:#666}
 <input id="storeFacebook" placeholder="رابط الصفحة">
 <label>رابط تيك توك</label>
 <input id="storeTiktok" placeholder="رابط الحساب">
-<label>رابط شعار المتجر</label>
-<input id="storeLogo" placeholder="رابط صورة الشعار">
-<label>رابط صورة الغلاف</label>
-<input id="storeCover" placeholder="رابط صورة الغلاف">
+<hr>
+<h3>صورة شعار المتجر</h3>
+<label class="file-button" for="storeLogoFile">📷 اختيار صورة الشعار</label>
+<input class="file-input" id="storeLogoFile" type="file" accept="image/*">
+<img id="logoPreview" class="image-preview" alt="معاينة الشعار">
+<small id="logoStatus">لم يتم اختيار صورة جديدة.</small>
+<hr>
+<h3>صورة غلاف المتجر</h3>
+<label class="file-button" for="storeCoverFile">📷 اختيار صورة الغلاف</label>
+<input class="file-input" id="storeCoverFile" type="file" accept="image/*">
+<img id="coverPreview" class="image-preview" alt="معاينة الغلاف">
+<small id="coverStatus">لم يتم اختيار صورة جديدة.</small>
+<hr>
 <label>مصاريف الشحن بالجنيه</label>
 <input id="shippingFee" type="number" min="0" value="0">
 <label>الحد الأدنى للشحن المجاني</label>
@@ -80,7 +92,7 @@ small{display:block;color:#666}
 <input id="aboutStore" placeholder="نبذة عن المتجر">
 <label>سياسة الاستبدال والاسترجاع</label>
 <input id="returnPolicy" placeholder="سياسة الاستبدال">
-<button type="button" onclick="saveSettings()">حفظ إعدادات المتجر</button>
+<button type="button" id="saveSettingsButton" onclick="saveSettings()">حفظ إعدادات المتجر</button>
 <p id="settingsMsg"></p>
 </section>
 <section>
@@ -96,6 +108,27 @@ const SUPABASE_URL="https://jezqohivdiziuzfmllvq.supabase.co";
 const SUPABASE_KEY="sb_publishable_hrP0-e5_ou1HHeKZpCu8jw_ORY_-zdh";
 const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let adminReady=false;
+let logoUrl="";
+let coverUrl="";
+function previewImage(inputId,previewId,statusId){
+const input=document.getElementById(inputId);
+const preview=document.getElementById(previewId);
+const status=document.getElementById(statusId);
+input.addEventListener("change",function(){
+const file=this.files[0];
+if(!file)return;
+if(!file.type.startsWith("image/")){
+alert("من فضلك اختر ملف صورة صحيح.");
+this.value="";
+return;
+}
+preview.src=URL.createObjectURL(file);
+preview.style.display="block";
+status.textContent="تم اختيار: "+file.name;
+});
+}
+previewImage("storeLogoFile","logoPreview","logoStatus");
+previewImage("storeCoverFile","coverPreview","coverStatus");
 async function login(){
 const msg=document.getElementById("loginMsg");
 const email=document.getElementById("email").value.trim();
@@ -328,6 +361,18 @@ return;
 alert("تم تحديث حالة الطلب.");
 await loadOrders();
 }
+async function uploadImage(file,folder){
+if(!file)return null;
+if(!file.type.startsWith("image/")){
+throw new Error("الملف المختار ليس صورة.");
+}
+const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+const path=folder+"/"+Date.now()+"-"+Math.random().toString(36).slice(2)+"-"+safeName;
+const {error}=await client.storage.from("product-images").upload(path,file);
+if(error)throw error;
+const {data}=client.storage.from("product-images").getPublicUrl(path);
+return data.publicUrl;
+}
 async function loadSettings(){
 const msg=document.getElementById("settingsMsg");
 const {data,error}=await client.from("store_settings").select("settings").eq("id",1).maybeSingle();
@@ -336,6 +381,8 @@ msg.textContent="تعذر تحميل الإعدادات: "+error.message;
 return;
 }
 const s=data?.settings||{};
+logoUrl=s.storeLogo||"";
+coverUrl=s.storeCover||"";
 const fields={
 storeName:s.storeName,
 storeDescription:s.storeDescription,
@@ -343,8 +390,6 @@ storePhone:s.storePhone,
 storeWhatsapp:s.storeWhatsapp,
 storeFacebook:s.storeFacebook,
 storeTiktok:s.storeTiktok,
-storeLogo:s.storeLogo,
-storeCover:s.storeCover,
 shippingFee:s.shippingFee,
 freeShipping:s.freeShipping,
 storeColor:s.storeColor,
@@ -356,12 +401,36 @@ if(value!==undefined&&value!==null){
 document.getElementById(id).value=value;
 }
 });
+if(logoUrl){
+document.getElementById("logoPreview").src=logoUrl;
+document.getElementById("logoPreview").style.display="block";
+document.getElementById("logoStatus").textContent="الشعار الحالي محفوظ.";
+}
+if(coverUrl){
+document.getElementById("coverPreview").src=coverUrl;
+document.getElementById("coverPreview").style.display="block";
+document.getElementById("coverStatus").textContent="الغلاف الحالي محفوظ.";
+}
 }
 async function saveSettings(){
 if(!adminReady)return;
 const msg=document.getElementById("settingsMsg");
-msg.textContent="جاري حفظ الإعدادات...";
+const button=document.getElementById("saveSettingsButton");
+const logoFile=document.getElementById("storeLogoFile").files[0];
+const coverFile=document.getElementById("storeCoverFile").files[0];
+msg.textContent="جاري حفظ الإعدادات ورفع الصور...";
+button.disabled=true;
 try{
+if(logoFile){
+msg.textContent="جاري رفع شعار المتجر...";
+const uploadedLogo=await uploadImage(logoFile,"store");
+if(uploadedLogo)logoUrl=uploadedLogo;
+}
+if(coverFile){
+msg.textContent="جاري رفع صورة الغلاف...";
+const uploadedCover=await uploadImage(coverFile,"store");
+if(uploadedCover)coverUrl=uploadedCover;
+}
 const settings={
 storeName:document.getElementById("storeName").value,
 storeDescription:document.getElementById("storeDescription").value,
@@ -369,24 +438,31 @@ storePhone:document.getElementById("storePhone").value,
 storeWhatsapp:document.getElementById("storeWhatsapp").value,
 storeFacebook:document.getElementById("storeFacebook").value,
 storeTiktok:document.getElementById("storeTiktok").value,
-storeLogo:document.getElementById("storeLogo").value,
-storeCover:document.getElementById("storeCover").value,
+storeLogo:logoUrl,
+storeCover:coverUrl,
 shippingFee:Number(document.getElementById("shippingFee").value),
 freeShipping:Number(document.getElementById("freeShipping").value),
 storeColor:document.getElementById("storeColor").value,
 aboutStore:document.getElementById("aboutStore").value,
 returnPolicy:document.getElementById("returnPolicy").value
 };
+msg.textContent="جاري حفظ البيانات...";
 const {error}=await client.from("store_settings").upsert({
 id:1,
 settings:settings,
 updated_at:new Date().toISOString()
 });
 if(error)throw error;
-msg.textContent="تم حفظ إعدادات المتجر بنجاح.";
+document.getElementById("storeLogoFile").value="";
+document.getElementById("storeCoverFile").value="";
+document.getElementById("logoStatus").textContent=logoUrl?"تم حفظ الشعار بنجاح.":"لم يتم اختيار شعار.";
+document.getElementById("coverStatus").textContent=coverUrl?"تم حفظ الغلاف بنجاح.":"لم يتم اختيار غلاف.";
+msg.textContent="تم حفظ إعدادات المتجر والصور بنجاح.";
 }catch(error){
 console.error(error);
 msg.textContent="تعذر الحفظ: "+error.message;
+}finally{
+button.disabled=false;
 }
 }
 window.login=login;

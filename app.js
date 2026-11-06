@@ -797,3 +797,68 @@ contactSection.innerHTML = `
 
 document.body.appendChild(contactSection);
 
+
+
+// متابعة الطلب للعميل: لا يتم كشف بيانات الطلب إلا بعد مطابقة رقم الطلب ورقم الهاتف.
+const trackingForm = document.getElementById("trackingForm");
+if (trackingForm) {
+  trackingForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    const submitButton = trackingForm.querySelector('button[type="submit"]');
+    const resultBox = document.getElementById("trackingResult");
+    const values = Object.fromEntries(new FormData(trackingForm).entries());
+
+    submitButton.disabled = true;
+    submitButton.textContent = "جاري البحث...";
+    resultBox.className = "trackingResult";
+    resultBox.textContent = "";
+
+    try {
+      const orderId = Number(values.order_id);
+      if (!Number.isSafeInteger(orderId) || orderId < 1) {
+        throw new Error("من فضلك أدخل رقم طلب صحيح.");
+      }
+
+      const { data, error } = await db.rpc("track_customer_order", {
+        p_order_id: orderId,
+        p_phone: values.phone
+      });
+
+      if (error) throw error;
+
+      const order = Array.isArray(data) ? data[0] : data;
+      if (!order) {
+        resultBox.classList.add("notFound");
+        resultBox.textContent = "لم نعثر على طلب بهذه البيانات. تأكد من رقم الطلب ورقم الموبايل المسجل عند الشراء.";
+        return;
+      }
+
+      const statusLabels = {
+        "جديد": "تم استلام طلبك",
+        "قيد التجهيز": "طلبك قيد التجهيز",
+        "تم الشحن": "طلبك تم شحنه",
+        "مكتمل": "تم اكتمال الطلب",
+        "ملغي": "تم إلغاء الطلب"
+      };
+      const statusLabel = statusLabels[order.status] || order.status || "الحالة غير محددة";
+      const dateText = order.created_at
+        ? new Date(order.created_at).toLocaleString("ar-EG", { dateStyle: "medium", timeStyle: "short" })
+        : "";
+
+      resultBox.classList.add("found");
+      resultBox.innerHTML = `
+        <div class="trackingOrderNumber">طلبك رقم #${escapeHTML(order.order_id)}</div>
+        <div class="trackingStatus">${escapeHTML(statusLabel)}</div>
+        ${dateText ? `<p>تاريخ الطلب: ${escapeHTML(dateText)}</p>` : ""}
+        <p class="trackingNote">شكرًا لاختيارك EA Luxury</p>
+      `;
+    } catch (error) {
+      console.error("خطأ متابعة الطلب:", error);
+      resultBox.classList.add("notFound");
+      resultBox.textContent = "تعذر الاستعلام حاليًا. حاول مرة أخرى بعد قليل.";
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = "عرض حالة الطلب";
+    }
+  });
+}

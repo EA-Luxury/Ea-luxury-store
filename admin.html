@@ -400,6 +400,12 @@ activeButton.type="button";
 activeButton.textContent=p.active?"إخفاء المنتج":"إظهار المنتج";
 activeButton.onclick=()=>toggleProduct(p.id,!p.active);
 
+const deleteButton=document.createElement("button");
+deleteButton.type="button";
+deleteButton.className="danger";
+deleteButton.textContent="حذف المنتج نهائيًا";
+deleteButton.onclick=()=>deleteProduct(p);
+
 const variantsButton=document.createElement("button");
 variantsButton.type="button";
 variantsButton.textContent="إدارة المقاسات والألوان";
@@ -409,7 +415,7 @@ loadVariants();
 document.getElementById("variantsSection").scrollIntoView({behavior:"smooth"});
 };
 
-div.append(title,detail,quantityLabel,imageCount,stockInput,saveButton,activeButton,variantsButton);
+div.append(title,detail,quantityLabel,imageCount,stockInput,saveButton,activeButton,variantsButton,deleteButton);
 box.append(div);
 });
 
@@ -438,6 +444,44 @@ return;
 
 alert("تم تحديث الكمية الإجمالية القديمة للمنتج.");
 await loadProducts();
+}
+
+async function deleteProduct(product){
+if(!adminReady)return;
+
+const confirmed=confirm("تحذير: هل تريد حذف المنتج \""+product.name+"\" نهائيًا من المتجر؟ سيتم حذف المقاسات والألوان والصور المرتبطة به، لكن تفاصيله في الطلبات القديمة ستظل محفوظة.");
+if(!confirmed)return;
+
+const {error}=await client.from("products").delete().eq("id",product.id);
+if(error){
+alert("تعذر حذف المنتج: "+error.message);
+return;
+}
+
+// حذف صور المنتج من التخزين بعد نجاح حذف سجل المنتج.
+const urls=[...(Array.isArray(product.image_urls)?product.image_urls:[]),product.image_url].filter(Boolean);
+const paths=[...new Set(urls.map(url=>{
+try{
+const marker="/storage/v1/object/public/product-images/";
+const index=url.indexOf(marker);
+return index>=0?decodeURIComponent(url.slice(index+marker.length).split("?")[0]):null;
+}catch(_){return null;}
+}).filter(Boolean))];
+
+let storageWarning="";
+if(paths.length){
+const {error:storageError}=await client.storage.from("product-images").remove(paths);
+if(storageError){
+console.error("Product images cleanup failed:",storageError);
+storageWarning="\nتعذر حذف بعض الصور من التخزين، لكن المنتج حُذف من المتجر.";
+}
+}
+
+const selected=document.getElementById("variantProduct");
+if(selected.value===String(product.id))selected.value="";
+await loadProducts();
+await loadVariants();
+alert("تم حذف المنتج نهائيًا من المتجر."+storageWarning);
 }
 
 async function toggleProduct(id,active){

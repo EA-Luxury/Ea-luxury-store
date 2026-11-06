@@ -4,6 +4,80 @@ const SUPABASE_KEY = "sb_publishable_hrP0-e5_ou1HHeKZpCu8jw_ORY_-zdh";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// بيانات EmailJS تُضاف بعد إنشاء الحساب وربط البريد
+const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";
+const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID";
+const EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";
+const OWNER_NOTIFICATION_EMAIL = "Ealuxury109@gmail.com";
+
+async function sendOrderEmails(orderId, values, orderItems, orderTotal) {
+  const configured = [EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY]
+    .every(value => value && !value.startsWith("YOUR_"));
+
+  if (!configured || !window.emailjs) {
+    return { ownerSent: false, customerSent: false, configured: false };
+  }
+
+  const itemsText = orderItems.map(item => {
+    const variant = [item.selected_size, item.selected_color].filter(Boolean).join(" / ");
+    return `${item.name}${variant ? " (" + variant + ")" : ""} × ${item.quantity} — ${(Number(item.price) * item.quantity).toLocaleString("ar-EG")} جنيه`;
+  }).join("\\n");
+
+  const common = {
+    order_id: String(orderId),
+    customer_name: values.customer_name,
+    customer_email: values.customer_email,
+    phone: values.phone,
+    governorate: values.governorate,
+    address: values.address,
+    order_total: Number(orderTotal).toLocaleString("ar-EG") + " جنيه",
+    items_text: itemsText,
+    store_name: "EA Luxury"
+  };
+
+  const sendTo = async (toEmail, toName, subject, intro) => {
+    await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      ...common,
+      to_email: toEmail,
+      to_name: toName,
+      subject,
+      intro
+    }, { publicKey: EMAILJS_PUBLIC_KEY });
+  };
+
+  let ownerSent = false;
+  let customerSent = false;
+
+  try {
+    await sendTo(
+      OWNER_NOTIFICATION_EMAIL,
+      "EA Luxury",
+      "طلب جديد من EA Luxury #" + orderId,
+      "تم استلام طلب جديد من المتجر."
+    );
+    ownerSent = true;
+  } catch (error) {
+    console.error("تعذر إرسال إشعار المتجر:", error);
+  }
+
+  // EmailJS يوصي بحد أقصى طلب إرسال واحد في الثانية
+  await new Promise(resolve => setTimeout(resolve, 1100));
+
+  try {
+    await sendTo(
+      values.customer_email,
+      values.customer_name,
+      "تأكيد طلبك من EA Luxury #" + orderId,
+      "شكرًا لطلبك من EA Luxury. تم استلام طلبك بنجاح."
+    );
+    customerSent = true;
+  } catch (error) {
+    console.error("تعذر إرسال تأكيد العميل:", error);
+  }
+
+  return { ownerSent, customerSent, configured: true };
+}
+
 let products = [];
 let productVariants = [];
 let cart = [];
@@ -587,9 +661,23 @@ document.getElementById("checkoutForm")
 
       if (error) throw error;
 
+      const orderSnapshot = cart.map(item => ({ ...item }));
+      const orderTotal = orderSnapshot.reduce(
+        (sum, item) => sum + Number(item.price) * item.quantity, 0
+      );
+
       message.textContent =
         "تم استلام طلبك بنجاح! رقم طلبك: #" + data +
         ". احتفظ بالرقم لمتابعة طلبك، وسنتواصل معك لتأكيده.";
+
+      const emailResult = await sendOrderEmails(data, values, orderSnapshot, orderTotal);
+      if (!emailResult.configured) {
+        message.textContent += " سيتم تفعيل رسائل التأكيد بالبريد بعد ربط خدمة البريد.";
+      } else if (emailResult.ownerSent && emailResult.customerSent) {
+        message.textContent += " تم إرسال تأكيد الطلب إلى بريدك وإشعار المتجر.";
+      } else {
+        message.textContent += " تم حفظ الطلب، لكن تعذر إرسال إحدى رسائل البريد.";
+      }
 
       cart = [];
       updateCart();

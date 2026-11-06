@@ -1056,3 +1056,16 @@ footer small {
   color: #222;
   border-color: #c9b17f;
 }
+
+
+/* صفحة السلة المستقلة */
+.cart-page .hero, .cart-page .trackingEntry, .cart-page .trackingSection,
+.cart-page .benefits, .cart-page .categorySection, .cart-page .productsSection,
+.cart-page .shoppingBanner, .cart-page .newsletter, .cart-page footer,
+.cart-page .announcement { display: none !important; }
+.cart-page .cartSection { display: block !important; min-height: 65vh; margin: 28px auto 55px; max-width: 980px; }
+.cartQuantityControls { display: inline-flex; align-items: center; gap: 8px; direction: ltr; }
+.cartQuantityControls .quantityButton { min-width: 34px; min-height: 34px; padding: 3px 9px; border: 1px solid #c9b17f; border-radius: 6px; background: #171717; color: #d6b36a; font-size: 18px; font-weight: 800; cursor: pointer; }
+.cartQuantityControls .removeCartItemButton { background: #fff; color: #a22; border: 1px solid #e5caca; direction: rtl; }
+.cart-page .cartItem { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px; }
+@media (max-width: 650px) { .cart-page .cartItem { grid-template-columns: 1fr; justify-items: stretch; } .cart-page .cartQuantityControls { justify-content: flex-start; } }

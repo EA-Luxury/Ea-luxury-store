@@ -444,6 +444,50 @@ function showProducts() {
       </article>
     `;
   }).join("");
+  renderHomeCollections();
+}
+
+// مجموعات الصفحة الرئيسية: الأحدث وترشيحات المتجر، دون تغيير بيانات الطلب أو المخزون.
+function renderHomeCollections() {
+  const newestGrid = document.getElementById("newArrivalsGrid");
+  const picksGrid = document.getElementById("editorsPicksGrid");
+  if (!newestGrid || !picksGrid || !Array.isArray(products)) return;
+
+  const getImage = product => {
+    const images = getProductImages(product);
+    return images[0] || "";
+  };
+  const makeTile = product => {
+    const image = getImage(product);
+    const href = "product.html?id=" + encodeURIComponent(String(product.id));
+    return `
+      <a class="homeCollectionCard" href="${href}">
+        <div class="homeCollectionImage">
+          ${image ? `<img src="${escapeHTML(image)}" alt="${escapeHTML(product.name)}" loading="lazy">` : '<span>EA LUXURY</span>'}
+        </div>
+        <div class="homeCollectionDetails">
+          <strong>${escapeHTML(product.name)}</strong>
+          <span>${Number(product.price || 0).toLocaleString("ar-EG")} جنيه</span>
+          <small>اكتشف التفاصيل ←</small>
+        </div>
+      </a>
+    `;
+  };
+  const newest = [...products].sort((a,b) =>
+    new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+  ).slice(0,4);
+  const picks = [...products].sort((a,b) => {
+    const score = p => Number(p.sales_count ?? p.sold_count ?? p.order_count ?? p.is_featured ?? p.featured ?? 0);
+    return score(b) - score(a);
+  }).slice(0,4);
+
+  const render = (target, items) => {
+    target.innerHTML = items.length
+      ? items.map(makeTile).join("")
+      : '<p class="homeCollectionEmpty">سيتم عرض المنتجات هنا قريبًا.</p>';
+  };
+  render(newestGrid, newest);
+  render(picksGrid, picks);
 }
 
 // الضغط على الصور الصغيرة أو الكبيرة

@@ -746,6 +746,9 @@ document.getElementById("checkoutForm")
     }
   });
 
+// عرض السلة المحفوظة عند فتح الموقع أو صفحة السلة.
+updateCart();
+
 // بدء تحميل إعدادات المتجر وصورة الغلاف
 loadStoreSettings();
 

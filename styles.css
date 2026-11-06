@@ -3,60 +3,172 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, Arial, sans-serif;
-  background: #f8f6f2;
-  color: #222;
+  font-family: "Cairo", Arial, sans-serif;
+  background: #faf9f6;
+  color: #202020;
 }
+
+button, input, textarea {
+  font-family: inherit;
+}
+
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* الشريط العلوي */
+
+.announcement {
+  background: #b99550;
+  color: #111;
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  font-weight: 700;
+}
+
+/* الهيدر */
 
 .header {
   background: #111;
   color: white;
-  padding: 18px 6%;
+  min-height: 78px;
+  padding: 12px 6%;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 3px 15px #00000020;
 }
 
 .logo {
-  font-size: 27px;
-  font-weight: bold;
-  letter-spacing: 1px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: white;
+  line-height: 1;
 }
 
-.logo span {
+.logo-main {
+  font-family: Georgia, serif;
+  font-size: 34px;
+  font-weight: bold;
+  letter-spacing: 3px;
   color: #d6b36a;
 }
 
-button, .shopButton {
+.logo-sub {
+  font-size: 10px;
+  letter-spacing: 5px;
+  margin-top: 5px;
+}
+
+.mainNav {
+  display: flex;
+  gap: 28px;
+}
+
+.mainNav a {
+  color: #eee;
+  font-size: 14px;
+  transition: .2s;
+}
+
+.mainNav a:hover {
+  color: #d6b36a;
+}
+
+.cartButton {
+  border: 1px solid #d6b36a;
+  background: #d6b36a;
+  color: #111;
+  border-radius: 30px;
+  padding: 10px 17px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   cursor: pointer;
-  border: none;
-  border-radius: 7px;
-  padding: 12px 18px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: bold;
 }
 
-.header button {
-  background: #d6b36a;
-  color: #111;
+.cartCount {
+  background: #111;
+  color: #d6b36a;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 12px;
 }
 
+/* الغلاف الرئيسي */
+
 .hero {
+  min-height: 480px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   text-align: center;
-  padding: 85px 20px;
   color: white;
-  background: linear-gradient(135deg, #171717, #51412b);
+  background-color: #171717;
+  background-image:
+    linear-gradient(90deg, #00000055, #00000075);
+  background-position: center;
+  background-size: cover;
+  overflow: hidden;
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    #00000025,
+    #00000065
+  );
+}
+
+.heroContent {
+  position: relative;
+  z-index: 2;
+  padding: 45px 20px;
+}
+
+.heroEyebrow {
+  color: #e2c27c;
+  font-size: 13px;
+  letter-spacing: 5px;
+  font-weight: bold;
 }
 
 .hero h1 {
-  font-size: 38px;
-  margin: 0 0 15px;
+  font-size: clamp(32px, 5vw, 58px);
+  margin: 18px 0 10px;
+  font-weight: 800;
 }
 
 .hero p {
-  color: #e6dfd2;
+  color: #eee;
   font-size: 17px;
   margin-bottom: 30px;
 }
@@ -65,79 +177,257 @@ button, .shopButton {
   display: inline-block;
   background: #d6b36a;
   color: #111;
-  text-decoration: none;
+  padding: 13px 32px;
+  border-radius: 4px;
+  font-weight: 800;
+  transition: .3s;
+}
+
+.shopButton:hover {
+  background: white;
+  transform: translateY(-3px);
+}
+
+.heroBottom {
+  position: absolute;
+  bottom: 20px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #e4c77f;
+  font-size: 11px;
+  letter-spacing: 3px;
+}
+
+.heroLine {
+  width: 35px;
+  height: 1px;
+  background: #d6b36a;
+}
+
+/* المميزات */
+
+.benefits {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: white;
+  padding: 25px 7%;
+  gap: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.benefit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.benefitIcon {
+  color: #b99550;
+  font-size: 28px;
+}
+
+.benefit strong,
+.benefit small {
+  display: block;
+}
+
+.benefit strong {
+  font-size: 14px;
+}
+
+.benefit small {
+  color: #888;
+  font-size: 12px;
+}
+
+/* عناوين الأقسام */
+
+.sectionHeading {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.sectionHeading > span {
+  color: #b99550;
+  font-size: 11px;
+  letter-spacing: 3px;
+  font-weight: bold;
+}
+
+.sectionHeading h2 {
+  font-size: 29px;
+  margin: 7px 0;
+  color: #171717;
+}
+
+.sectionHeading p {
+  color: #888;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* التصنيفات */
+
+.categorySection {
+  padding: 55px 6% 15px;
 }
 
 .categories {
   display: flex;
   justify-content: center;
   gap: 12px;
-  padding: 25px 10px;
   flex-wrap: wrap;
 }
 
 .category {
+  cursor: pointer;
   background: white;
-  border: 1px solid #d6b36a;
   color: #333;
+  border: 1px solid #d6b36a;
+  padding: 10px 30px;
+  border-radius: 30px;
+  font-size: 14px;
+  transition: .25s;
 }
 
-.category.active {
+.category.active,
+.category:hover {
   background: #171717;
   color: #d6b36a;
 }
 
-main {
-  padding: 15px 6% 55px;
-}
+/* المنتجات */
 
-main h2 {
-  text-align: center;
-  margin-bottom: 30px;
+.productsSection {
+  padding: 35px 6% 65px;
 }
 
 .productGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 22px;
 }
 
 .product {
   background: white;
-  border-radius: 12px;
+  border: 1px solid #eee;
+  border-radius: 8px;
   overflow: hidden;
   text-align: center;
   padding-bottom: 20px;
-  box-shadow: 0 3px 15px #0000000c;
+  transition: .25s;
+  box-shadow: 0 5px 20px #00000008;
 }
 
-.product img {
+.product:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 25px #00000012;
+}
+
+.product img.product-main-image {
   width: 100%;
-  height: 260px;
+  height: 290px;
   object-fit: cover;
   background: #eee;
+  display: block;
 }
 
 .product h3 {
+  font-size: 16px;
   margin: 15px 8px 8px;
 }
 
 .product p {
   color: #777;
+  font-size: 13px;
+  margin: 8px;
 }
 
-.product button,
-#checkoutForm button {
+.product p:nth-of-type(1) {
+  color: #a17d37;
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.product button {
   background: #171717;
   color: #d6b36a;
+  border: 1px solid #171717;
+  border-radius: 4px;
+  padding: 11px 18px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  margin-top: 8px;
+  transition: .2s;
 }
+
+.product button:hover {
+  background: #d6b36a;
+  color: #111;
+}
+
+.product button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.product-thumb {
+  cursor: pointer;
+}
+
+/* بانر التسوق */
+
+.shoppingBanner {
+  margin: 0 6% 65px;
+  padding: 40px 6%;
+  background: linear-gradient(120deg, #171717, #413522);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  border-radius: 8px;
+}
+
+.shoppingBanner span {
+  color: #d6b36a;
+  font-size: 11px;
+  letter-spacing: 3px;
+}
+
+.shoppingBanner h2 {
+  font-size: 28px;
+  margin: 8px 0;
+}
+
+.shoppingBanner p {
+  color: #ddd;
+  font-size: 14px;
+}
+
+.shoppingBanner a {
+  background: #d6b36a;
+  color: #111;
+  padding: 12px 25px;
+  border-radius: 4px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* السلة */
 
 .cartSection {
   background: white;
-  padding: 25px 6%;
-  margin: 20px auto;
-  max-width: 750px;
-  border-radius: 12px;
+  padding: 35px 6%;
+  margin: 25px auto 55px;
+  max-width: 850px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  box-shadow: 0 5px 25px #00000008;
 }
 
 .cartItem {
@@ -145,19 +435,54 @@ main h2 {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  padding: 12px 0;
+  padding: 15px 0;
   border-bottom: 1px solid #eee;
   flex-wrap: wrap;
+  font-size: 14px;
 }
 
 .cartItem button {
-  background: #eee;
-  color: #333;
+  background: #f2eeee;
+  color: #a22;
+  cursor: pointer;
+  border: 0;
+  padding: 8px 15px;
+  border-radius: 5px;
+}
+
+.cartSummary {
+  background: #faf7ef;
+  padding: 15px;
+  margin-top: 20px;
+  border-right: 3px solid #d6b36a;
+}
+
+.cartSummary h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.cartSummary span {
+  color: #a17d37;
+}
+
+.checkoutHeading {
+  margin-top: 30px;
+}
+
+.checkoutHeading h2 {
+  font-size: 21px;
+  margin-bottom: 5px;
+}
+
+.checkoutHeading p {
+  color: #888;
+  font-size: 13px;
 }
 
 #checkoutForm {
   display: grid;
-  gap: 12px;
+  gap: 13px;
   margin-top: 20px;
 }
 
@@ -166,37 +491,214 @@ main h2 {
   width: 100%;
   padding: 14px;
   border: 1px solid #ddd;
-  border-radius: 7px;
-  font-size: 16px;
-  font-family: inherit;
+  border-radius: 5px;
+  font-size: 15px;
+  background: #fcfcfc;
+  outline: none;
+}
+
+#checkoutForm input:focus,
+#checkoutForm textarea:focus {
+  border-color: #b99550;
 }
 
 #checkoutForm textarea {
-  min-height: 90px;
+  min-height: 100px;
+  resize: vertical;
 }
 
 #checkoutForm button {
+  background: #171717;
+  color: #d6b36a;
   padding: 15px;
+  border: 0;
+  border-radius: 5px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
 }
+
+#checkoutForm button:disabled {
+  opacity: .6;
+}
+
+#orderMessage {
+  text-align: center;
+  font-weight: bold;
+  margin-top: 15px;
+}
+
+/* النشرة */
+
+.newsletter {
+  text-align: center;
+  background: #f0ece3;
+  padding: 55px 15px;
+}
+
+.newsletter span {
+  color: #a17d37;
+  letter-spacing: 5px;
+  font-weight: bold;
+}
+
+.newsletter h2 {
+  font-size: 28px;
+  margin: 10px 0;
+}
+
+.newsletter p {
+  color: #777;
+}
+
+.newsletter a {
+  display: inline-block;
+  margin-top: 12px;
+  background: #171717;
+  color: #d6b36a;
+  padding: 12px 30px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+/* الفوتر */
 
 footer {
   background: #111;
   color: white;
   text-align: center;
-  padding: 30px 15px;
+  padding: 40px 15px 25px;
 }
 
-footer h2 {
+.footerLogo {
+  font-family: Georgia, serif;
+  font-size: 31px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.footerLogo span {
   color: #d6b36a;
+  font-size: 21px;
 }
 
-@media (max-width: 500px) {
+footer p {
+  color: #bbb;
+  font-size: 13px;
+}
+
+.footerLinks {
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+  margin: 25px 0;
+}
+
+.footerLinks a {
+  color: #d6b36a;
+  font-size: 13px;
+}
+
+footer small {
+  color: #777;
+}
+
+/* الموبايل والتابلت */
+
+@media (max-width: 900px) {
+  .productGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .mainNav {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 650px) {
+  .announcement {
+    font-size: 10px;
+    gap: 7px;
+  }
+
+  .header {
+    padding: 12px 4%;
+    min-height: 68px;
+    gap: 8px;
+  }
+
+  .logo-main {
+    font-size: 28px;
+  }
+
+  .logo-sub {
+    font-size: 8px;
+  }
+
+  .mainNav {
+    display: none;
+  }
+
+  .cartButton {
+    padding: 9px 12px;
+    font-size: 12px;
+  }
+
   .hero {
-    padding: 65px 15px;
+    min-height: 390px;
   }
 
   .hero h1 {
-    font-size: 29px;
+    font-size: 32px;
+  }
+
+  .hero p {
+    font-size: 14px;
+  }
+
+  .heroEyebrow {
+    font-size: 10px;
+    letter-spacing: 3px;
+  }
+
+  .benefits {
+    padding: 20px 8px;
+    gap: 8px;
+  }
+
+  .benefit {
+    flex-direction: column;
+    text-align: center;
+    gap: 5px;
+  }
+
+  .benefitIcon {
+    font-size: 22px;
+  }
+
+  .benefit strong {
+    font-size: 11px;
+  }
+
+  .benefit small {
+    font-size: 10px;
+  }
+
+  .sectionHeading h2 {
+    font-size: 24px;
+  }
+
+  .categorySection {
+    padding: 40px 4% 10px;
+  }
+
+  .category {
+    padding: 9px 23px;
+    font-size: 13px;
+  }
+
+  .productsSection {
+    padding: 25px 4% 45px;
   }
 
   .productGrid {
@@ -204,12 +706,60 @@ footer h2 {
     gap: 12px;
   }
 
-  .product img {
+  .product {
+    border-radius: 6px;
+  }
+
+  .product img.product-main-image {
     height: 190px;
   }
 
-  .product button {
-    padding: 10px;
+  .product h3 {
     font-size: 13px;
+  }
+
+  .product p {
+    font-size: 11px;
+  }
+
+  .product p:nth-of-type(1) {
+    font-size: 14px;
+  }
+
+  .product button {
+    padding: 9px 10px;
+    font-size: 11px;
+  }
+
+  .shoppingBanner {
+    margin: 0 4% 40px;
+    padding: 25px 18px;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .shoppingBanner h2 {
+    font-size: 23px;
+  }
+
+  .cartSection {
+    margin: 15px 4% 35px;
+    padding: 25px 15px;
+  }
+
+  .cartItem {
+    font-size: 12px;
+  }
+
+  .newsletter {
+    padding: 40px 15px;
+  }
+
+  .newsletter h2 {
+    font-size: 23px;
+  }
+
+  .footerLinks {
+    gap: 15px;
   }
 }

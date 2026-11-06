@@ -27,6 +27,7 @@ small{display:block;color:#666}
 .secondary{background:#eee;color:#222}
 .danger{background:#a52a2a;color:white}
 .status-text{font-size:14px;color:#666}
+.order-notice{background:#fff4d6;border:1px solid #d6b36a;color:#5d4518;padding:14px;border-radius:9px;margin:12px 0;font-weight:bold}
 </style>
 </head>
 <body>
@@ -148,6 +149,9 @@ small{display:block;color:#666}
 
 <section>
 <h2>طلبات العملاء</h2>
+<div id="newOrderNotice" class="order-notice" hidden></div>
+<button type="button" onclick="enableOrderNotifications()">تفعيل إشعارات الجهاز</button>
+<p id="notificationStatus" class="status-text">التنبيه المباشر يعمل عند فتح لوحة الإدارة.</p>
 <button type="button" onclick="loadOrders()">تحديث الطلبات</button>
 <div id="ordersList">اضغط تحديث الطلبات.</div>
 </section>
@@ -163,6 +167,7 @@ const SUPABASE_KEY="sb_publishable_hrP0-e5_ou1HHeKZpCu8jw_ORY_-zdh";
 const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let adminReady=false;
+let ordersChannel=null;
 let logoUrl="";
 let coverUrl="";
 
@@ -243,6 +248,7 @@ document.getElementById("dashboard").hidden=false;
 await loadProducts();
 await loadOrders();
 await loadSettings();
+startOrderNotifications();
 
 }catch(error){
 console.error(error);
@@ -691,6 +697,63 @@ await loadVariants();
 // الطلبات
 // ================================
 
+
+function startOrderNotifications(){
+if(!adminReady)return;
+if(ordersChannel){
+client.removeChannel(ordersChannel);
+ordersChannel=null;
+}
+ordersChannel=client
+.channel("ea-luxury-new-orders")
+.on("postgres_changes",{
+event:"INSERT",
+schema:"public",
+table:"orders"
+},payload=>{
+const order=payload.new||{};
+const notice=document.getElementById("newOrderNotice");
+notice.textContent="🔔 طلب جديد وصل! رقم الطلب #"+order.id+" — العميل: "+(order.customer_name||"عميل جديد")+" — الإجمالي: "+(order.total??"غير محدد")+" جنيه";
+notice.hidden=false;
+document.title="طلب جديد - EA Luxury";
+if("Notification" in window && Notification.permission==="granted"){
+try{
+new Notification("طلب جديد - EA Luxury",{
+body:"رقم الطلب #"+order.id+" من "+(order.customer_name||"عميل جديد"),
+tag:"ea-order-"+order.id
+});
+}catch(error){console.warn("Browser notification unavailable:",error);}
+}
+loadOrders();
+})
+.subscribe(status=>{
+const statusBox=document.getElementById("notificationStatus");
+if(status==="SUBSCRIBED"){
+statusBox.textContent="متصل: ستظهر الطلبات الجديدة تلقائيًا أثناء فتح لوحة الإدارة.";
+}else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){
+statusBox.textContent="تعذر الاتصال بالتنبيهات المباشرة. استخدم زر تحديث الطلبات.";
+}
+});
+}
+
+async function enableOrderNotifications(){
+const statusBox=document.getElementById("notificationStatus");
+if(!("Notification" in window)){
+statusBox.textContent="المتصفح لا يدعم إشعارات الجهاز هنا. سيظل التنبيه ظاهرًا داخل لوحة الإدارة.";
+return;
+}
+try{
+const permission=await Notification.requestPermission();
+if(permission==="granted"){
+statusBox.textContent="تم السماح بإشعارات الجهاز. ستظهر عند وصول طلب جديد أثناء عمل لوحة الإدارة.";
+}else{
+statusBox.textContent="لم يتم السماح بإشعارات الجهاز. سيظل التنبيه داخل لوحة الإدارة.";
+}
+}catch(error){
+statusBox.textContent="تعذر تفعيل إشعارات الجهاز في هذا المتصفح.";
+}
+}
+
 async function loadOrders(){
 if(!adminReady)return;
 
@@ -906,6 +969,7 @@ button.disabled=false;
 window.login=login;
 window.addProduct=addProduct;
 window.loadOrders=loadOrders;
+window.enableOrderNotifications=enableOrderNotifications;
 window.saveSettings=saveSettings;
 window.loadVariants=loadVariants;
 window.saveVariant=saveVariant;

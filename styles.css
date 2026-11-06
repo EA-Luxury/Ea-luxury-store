@@ -858,6 +858,26 @@ footer small {
 }
 .trackingResult p { margin: 6px 0; color: #666; }
 .trackingResult .trackingNote { color: #8c6828; font-weight: 700; }
+
+.customerCancelOrderButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 14px 0 8px;
+  padding: 10px 22px;
+  border: 1px solid #a33b32;
+  border-radius: 7px;
+  background: #fff;
+  color: #a33b32;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .2s ease;
+}
+.customerCancelOrderButton:hover { background: #a33b32; color: #fff; }
+.customerCancelOrderButton:disabled { opacity: .6; cursor: wait; }
+.trackingCancelError { color: #a33b32 !important; font-size: 13px; }
 @media (max-width: 650px) {
   .trackingSection { margin: 25px 4%; padding: 25px 15px; }
   .trackingForm { grid-template-columns: 1fr; }

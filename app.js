@@ -499,3 +499,88 @@ document.getElementById("checkoutForm")
 
 // بدء تحميل المنتجات
 loadProducts();
+
+// قسم التواصل الخاص بمتجر EA Luxury
+const contactSection = document.createElement("section");
+
+contactSection.id = "eaContact";
+
+contactSection.style.cssText = `
+  background:#111;
+  color:#d6b36a;
+  padding:30px 15px;
+  margin-top:35px;
+  text-align:center;
+  border-radius:12px;
+  direction:rtl;
+`;
+
+contactSection.innerHTML = `
+  <h2 style="color:#d6b36a;margin-bottom:10px">
+    تواصل معنا
+  </h2>
+
+  <p style="color:white;margin-bottom:22px">
+    EA Luxury - يسعدنا تواصلك معنا
+  </p>
+
+  <div style="
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:12px;
+  ">
+
+    <a href="tel:01065938516"
+      style="
+        background:#d6b36a;
+        color:#111;
+        padding:13px 20px;
+        border-radius:8px;
+        text-decoration:none;
+        font-weight:bold;
+      ">
+      📞 اتصل بنا
+    </a>
+
+    <a href="https://wa.me/201065938516"
+      target="_blank"
+      rel="noopener"
+      style="
+        background:#25D366;
+        color:white;
+        padding:13px 20px;
+        border-radius:8px;
+        text-decoration:none;
+        font-weight:bold;
+      ">
+      واتساب
+    </a>
+
+    <a href="https://www.facebook.com/share/1F6UFaUhmj/?mibextid=wwXIfr"
+      target="_blank"
+      rel="noopener"
+      style="
+        background:#1877F2;
+        color:white;
+        padding:13px 20px;
+        border-radius:8px;
+        text-decoration:none;
+        font-weight:bold;
+      ">
+      Facebook
+    </a>
+
+  </div>
+
+  <p style="
+    color:#aaa;
+    font-size:13px;
+    margin-top:25px;
+  ">
+    © EA Luxury - جميع الحقوق محفوظة
+  </p>
+`;
+
+document.body.appendChild(contactSection);
+

@@ -43,6 +43,24 @@ function detailShowImage(index) {
   });
 }
 
+function detailEffectivePrice(product) {
+  const regular = Number(product?.price || 0);
+  const sale = Number(product?.sale_price);
+  return Number.isFinite(sale) && sale > 0 && sale < regular ? sale : regular;
+}
+
+function detailPriceMarkup(product) {
+  const regular = Number(product?.price || 0);
+  const sale = detailEffectivePrice(product);
+  if (sale < regular) {
+    const discount = Math.round((1 - sale / regular) * 100);
+    return '<strong class="product-sale-price">' + sale.toLocaleString("ar-EG") +
+      ' جنيه</strong> <del class="product-old-price">' + regular.toLocaleString("ar-EG") +
+      ' جنيه</del> <span class="product-discount-badge">خصم ' + discount + '%</span>';
+  }
+  return sale.toLocaleString("ar-EG") + " جنيه";
+}
+
 function detailRender() {
   const p = detailProduct;
   const hasVariants = detailVariants.length > 0;
@@ -86,7 +104,7 @@ function detailRender() {
       <div class="product-detail-info">
         <span class="product-detail-category">${detailEscape(p.category || "EA LUXURY")}</span>
         <h1>${detailEscape(p.name)}</h1>
-        <div class="product-detail-price">${Number(p.price || 0).toLocaleString("ar-EG")} جنيه</div>
+        <div class="product-detail-price">${detailPriceMarkup(p)}</div>
         <p class="product-detail-description">${detailEscape(description)}</p>
         <div class="product-detail-meta">
           <span>القسم: ${detailEscape(p.category || "غير محدد")}</span>
@@ -142,6 +160,7 @@ function detailAddToCart() {
   } else {
     saved.push({
       ...p,
+      price: detailEffectivePrice(p),
       quantity: 1,
       cartKey,
       variant_id: selectedVariant ? selectedVariant.id : null,

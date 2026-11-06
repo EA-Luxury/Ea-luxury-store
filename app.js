@@ -344,6 +344,25 @@ function escapeHTML(value) {
   })[char]);
 }
 
+function getEffectiveProductPrice(product) {
+  const regular = Number(product?.price || 0);
+  const sale = Number(product?.sale_price);
+  return Number.isFinite(sale) && sale > 0 && sale < regular ? sale : regular;
+}
+
+function renderProductPrice(product) {
+  const regular = Number(product?.price || 0);
+  const sale = getEffectiveProductPrice(product);
+  if (sale < regular) {
+    const discount = Math.round((1 - sale / regular) * 100);
+    return '<div class="product-price-wrap"><strong class="product-sale-price">' +
+      sale.toLocaleString("ar-EG") + ' جنيه</strong> <del class="product-old-price">' +
+      regular.toLocaleString("ar-EG") + ' جنيه</del><span class="product-discount-badge">خصم ' +
+      discount + '%</span></div>';
+  }
+  return '<p class="product-regular-price">' + regular.toLocaleString("ar-EG") + ' جنيه</p>';
+}
+
 // عرض المنتجات ومعرض الصور
 function showProducts() {
   const filtered = selectedCategory === "الكل"
@@ -452,7 +471,7 @@ function showProducts() {
         <h3><a class="product-detail-link" href="product.html?id=${encodeURIComponent(String(p.id))}">${escapeHTML(p.name)}</a></h3>
 
         <p>
-          ${Number(p.price).toLocaleString("ar-EG")} جنيه
+          ${renderProductPrice(p)}
         </p>
 
         ${hasVariants ? variantOptions : `
@@ -609,6 +628,7 @@ function addToCart(id) {
   } else {
     cart.push({
       ...product,
+      price: getEffectiveProductPrice(product),
       quantity: 1,
       cartKey,
       variant_id: selectedVariant ? selectedVariant.id : null,

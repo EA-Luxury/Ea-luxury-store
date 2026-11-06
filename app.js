@@ -5,9 +5,9 @@ const SUPABASE_KEY = "sb_publishable_hrP0-e5_ou1HHeKZpCu8jw_ORY_-zdh";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // بيانات EmailJS تُضاف بعد إنشاء الحساب وربط البريد
-const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";
-const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID";
-const EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";
+const EMAILJS_SERVICE_ID = "service_s9qftlj";
+const EMAILJS_TEMPLATE_ID = "template_nbfsenl";
+const EMAILJS_PUBLIC_KEY = "cFAgCWXvFOilVQI7p";
 const OWNER_NOTIFICATION_EMAIL = "Ealuxury109@gmail.com";
 
 async function sendOrderEmails(orderId, values, orderItems, orderTotal) {
@@ -15,7 +15,7 @@ async function sendOrderEmails(orderId, values, orderItems, orderTotal) {
     .every(value => value && !value.startsWith("YOUR_"));
 
   if (!configured || !window.emailjs) {
-    return { ownerSent: false, customerSent: false, configured: false };
+    return { sent: false, configured: false };
   }
 
   const itemsText = orderItems.map(item => {
@@ -23,7 +23,7 @@ async function sendOrderEmails(orderId, values, orderItems, orderTotal) {
     return `${item.name}${variant ? " (" + variant + ")" : ""} × ${item.quantity} — ${(Number(item.price) * item.quantity).toLocaleString("ar-EG")} جنيه`;
   }).join("\\n");
 
-  const common = {
+  const templateParams = {
     order_id: String(orderId),
     customer_name: values.customer_name,
     customer_email: values.customer_email,
@@ -32,50 +32,26 @@ async function sendOrderEmails(orderId, values, orderItems, orderTotal) {
     address: values.address,
     order_total: Number(orderTotal).toLocaleString("ar-EG") + " جنيه",
     items_text: itemsText,
-    store_name: "EA Luxury"
+    store_name: "EA Luxury",
+    to_email: values.customer_email,
+    to_name: values.customer_name,
+    subject: "تأكيد طلبك من EA Luxury #" + orderId,
+    intro: "شكرًا لطلبك من EA Luxury. تم استلام طلبك بنجاح."
   };
 
-  const sendTo = async (toEmail, toName, subject, intro) => {
-    await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      ...common,
-      to_email: toEmail,
-      to_name: toName,
-      subject,
-      intro
-    }, { publicKey: EMAILJS_PUBLIC_KEY });
-  };
-
-  let ownerSent = false;
-  let customerSent = false;
-
   try {
-    await sendTo(
-      OWNER_NOTIFICATION_EMAIL,
-      "EA Luxury",
-      "طلب جديد من EA Luxury #" + orderId,
-      "تم استلام طلب جديد من المتجر."
+    // رسالة واحدة للعميل، مع نسخة BCC مخفية للمتجر من إعدادات القالب.
+    await window.emailjs.send(
+      EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID,
+      templateParams,
+      { publicKey: EMAILJS_PUBLIC_KEY }
     );
-    ownerSent = true;
+    return { sent: true, configured: true };
   } catch (error) {
-    console.error("تعذر إرسال إشعار المتجر:", error);
+    console.error("تعذر إرسال تأكيد الطلب بالبريد:", error);
+    return { sent: false, configured: true };
   }
-
-  // EmailJS يوصي بحد أقصى طلب إرسال واحد في الثانية
-  await new Promise(resolve => setTimeout(resolve, 1100));
-
-  try {
-    await sendTo(
-      values.customer_email,
-      values.customer_name,
-      "تأكيد طلبك من EA Luxury #" + orderId,
-      "شكرًا لطلبك من EA Luxury. تم استلام طلبك بنجاح."
-    );
-    customerSent = true;
-  } catch (error) {
-    console.error("تعذر إرسال تأكيد العميل:", error);
-  }
-
-  return { ownerSent, customerSent, configured: true };
 }
 
 let products = [];

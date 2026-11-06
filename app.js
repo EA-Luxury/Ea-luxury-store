@@ -110,6 +110,19 @@ async function loadStoreSettings() {
 
     const settings = data?.settings || {};
 
+    const announcementBar = document.getElementById("storeAnnouncementBar");
+    const announcementText = document.getElementById("storeAnnouncementText");
+    if (announcementBar && announcementText) {
+      if (settings.announcementEnabled === false) {
+        announcementBar.hidden = true;
+      } else {
+        announcementBar.hidden = false;
+        if (typeof settings.storeAnnouncement === "string" && settings.storeAnnouncement.trim()) {
+          announcementText.textContent = settings.storeAnnouncement.trim();
+        }
+      }
+    }
+
     if (settings.storeCover) {
       const cover = settings.storeCover.replace(/'/g, "%27");
 

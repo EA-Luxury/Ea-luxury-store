@@ -519,7 +519,7 @@ function renderHomeCollections() {
         </div>
         <div class="homeCollectionDetails">
           <strong>${escapeHTML(product.name)}</strong>
-          <span>${Number(product.price || 0).toLocaleString("ar-EG")} جنيه</span>
+          <span>${getEffectiveProductPrice(product).toLocaleString("ar-EG")} جنيه${getEffectiveProductPrice(product) < Number(product.price || 0) ? " (بدل " + Number(product.price).toLocaleString("ar-EG") + ")" : ""}</span>
           <small>اكتشف التفاصيل ←</small>
         </div>
       </a>

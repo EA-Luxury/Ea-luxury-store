@@ -132,6 +132,50 @@ async function loadStoreSettings() {
 
     renderStoreCategories(settings.productCategories);
 
+    const storeName = typeof settings.storeName === "string" && settings.storeName.trim()
+      ? settings.storeName.trim() : "EA Luxury";
+    const logoSubtitle = document.querySelector(".logo-sub");
+    if (logoSubtitle) logoSubtitle.textContent = storeName.toUpperCase();
+    document.title = storeName + " | أناقتك تبدأ من هنا";
+
+    const storeDescription = typeof settings.storeDescription === "string" && settings.storeDescription.trim()
+      ? settings.storeDescription.trim() : "اكتشف أحدث صيحات الموضة الحريمي والرجالي";
+    const heroDescription = document.querySelector(".heroContent p");
+    if (heroDescription) heroDescription.textContent = storeDescription;
+
+    const aboutText = document.getElementById("storeAboutText");
+    if (aboutText && typeof settings.aboutStore === "string" && settings.aboutStore.trim()) {
+      aboutText.textContent = settings.aboutStore.trim();
+    }
+    const returnText = document.getElementById("storeReturnPolicyText");
+    if (returnText && typeof settings.returnPolicy === "string" && settings.returnPolicy.trim()) {
+      returnText.textContent = settings.returnPolicy.trim();
+    }
+    const shippingFee = Number(settings.shippingFee || 0);
+    const freeShipping = Number(settings.freeShipping || 0);
+    let shippingText = "التوصيل متاح لجميع محافظات مصر.";
+    if (shippingFee > 0) shippingText = "مصاريف الشحن تبدأ من " + shippingFee.toLocaleString("ar-EG") + " جنيه.";
+    if (freeShipping > 0) shippingText += " الشحن مجاني للطلبات من " + freeShipping.toLocaleString("ar-EG") + " جنيه فأكثر.";
+    ["storeShippingText", "faqShippingText"].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) element.textContent = shippingText;
+    });
+
+    const logo = document.querySelector(".logo");
+    if (logo && typeof settings.storeLogo === "string" && settings.storeLogo.trim()) {
+      let logoImage = document.getElementById("storeLogoImage");
+      if (!logoImage) {
+        logoImage = document.createElement("img");
+        logoImage.id = "storeLogoImage";
+        logoImage.alt = storeName;
+        logoImage.style.cssText = "width:74px;height:52px;object-fit:contain;";
+        const mark = logo.querySelector(".logo-main");
+        if (mark) mark.hidden = true;
+        logo.insertBefore(logoImage, logo.querySelector(".logo-sub"));
+      }
+      logoImage.src = settings.storeLogo;
+    }
+
     const announcementBar = document.getElementById("storeAnnouncementBar");
     const announcementText = document.getElementById("storeAnnouncementText");
     if (announcementBar && announcementText) {
@@ -790,6 +834,23 @@ window.addToCart = addToCart;
 window.removeFromCart = removeFromCart;
 
 // تصنيف المنتجات: event delegation حتى تعمل الأزرار التي تُنشأ من إعدادات الإدارة.
+const mobileMenuButton = document.getElementById("mobileMenuButton");
+const mainNav = document.getElementById("mainNav");
+if (mobileMenuButton && mainNav) {
+  mobileMenuButton.addEventListener("click", () => {
+    const isOpen = mainNav.classList.toggle("is-open");
+    mobileMenuButton.setAttribute("aria-expanded", String(isOpen));
+    mobileMenuButton.textContent = isOpen ? "×" : "☰";
+  });
+  mainNav.addEventListener("click", event => {
+    if (event.target.closest("a")) {
+      mainNav.classList.remove("is-open");
+      mobileMenuButton.setAttribute("aria-expanded", "false");
+      mobileMenuButton.textContent = "☰";
+    }
+  });
+}
+
 const categoryNavigation = document.getElementById("categoryNavigation");
 if (categoryNavigation) {
   categoryNavigation.addEventListener("click", event => {

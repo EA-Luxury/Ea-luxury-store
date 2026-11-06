@@ -89,7 +89,7 @@ async function sendOrderEmails(orderId, values, orderItems, orderTotal) {
 
 let products = [];
 let productVariants = [];
-let cart = [];
+let cart = (() => { try { const saved = JSON.parse(localStorage.getItem("eaLuxuryCart") || "[]"); return Array.isArray(saved) ? saved.filter(item => item && item.id != null && Number(item.quantity) > 0) : []; } catch (_) { return []; } })();
 let selectedCategory = "الكل";
 
 const grid = document.getElementById("productGrid");
@@ -556,6 +556,7 @@ function addToCart(id) {
 
 // تحديث السلة
 function updateCart() {
+  try { localStorage.setItem("eaLuxuryCart", JSON.stringify(cart)); } catch (error) { console.warn("تعذر حفظ السلة:", error); }
   cartCount.textContent = cart.reduce(
     (sum, item) => sum + item.quantity, 0
   );
@@ -576,10 +577,15 @@ function updateCart() {
             .toLocaleString("ar-EG")} جنيه
         </span>
 
-        <button type="button"
-          onclick="removeFromCart('${escapeHTML(item.cartKey || String(item.id) + "_base")}')">
-          حذف
-        </button>
+        <div class="cartQuantityControls">
+          <button type="button" class="quantityButton" aria-label="تقليل الكمية"
+            onclick="changeCartQuantity('${escapeHTML(item.cartKey || String(item.id) + "_base")}', -1)">−</button>
+          <strong>${Number(item.quantity)}</strong>
+          <button type="button" class="quantityButton" aria-label="زيادة الكمية"
+            onclick="changeCartQuantity('${escapeHTML(item.cartKey || String(item.id) + "_base")}', 1)">+</button>
+          <button type="button" class="removeCartItemButton"
+            onclick="removeFromCart('${escapeHTML(item.cartKey || String(item.id) + "_base")}')">حذف الكل</button>
+        </div>
       </div>
     `).join("");
 
@@ -593,7 +599,20 @@ function updateCart() {
   return total;
 }
 
-// حذف منتج من السلة
+// تعديل كمية المنتج داخل السلة قطعة واحدة في كل مرة.
+function changeCartQuantity(cartKey, delta) {
+  const item = cart.find(i => (i.cartKey || String(i.id) + "_base") === String(cartKey));
+  if (!item) return;
+  const next = Number(item.quantity) + Number(delta);
+  if (next <= 0) { removeFromCart(cartKey); return; }
+  const limit = Number(item.availableStock ?? item.stock ?? Infinity);
+  if (delta > 0 && next > limit) { alert("وصلت للكمية المتاحة من هذا الاختيار."); return; }
+  item.quantity = next;
+  updateCart();
+}
+window.changeCartQuantity = changeCartQuantity;
+
+// حذف سطر المنتج بالكامل من السلة.
 function removeFromCart(cartKey) {
   cart = cart.filter(
     item => (item.cartKey || String(item.id) + "_base") !== String(cartKey)
@@ -624,17 +643,11 @@ const checkoutPanel = document.getElementById("checkoutPanel");
 const cartActions = document.getElementById("cartActions");
 
 document.getElementById("cartButton").addEventListener("click", () => {
-  checkoutPanel.hidden = true;
-  cartActions.hidden = false;
-  cartSection.hidden = false;
-  cartSection.scrollIntoView({ behavior: "smooth" });
+  window.location.href = "cart.html";
 });
 
 document.getElementById("continueShoppingButton").addEventListener("click", () => {
-  checkoutPanel.hidden = true;
-  cartActions.hidden = false;
-  cartSection.hidden = true;
-  document.getElementById("products").scrollIntoView({ behavior: "smooth" });
+  window.location.href = "index.html#products";
 });
 
 document.getElementById("proceedCheckoutButton").addEventListener("click", () => {
@@ -651,7 +664,6 @@ document.getElementById("proceedCheckoutButton").addEventListener("click", () =>
 document.getElementById("backToCartButton").addEventListener("click", () => {
   checkoutPanel.hidden = true;
   cartActions.hidden = false;
-  document.getElementById("cartItems").scrollIntoView({ behavior: "smooth", block: "center" });
 });
 
 // تأكيد الطلب وخصم المخزون

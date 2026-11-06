@@ -1273,3 +1273,57 @@ footer small {
  .cartItemControls { flex-direction:row; align-items:center; justify-content:space-between; }
  .cart-page .cartSummary h3 { font-size:17px; }
 }
+
+
+/* أدوات البحث والفرز */
+.store-tools {
+  max-width: 980px;
+  margin: 0 auto 28px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr);
+  gap: 14px;
+  align-items: end;
+  background: #fff;
+  border: 1px solid #eee6d7;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px #1b160b0a;
+}
+.store-tools label { display: flex; flex-direction: column; gap: 7px; }
+.store-tools label span { color: #7b6744; font-size: 12px; font-weight: 800; }
+.store-tools input,
+.store-tools select {
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 14px;
+  border: 1px solid #e5dfd3;
+  border-radius: 7px;
+  background: #fcfbf8;
+  color: #222;
+  font: inherit;
+  outline: none;
+}
+.store-tools input:focus,
+.store-tools select:focus { border-color: #b99550; box-shadow: 0 0 0 3px #b995501c; }
+.product-results-count {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #8a7756;
+  font-size: 12px;
+}
+.store-empty-state {
+  grid-column: 1 / -1;
+  padding: 38px 16px;
+  text-align: center;
+  background: #fff;
+  border: 1px dashed #d8c69e;
+  border-radius: 10px;
+  color: #777;
+}
+.store-empty-state strong,
+.store-empty-state span { display: block; }
+.store-empty-state strong { color: #29251e; margin-bottom: 6px; font-size: 17px; }
+@media (max-width: 650px) {
+  .store-tools { grid-template-columns: 1fr; margin: 0 0 22px; padding: 13px; gap: 11px; }
+  .product-results-count { grid-column: auto; }
+}

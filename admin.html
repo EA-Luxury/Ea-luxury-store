@@ -816,14 +816,20 @@ box.append(div);
 async function updateOrder(id,status){
 if(!adminReady)return;
 
-const {error}=await client.from("orders").update({status:status}).eq("id",id);
+const {error}=await client.rpc("admin_update_order_status",{
+p_order_id:id,
+p_new_status:status
+});
 
 if(error){
-alert("تعذر تحديث الطلب: "+error.message);
+alert("تعذر تحديث حالة الطلب أو إرجاع المخزون: "+error.message);
+await loadOrders();
 return;
 }
 
-alert("تم تحديث حالة الطلب.");
+alert(status==="ملغي"
+? "تم إلغاء الطلب وإرجاع الكمية إلى المخزون بنجاح."
+: "تم تحديث حالة الطلب.");
 await loadOrders();
 }
 

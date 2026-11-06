@@ -1239,3 +1239,37 @@ footer small {
  .product-related-info { padding:10px; }
  .product-related-info strong { font-size:12px; }
 }
+
+
+/* سلة مشتريات EA Luxury - تصميم البطاقات المحسن */
+.cart-page .cartSection { max-width: 1080px; padding: clamp(18px,3vw,34px); }
+.cart-page .cartSection > .sectionHeading { padding-bottom: 18px; border-bottom: 1px solid #eee7da; }
+.cart-page .cartItemCard { display:flex; justify-content:space-between; align-items:center; gap:18px; padding:18px 0; border-bottom:1px solid #eee9df; }
+.cartItemProduct { display:flex; align-items:center; gap:16px; min-width:0; flex:1; }
+.cartItemImage { width:112px; height:126px; flex:0 0 112px; overflow:hidden; border-radius:9px; background:#f5f1e8; display:grid; place-items:center; }
+.cartItemImage img { width:100%; height:100%; object-fit:cover; display:block; }
+.cartItemImageFallback { color:#a8874d; font:700 25px Georgia,serif; letter-spacing:2px; }
+.cartItemDetails { min-width:0; display:grid; gap:6px; }
+.cartItemDetails h3 { margin:0; color:#202020; font-size:16px; }
+.cartItemVariant,.cartItemUnitPrice { margin:0; color:#777; font-size:12px; }
+.cartItemLineTotal { color:#9b793e; font-size:15px; }
+.cartItemControls { display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+.cart-page .cartQuantityControls { gap:10px; }
+.cart-page .cartQuantityControls strong { min-width:22px; text-align:center; direction:ltr; }
+.cart-page .cartQuantityControls .quantityButton { width:36px; height:36px; }
+.cart-page .cartQuantityControls .removeCartItemButton,.cartItemControls .removeCartItemButton { min-height:34px; padding:7px 12px; background:#fff; color:#9b3939; border:1px solid #ead2d2; border-radius:6px; font:inherit; font-size:12px; cursor:pointer; }
+.cart-page .cartSummary { margin-top:24px; padding:20px; border:1px solid #eadfc9; border-right:4px solid #b99550; border-radius:9px; background:#fbf8f1; }
+.cart-page .cartSummary h3 { display:flex; justify-content:space-between; gap:10px; font-size:20px; }
+.cartSummaryNote { margin:8px 0 0; color:#777; font-size:12px; }
+.cartEmptyState { text-align:center; padding:55px 18px; border:1px dashed #d9c9a8; border-radius:12px; background:#fdfbf6; }
+.cartEmptyIcon { font-size:38px; }
+.cartEmptyState h3 { margin:10px 0 5px; color:#222; }
+.cartEmptyState p { color:#777; font-size:13px; }
+.cartEmptyState a { display:inline-block; margin-top:10px; padding:11px 24px; border-radius:6px; background:#171717; color:#d6b36a; font-weight:800; }
+@media(max-width:650px) {
+ .cart-page .cartItemCard { align-items:stretch; flex-direction:column; gap:13px; }
+ .cartItemImage { width:92px; height:108px; flex-basis:92px; }
+ .cartItemDetails h3 { font-size:14px; }
+ .cartItemControls { flex-direction:row; align-items:center; justify-content:space-between; }
+ .cart-page .cartSummary h3 { font-size:17px; }
+}

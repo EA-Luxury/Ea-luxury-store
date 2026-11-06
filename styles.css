@@ -1029,3 +1029,5 @@ footer small {
   #checkoutForm textarea,
   #checkoutForm button { grid-column: 1; }
 }
+
+.cartSection[hidden] { display: none !important; }

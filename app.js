@@ -402,18 +402,21 @@ function showProducts() {
     return `
       <article class="product">
 
-        <img
-          class="product-main-image"
-          data-product-id="${escapeHTML(p.id)}"
-          src="${escapeHTML(mainImage)}"
-          alt="${escapeHTML(p.name)}"
-          style="cursor:zoom-in"
-          onerror="this.style.display='none'"
-        >
+        <a class="product-detail-link product-image-link"
+          href="product.html?id=${encodeURIComponent(String(p.id))}"
+          aria-label="عرض تفاصيل ${escapeHTML(p.name)}">
+          <img
+            class="product-main-image"
+            data-product-id="${escapeHTML(p.id)}"
+            src="${escapeHTML(mainImage)}"
+            alt="${escapeHTML(p.name)}"
+            onerror="this.style.display='none'"
+          >
+        </a>
 
         ${thumbnails}
 
-        <h3>${escapeHTML(p.name)}</h3>
+        <h3><a class="product-detail-link" href="product.html?id=${encodeURIComponent(String(p.id))}">${escapeHTML(p.name)}</a></h3>
 
         <p>
           ${Number(p.price).toLocaleString("ar-EG")} جنيه
@@ -474,20 +477,7 @@ grid.addEventListener("click", event => {
     return;
   }
 
-  const mainImage = event.target.closest(".product-main-image");
 
-  if (mainImage) {
-    const product = products.find(
-      p => String(p.id) === String(mainImage.dataset.productId)
-    );
-
-    if (!product) return;
-
-    const images = getProductImages(product);
-    const index = Number(mainImage.dataset.imageIndex || 0);
-
-    openImageViewer(images, index);
-  }
 });
 
 // إضافة للسلة مع مراعاة مخزون المقاس واللون

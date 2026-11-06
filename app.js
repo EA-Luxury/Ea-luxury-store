@@ -669,47 +669,66 @@ function addToCart(id) {
   updateCart();
 }
 
-// تحديث السلة
+// تحديث السلة وعرض تفاصيل كل منتج بصورة واضحة.
 function updateCart() {
-  try { localStorage.setItem("eaLuxuryCart", JSON.stringify(cart)); } catch (error) { console.warn("تعذر حفظ السلة:", error); }
-  cartCount.textContent = cart.reduce(
-    (sum, item) => sum + item.quantity, 0
-  );
+  try { localStorage.setItem("eaLuxuryCart", JSON.stringify(cart)); }
+  catch (error) { console.warn("تعذر حفظ السلة:", error); }
 
-  document.getElementById("cartItems").innerHTML =
-    cart.map(item => `
-      <div class="cartItem">
-        <span>
-          ${escapeHTML(item.name)}
-          ${item.selected_size || item.selected_color
-            ? ` (${escapeHTML(item.selected_size || "")}${item.selected_size && item.selected_color ? " / " : ""}${escapeHTML(item.selected_color || "")})`
-            : ""}
-          × ${item.quantity}
-        </span>
+  const count = cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  if (cartCount) cartCount.textContent = count;
 
-        <span>
-          ${(Number(item.price) * item.quantity)
-            .toLocaleString("ar-EG")} جنيه
-        </span>
+  const cartItemsElement = document.getElementById("cartItems");
+  const totalElement = document.getElementById("cartTotal");
+  const total = cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
 
-        <div class="cartQuantityControls">
-          <button type="button" class="quantityButton" aria-label="تقليل الكمية"
-            onclick="changeCartQuantity('${escapeHTML(item.cartKey || String(item.id) + "_base")}', -1)">−</button>
-          <strong>${Number(item.quantity)}</strong>
-          <button type="button" class="quantityButton" aria-label="زيادة الكمية"
-            onclick="changeCartQuantity('${escapeHTML(item.cartKey || String(item.id) + "_base")}', 1)">+</button>
-          <button type="button" class="removeCartItemButton"
-            onclick="removeFromCart('${escapeHTML(item.cartKey || String(item.id) + "_base")}')">حذف الكل</button>
-        </div>
-      </div>
-    `).join("");
+  if (cartItemsElement) {
+    if (!cart.length) {
+      cartItemsElement.innerHTML = `
+        <div class="cartEmptyState">
+          <span class="cartEmptyIcon">🛍️</span>
+          <h3>سلتك لسه فاضية</h3>
+          <p>اختار المنتجات اللي عجبتك، وهتلاقيها هنا جاهزة للمراجعة.</p>
+          <a href="index.html#products">ابدأ التسوق</a>
+        </div>`;
+    } else {
+      cartItemsElement.innerHTML = cart.map(item => {
+        const key = String(item.cartKey || String(item.id) + "_base");
+        const safeKey = escapeHTML(key);
+        const images = getProductImages(item);
+        const image = images.length ? `<img src="${escapeHTML(images[0])}" alt="${escapeHTML(item.name || "صورة المنتج")}" loading="lazy">` : `<span class="cartItemImageFallback">EA</span>`;
+        const variant = [item.selected_size, item.selected_color].filter(Boolean).map(escapeHTML).join(" / ");
+        const quantity = Math.max(1, Number(item.quantity) || 1);
+        const unitPrice = Number(item.price) || 0;
+        return `
+          <article class="cartItem cartItemCard">
+            <div class="cartItemProduct">
+              <div class="cartItemImage">${image}</div>
+              <div class="cartItemDetails">
+                <h3>${escapeHTML(item.name || "منتج")}</h3>
+                ${variant ? `<p class="cartItemVariant">الاختيار: ${variant}</p>` : ""}
+                <p class="cartItemUnitPrice">سعر القطعة: ${unitPrice.toLocaleString("ar-EG")} جنيه</p>
+                <strong class="cartItemLineTotal">${(unitPrice * quantity).toLocaleString("ar-EG")} جنيه</strong>
+              </div>
+            </div>
+            <div class="cartItemControls">
+              <div class="cartQuantityControls" aria-label="تعديل الكمية">
+                <button type="button" class="quantityButton" aria-label="تقليل الكمية" onclick="changeCartQuantity('${safeKey}', -1)">−</button>
+                <strong>${quantity}</strong>
+                <button type="button" class="quantityButton" aria-label="زيادة الكمية" onclick="changeCartQuantity('${safeKey}', 1)">+</button>
+              </div>
+              <button type="button" class="removeCartItemButton" onclick="removeFromCart('${safeKey}')">حذف المنتج</button>
+            </div>
+          </article>`;
+      }).join("");
+    }
+  }
 
-  const total = cart.reduce(
-    (sum, item) => sum + Number(item.price) * item.quantity, 0
-  );
-
-  document.getElementById("cartTotal").textContent =
-    total.toLocaleString("ar-EG");
+  if (totalElement) totalElement.textContent = total.toLocaleString("ar-EG");
+  const countElement = document.getElementById("cartSummaryCount");
+  if (countElement) countElement.textContent = count.toLocaleString("ar-EG");
+  const actions = document.getElementById("cartActions");
+  if (actions && !cart.length) actions.hidden = true;
+  else if (actions && checkoutPanel?.hidden) actions.hidden = false;
 
   return total;
 }

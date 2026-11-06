@@ -515,32 +515,36 @@ function showProducts() {
   renderHomeCollections();
 }
 
-// مجموعات الصفحة الرئيسية: الأحدث وترشيحات المتجر، دون تغيير بيانات الطلب أو المخزون.
+// مجموعات الصفحة الرئيسية: الأحدث والترشيحات والعروض الفعالة.
 function renderHomeCollections() {
   const newestGrid = document.getElementById("newArrivalsGrid");
   const picksGrid = document.getElementById("editorsPicksGrid");
+  const offersSection = document.getElementById("bestOffersSection");
+  const offersGrid = document.getElementById("bestOffersGrid");
   if (!newestGrid || !picksGrid || !Array.isArray(products)) return;
 
-  const getImage = product => {
-    const images = getProductImages(product);
-    return images[0] || "";
-  };
-  const makeTile = product => {
+  const getImage = product => getProductImages(product)[0] || "";
+  const makeTile = (product, isOffer = false) => {
     const image = getImage(product);
     const href = "product.html?id=" + encodeURIComponent(String(product.id));
+    const priceMarkup = isOffer
+      ? renderProductPrice(product)
+      : '<div class="homeCollectionPrice">' + getEffectiveProductPrice(product).toLocaleString("ar-EG") + ' جنيه</div>';
     return `
-      <a class="homeCollectionCard" href="${href}">
+      <a class="homeCollectionCard${isOffer ? " homeOfferCard" : ""}" href="${href}">
         <div class="homeCollectionImage">
           ${image ? `<img src="${escapeHTML(image)}" alt="${escapeHTML(product.name)}" loading="lazy">` : '<span>EA LUXURY</span>'}
+          ${isOffer ? '<span class="homeOfferRibbon">عرض خاص</span>' : ""}
         </div>
         <div class="homeCollectionDetails">
           <strong>${escapeHTML(product.name)}</strong>
-          <span>${getEffectiveProductPrice(product).toLocaleString("ar-EG")} جنيه${getEffectiveProductPrice(product) < Number(product.price || 0) ? " (بدل " + Number(product.price).toLocaleString("ar-EG") + ")" : ""}</span>
+          ${priceMarkup}
           <small>اكتشف التفاصيل ←</small>
         </div>
       </a>
     `;
   };
+
   const newest = [...products].sort((a,b) =>
     new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
   ).slice(0,4);
@@ -548,14 +552,22 @@ function renderHomeCollections() {
     const score = p => Number(p.sales_count ?? p.sold_count ?? p.order_count ?? p.is_featured ?? p.featured ?? 0);
     return score(b) - score(a);
   }).slice(0,4);
+  const offers = products
+    .filter(product => getEffectiveProductPrice(product) < Number(product.price || 0))
+    .sort((a,b) => (1 - getEffectiveProductPrice(b) / Number(b.price || 1)) -
+                   (1 - getEffectiveProductPrice(a) / Number(a.price || 1)));
 
   const render = (target, items) => {
     target.innerHTML = items.length
-      ? items.map(makeTile).join("")
+      ? items.map(item => makeTile(item)).join("")
       : '<p class="homeCollectionEmpty">سيتم عرض المنتجات هنا قريبًا.</p>';
   };
   render(newestGrid, newest);
   render(picksGrid, picks);
+  if (offersSection && offersGrid) {
+    offersSection.hidden = offers.length === 0;
+    offersGrid.innerHTML = offers.map(item => makeTile(item, true)).join("");
+  }
 }
 
 // الضغط على الصور الصغيرة أو الكبيرة

@@ -1031,3 +1031,28 @@ footer small {
 }
 
 .cartSection[hidden] { display: none !important; }
+
+
+.cartAddNoticeActions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.cartAddNoticeActions button {
+  padding: 8px 13px;
+  border-radius: 6px;
+  border: 1px solid #171717;
+  background: #171717;
+  color: #d6b36a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.cartAddNoticeActions button + button {
+  background: #fff;
+  color: #222;
+  border-color: #c9b17f;
+}

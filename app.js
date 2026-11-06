@@ -552,9 +552,12 @@ function addToCart(id) {
   }
 
   updateCart();
-
-  cartSection.hidden = false;
-  cartSection.scrollIntoView({ behavior: "smooth" });
+  const addNotice = document.getElementById("cartAddNotice");
+  if (addNotice) {
+    addNotice.textContent = "تمت إضافة المنتج إلى السلة";
+    addNotice.hidden = false;
+    window.setTimeout(() => { addNotice.hidden = true; }, 2200);
+  }
 }
 
 // تحديث السلة
@@ -622,12 +625,39 @@ document.querySelectorAll(".category").forEach(button => {
   });
 });
 
-// فتح السلة
-document.getElementById("cartButton")
-  .addEventListener("click", () => {
-    cartSection.hidden = false;
-    cartSection.scrollIntoView({ behavior: "smooth" });
-  });
+// التنقل بين السلة وخطوة إتمام الطلب
+const checkoutPanel = document.getElementById("checkoutPanel");
+const cartActions = document.getElementById("cartActions");
+
+document.getElementById("cartButton").addEventListener("click", () => {
+  checkoutPanel.hidden = true;
+  cartActions.hidden = false;
+  cartSection.hidden = false;
+  cartSection.scrollIntoView({ behavior: "smooth" });
+});
+
+document.getElementById("continueShoppingButton").addEventListener("click", () => {
+  checkoutPanel.hidden = true;
+  cartActions.hidden = false;
+  document.getElementById("products").scrollIntoView({ behavior: "smooth" });
+});
+
+document.getElementById("proceedCheckoutButton").addEventListener("click", () => {
+  if (!cart.length) {
+    alert("السلة فارغة. أضف المنتجات أولًا.");
+    return;
+  }
+  cartActions.hidden = true;
+  checkoutPanel.hidden = false;
+  checkoutPanel.scrollIntoView({ behavior: "smooth" });
+  checkoutPanel.querySelector('input[name="customer_name"]').focus({ preventScroll: true });
+});
+
+document.getElementById("backToCartButton").addEventListener("click", () => {
+  checkoutPanel.hidden = true;
+  cartActions.hidden = false;
+  document.getElementById("cartItems").scrollIntoView({ behavior: "smooth", block: "center" });
+});
 
 // تأكيد الطلب وخصم المخزون
 document.getElementById("checkoutForm")
@@ -691,6 +721,8 @@ document.getElementById("checkoutForm")
       cart = [];
       updateCart();
       form.reset();
+      checkoutPanel.hidden = true;
+      cartActions.hidden = true;
 
       await loadProducts();
 

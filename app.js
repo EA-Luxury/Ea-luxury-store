@@ -11,7 +11,41 @@ let selectedCategory = "الكل";
 const grid = document.getElementById("productGrid");
 const cartCount = document.getElementById("cartCount");
 const cartSection = document.getElementById("cartSection");
+// تحميل صورة غلاف المتجر من Supabase
+async function loadStoreSettings() {
+  const hero = document.querySelector(".hero");
 
+  try {
+    const { data, error } = await db
+      .from("store_settings")
+      .select("settings")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    const settings = data?.settings || {};
+
+    if (settings.storeCover) {
+      const cover = settings.storeCover.replace(/'/g, "%27");
+
+      hero.style.backgroundImage =
+        `linear-gradient(rgba(0,0,0,.25), rgba(0,0,0,.25)), url('${cover}')`;
+
+      hero.style.backgroundSize = "cover";
+      hero.style.backgroundPosition = "center";
+      hero.style.backgroundRepeat = "no-repeat";
+      hero.style.minHeight = "320px";
+
+      console.log("تم تحميل صورة الغلاف بنجاح");
+    } else {
+      console.log("لا توجد صورة غلاف محفوظة في إعدادات المتجر");
+    }
+
+  } catch (error) {
+    console.error("خطأ تحميل صورة الغلاف:", error);
+  }
+}
 // تجهيز نافذة عرض الصور
 const imageViewer = document.createElement("div");
 imageViewer.id = "imageViewer";
@@ -496,6 +530,9 @@ document.getElementById("checkoutForm")
       button.textContent = "تأكيد الطلب - الدفع عند الاستلام";
     }
   });
+
+// بدء تحميل إعدادات المتجر وصورة الغلاف
+loadStoreSettings();
 
 // بدء تحميل المنتجات
 loadProducts();

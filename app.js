@@ -576,6 +576,7 @@ document.getElementById("checkoutForm")
           p_phone: values.phone,
           p_governorate: values.governorate,
           p_address: values.address,
+          p_customer_email: values.customer_email,
           p_items: cart.map(item => ({
             id: item.id,
             quantity: item.quantity,

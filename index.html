@@ -154,6 +154,24 @@
       <p>اكتشف تشكيلتنا المختارة بعناية</p>
     </div>
 
+    <div class="store-tools" aria-label="البحث وتصفية المنتجات">
+      <label class="store-search">
+        <span>ابحث عن منتجك</span>
+        <input id="productSearch" type="search" placeholder="اكتب اسم المنتج أو وصفه..." autocomplete="off">
+      </label>
+      <label class="store-sort">
+        <span>ترتيب وعرض المنتجات</span>
+        <select id="productSort">
+          <option value="default">الترتيب الافتراضي</option>
+          <option value="newest">الأحدث أولًا</option>
+          <option value="price-asc">السعر: من الأقل للأعلى</option>
+          <option value="price-desc">السعر: من الأعلى للأقل</option>
+          <option value="offers">العروض فقط</option>
+          <option value="available">المتاح فقط</option>
+        </select>
+      </label>
+      <p id="productResultsCount" class="product-results-count" aria-live="polite"></p>
+    </div>
     <div id="productGrid" class="productGrid">
       <p>جاري تحميل المنتجات...</p>
     </div>

@@ -5,7 +5,7 @@ const SUPABASE_KEY = "sb_publishable_hrP0-e5_ou1HHeKZpCu8jw_ORY_-zdh";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // بيانات EmailJS تُضاف بعد إنشاء الحساب وربط البريد
-const EMAILJS_SERVICE_ID = "service_s9qftlj";
+const EMAILJS_SERVICE_ID = "service_m4fzbxg";
 const EMAILJS_TEMPLATE_ID = "template_nbfsenl";
 const EMAILJS_PUBLIC_KEY = "cFAgCWXvFOilVQI7p";
 const OWNER_NOTIFICATION_EMAIL = "Ealuxury109@gmail.com";

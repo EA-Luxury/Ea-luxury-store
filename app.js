@@ -649,10 +649,10 @@ document.getElementById("checkoutForm")
       const emailResult = await sendOrderEmails(data, values, orderSnapshot, orderTotal);
       if (!emailResult.configured) {
         message.textContent += " سيتم تفعيل رسائل التأكيد بالبريد بعد ربط خدمة البريد.";
-      } else if (emailResult.ownerSent && emailResult.customerSent) {
-        message.textContent += " تم إرسال تأكيد الطلب إلى بريدك وإشعار المتجر.";
+      } else if (emailResult.sent) {
+        message.textContent += " تم إرسال تأكيد الطلب، وستصلك نسخة على بريد المتجر.";
       } else {
-        message.textContent += " تم حفظ الطلب، لكن تعذر إرسال إحدى رسائل البريد.";
+        message.textContent += " تم حفظ الطلب، لكن تعذر إرسال رسالة البريد.";
       }
 
       cart = [];

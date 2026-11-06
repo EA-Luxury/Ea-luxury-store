@@ -342,6 +342,26 @@ async function detailLoadRelatedProducts() {
   detailRoot.append(section);
 }
 
+
+const detailMenuButton = document.getElementById("detailMobileMenuButton");
+const detailMainNav = document.getElementById("detailMainNav");
+if (detailMenuButton && detailMainNav) {
+  detailMenuButton.addEventListener("click", () => {
+    const isOpen = detailMainNav.classList.toggle("is-open");
+    detailMenuButton.setAttribute("aria-expanded", String(isOpen));
+    detailMenuButton.setAttribute("aria-label", isOpen ? "إغلاق القائمة" : "فتح القائمة");
+    detailMenuButton.textContent = isOpen ? "×" : "☰";
+  });
+  detailMainNav.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      detailMainNav.classList.remove("is-open");
+      detailMenuButton.setAttribute("aria-expanded", "false");
+      detailMenuButton.setAttribute("aria-label", "فتح القائمة");
+      detailMenuButton.textContent = "☰";
+    });
+  });
+}
+
 document.getElementById("detailCartButton").addEventListener("click", () => {
   window.location.href = "cart.html";
 });

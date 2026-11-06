@@ -106,6 +106,15 @@ small{display:block;color:#666}
 
 <section id="settingsSection">
 <h2>⚙️ إعدادات المتجر</h2>
+<h3>شريط الإعلان أعلى المتجر</h3>
+<label>نص الإعلان</label>
+<input id="storeAnnouncement" maxlength="180" placeholder="مثال: عروض EA Luxury لفترة محدودة - توصيل لجميع المحافظات">
+<label>حالة شريط الإعلان</label>
+<select id="announcementEnabled">
+<option value="true">ظاهر للعملاء</option>
+<option value="false">مخفي</option>
+</select>
+<hr>
 <label>اسم المتجر</label>
 <input id="storeName" placeholder="EA Luxury">
 <label>وصف المتجر</label>
@@ -899,6 +908,8 @@ logoUrl=s.storeLogo||"";
 coverUrl=s.storeCover||"";
 
 const fields={
+storeAnnouncement:s.storeAnnouncement,
+announcementEnabled:s.announcementEnabled===undefined?"true":String(s.announcementEnabled),
 storeName:s.storeName,
 storeDescription:s.storeDescription,
 storePhone:s.storePhone,
@@ -958,6 +969,8 @@ if(uploadedCover)coverUrl=uploadedCover;
 }
 
 const settings={
+storeAnnouncement:document.getElementById("storeAnnouncement").value.trim(),
+announcementEnabled:document.getElementById("announcementEnabled").value==="true",
 storeName:document.getElementById("storeName").value,
 storeDescription:document.getElementById("storeDescription").value,
 storePhone:document.getElementById("storePhone").value,

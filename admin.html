@@ -392,6 +392,16 @@ const images=Array.isArray(p.image_urls)?p.image_urls:[];
 const imageCount=document.createElement("p");
 imageCount.textContent="عدد الصور: "+(images.length||(p.image_url?1:0));
 
+const descriptionInput=document.createElement("textarea");
+descriptionInput.rows=3;
+descriptionInput.value=p.description||"";
+descriptionInput.placeholder="اكتب وصف المنتج وتفاصيل الخامة والتصميم والمميزات";
+
+const saveDescriptionButton=document.createElement("button");
+saveDescriptionButton.type="button";
+saveDescriptionButton.textContent="حفظ وصف المنتج";
+saveDescriptionButton.onclick=()=>updateProductDescription(p.id,descriptionInput.value);
+
 const stockInput=document.createElement("input");
 stockInput.type="number";
 stockInput.min="0";
@@ -424,7 +434,7 @@ loadVariants();
 document.getElementById("variantsSection").scrollIntoView({behavior:"smooth"});
 };
 
-div.append(title,detail,quantityLabel,imageCount,stockInput,saveButton,activeButton,variantsButton,deleteButton);
+div.append(title,detail,quantityLabel,imageCount,descriptionInput,saveDescriptionButton,stockInput,saveButton,activeButton,variantsButton,deleteButton);
 box.append(div);
 });
 
@@ -453,6 +463,21 @@ return;
 
 alert("تم تحديث الكمية الإجمالية القديمة للمنتج.");
 await loadProducts();
+}
+
+async function updateProductDescription(id,value){
+if(!adminReady)return;
+
+const {error}=await client.from("products")
+.update({description:String(value||"").trim()})
+.eq("id",id);
+
+if(error){
+alert("تعذر حفظ وصف المنتج: "+error.message);
+return;
+}
+
+alert("تم حفظ وصف المنتج بنجاح.");
 }
 
 async function deleteProduct(product){

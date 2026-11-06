@@ -10,12 +10,44 @@ const EMAILJS_TEMPLATE_ID = "template_nbfsenl";
 const EMAILJS_PUBLIC_KEY = "cFAgCWXvFOilVQI7p";
 const OWNER_NOTIFICATION_EMAIL = "Ealuxury109@gmail.com";
 
+async function ensureEmailJSSDK() {
+  if (window.emailjs && typeof window.emailjs.send === "function") return true;
+
+  const urls = [
+    "https://cdn.jsdelivr.net/npm/@emailjs/browser@5.0.3/dist/email.min.js",
+    "https://unpkg.com/@emailjs/browser@5.0.3/dist/email.min.js"
+  ];
+
+  for (const url of urls) {
+    try {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = url;
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("تعذر تحميل مكتبة البريد"));
+        document.head.appendChild(script);
+      });
+      if (window.emailjs && typeof window.emailjs.send === "function") return true;
+    } catch (error) {
+      console.warn("فشل تحميل EmailJS من:", url, error);
+    }
+  }
+  return false;
+}
+
 async function sendOrderEmails(orderId, values, orderItems, orderTotal) {
   const configured = [EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY]
     .every(value => value && !value.startsWith("YOUR_"));
 
-  if (!configured || !window.emailjs) {
+  if (!configured) {
     return { sent: false, configured: false };
+  }
+
+  const sdkReady = await ensureEmailJSSDK();
+  if (!sdkReady) {
+    console.error("EmailJS SDK لم يتم تحميله من مصادر CDN.");
+    return { sent: false, configured: true };
   }
 
   const itemsText = orderItems.map(item => {

@@ -862,3 +862,38 @@ if (trackingForm) {
     }
   });
 }
+
+
+// فتح وإغلاق صندوق متابعة الطلب عند الضغط على الزر فقط.
+const trackingSection = document.getElementById("trackOrder");
+const openTrackingButton = document.getElementById("openTrackingButton");
+const closeTrackingButton = document.getElementById("closeTrackingButton");
+
+function openOrderTracking() {
+  if (!trackingSection) return;
+  trackingSection.hidden = false;
+  trackingSection.scrollIntoView({ behavior: "smooth", block: "center" });
+  const orderInput = trackingSection.querySelector('input[name="order_id"]');
+  if (orderInput) setTimeout(() => orderInput.focus({ preventScroll: true }), 350);
+}
+
+function closeOrderTracking() {
+  if (!trackingSection) return;
+  trackingSection.hidden = true;
+  const resultBox = document.getElementById("trackingResult");
+  if (resultBox) {
+    resultBox.className = "trackingResult";
+    resultBox.textContent = "";
+  }
+}
+
+if (openTrackingButton) openTrackingButton.addEventListener("click", openOrderTracking);
+if (closeTrackingButton) closeTrackingButton.addEventListener("click", closeOrderTracking);
+
+// رابط المتابعة في قائمة التنقل يفتح الصندوق بدل الانتقال إلى قسم ظاهر دائمًا.
+document.querySelectorAll('a[href="#trackOrder"]').forEach(link => {
+  link.addEventListener("click", event => {
+    event.preventDefault();
+    openOrderTracking();
+  });
+});

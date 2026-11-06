@@ -133,6 +133,7 @@ function detailAddToCart() {
 
   const item = saved.find(row => row.cartKey === cartKey);
   if (item) {
+    item.price = detailEffectivePrice(p);
     if (Number(item.quantity) >= availableStock) {
       document.getElementById("detailMessage").textContent = "وصلت للكمية المتاحة من هذا الاختيار.";
       return;

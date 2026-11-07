@@ -94,8 +94,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 <div id="dashboard" hidden>
 
-<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#salesReportsSection">تقارير المبيعات</a><a href="#expensesSection">المصروفات</a><a href="#couponsSection">كوبونات الخصم</a><a href="#customersSection">العملاء</a><a href="#reviewsSection">تقييمات العملاء</a><a href="#bulkImportSection">استيراد بالجملة</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#settingsSection">إعدادات المتجر</a><a href="#ordersSection">الطلبات</a></nav>
-<section id="overviewSection" class="overviewSection"><h2>ملخص المتجر</h2><div class="statsGrid"><article class="statCard"><span>إجمالي المنتجات</span><strong id="statProducts">—</strong></article><article class="statCard"><span>منتجات منخفضة المخزون</span><strong id="statLowStock">—</strong></article><article class="statCard"><span>إجمالي الطلبات</span><strong id="statOrders">—</strong></article><article class="statCard"><span>طلبات تحتاج متابعة</span><strong id="statPendingOrders">—</strong></article><article class="statCard"><span>الطلبات الملغاة</span><strong id="statCancelledOrders">—</strong></article></div><p class="status-text">الأرقام تتحدث عند تحميل المنتجات والطلبات.</p></section>
+<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#lowStockSection">تنبيهات المخزون</a><a href="#salesReportsSection">تقارير المبيعات</a><a href="#expensesSection">المصروفات</a><a href="#couponsSection">كوبونات الخصم</a><a href="#customersSection">العملاء</a><a href="#reviewsSection">تقييمات العملاء</a><a href="#bulkImportSection">استيراد بالجملة</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#settingsSection">إعدادات المتجر</a><a href="#ordersSection">الطلبات</a></nav>
+<section id="overviewSection" class="overviewSection"><h2>ملخص المتجر</h2><div class="statsGrid"><article class="statCard"><span>إجمالي المنتجات</span><strong id="statProducts">—</strong></article><article class="statCard"><span>منتجات/تركيبات منخفضة المخزون</span><strong id="statLowStock">—</strong></article><article class="statCard"><span>منتجات/تركيبات نافدة</span><strong id="statOutOfStock">—</strong></article><article class="statCard"><span>إجمالي الطلبات</span><strong id="statOrders">—</strong></article><article class="statCard"><span>طلبات تحتاج متابعة</span><strong id="statPendingOrders">—</strong></article><article class="statCard"><span>الطلبات الملغاة</span><strong id="statCancelledOrders">—</strong></article></div><p class="status-text">الأرقام تتحدث عند تحميل المنتجات والطلبات.</p></section>
+<section id="lowStockSection" class="overviewSection"><h2>تنبيهات المخزون</h2><p class="status-text">يعرض هذا القسم المنتجات أو المقاسات والألوان التي وصلت إلى حد التنبيه أو نفدت. يمكنك تعديل حد التنبيه من بطاقة المنتج، ولا تؤثر هذه التنبيهات على الكميات.</p><div id="lowStockAlerts" aria-live="polite">جاري تحميل التنبيهات...</div></section>
 <section id="salesReportsSection" class="overviewSection">
 <h2>تقارير المبيعات والأداء</h2>
 <div class="reportToolbar"><label for="salesReportPeriod">الفترة الزمنية</label><select id="salesReportPeriod"><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يومًا</option><option value="90">آخر 90 يومًا</option><option value="all">كل الفترات</option></select><button type="button" class="secondary" onclick="loadOrders()">تحديث التقرير</button></div>
@@ -798,6 +799,61 @@ msg.textContent="تعذر إضافة المنتج: "+error.message;
 }
 }
 
+async function updateProductLowStockThreshold(id,value){
+if(!adminReady)return;
+const threshold=Number(value);
+if(value===""||!Number.isInteger(threshold)||threshold<0){
+alert("اكتب حد تنبيه صحيحًا: صفر أو رقم أكبر.");
+return;
+}
+const {error}=await client.from("products").update({low_stock_threshold:threshold}).eq("id",id);
+if(error){
+alert("تعذر حفظ حد التنبيه: "+error.message);
+return;
+}
+await loadProducts();
+alert("تم حفظ حد التنبيه بنجاح. لم يتم تغيير كمية المخزون.");
+}
+
+function renderLowStockAlerts(products,variants){
+const box=document.getElementById("lowStockAlerts");
+if(!box)return;
+box.innerHTML="";
+const entries=[];
+(products||[]).forEach(product=>{
+const threshold=Number.isInteger(Number(product.low_stock_threshold))?Number(product.low_stock_threshold):3;
+const activeVariants=(variants||[]).filter(variant=>String(variant.product_id)===String(product.id)&&variant.is_active);
+const monitoredItems=activeVariants.length?activeVariants:[null];
+monitoredItems.forEach(variant=>{
+const quantity=Number(variant?variant.stock:product.stock);
+const isOut=quantity<=0;
+const isLow=!isOut&&quantity<=threshold;
+if(!isOut&&!isLow)return;
+entries.push({productName:product.name||"منتج بدون اسم",variant,quantity,threshold,isOut});
+});
+});
+document.getElementById("statLowStock").textContent=String(entries.filter(item=>!item.isOut).length);
+document.getElementById("statOutOfStock").textContent=String(entries.filter(item=>item.isOut).length);
+if(!entries.length){
+box.textContent="لا توجد تنبيهات حاليًا. المخزون أعلى من حدود التنبيه المحددة.";
+return;
+}
+entries.sort((a,b)=>Number(b.isOut)-Number(a.isOut)||a.quantity-b.quantity||a.productName.localeCompare(b.productName,"ar"));
+entries.forEach(item=>{
+const row=document.createElement("div");
+row.className="productAdminCard";
+const title=document.createElement("strong");
+title.textContent=item.productName+(item.variant?" — المقاس: "+(item.variant.size||"غير محدد")+" | اللون: "+(item.variant.color||"غير محدد"):"");
+const status=document.createElement("p");
+status.className=item.isOut?"out":"stock";
+status.textContent=item.isOut?"نفد المخزون":"متبقي "+item.quantity+" قطعة — حد التنبيه: "+item.threshold;
+const hint=document.createElement("small");
+hint.textContent=item.variant?"تنبيه لتركيبة المقاس/اللون. الحد مأخوذ من إعداد المنتج.":"تنبيه للكمية الإجمالية للمنتج.";
+row.append(title,status,hint);
+box.append(row);
+});
+}
+
 async function loadProducts(){
 if(!adminReady)return;
 
@@ -817,10 +873,16 @@ box.textContent="تعذر تحميل تكاليف الشراء: "+costLoadError.
 return;
 }
 const purchaseCosts=new Map((costRows||[]).map(row=>[String(row.product_id),row.purchase_cost]));
+const {data:variantRows,error:variantLoadError}=await client.from("product_variants").select("id,product_id,size,color,stock,is_active");
+if(variantLoadError){
+box.textContent="تعذر تحميل مخزون المقاسات والألوان: "+variantLoadError.message;
+document.getElementById("lowStockAlerts").textContent="تعذر تحميل تنبيهات المخزون حسب المقاس واللون.";
+return;
+}
 
 box.innerHTML="";
 document.getElementById("statProducts").textContent=String(data?.length||0);
-document.getElementById("statLowStock").textContent=String((data||[]).filter(p=>Number(p.stock)<=3).length);
+renderLowStockAlerts(data||[],variantRows||[]);
 
 const select=document.getElementById("variantProduct");
 const oldValue=select.value;
@@ -920,6 +982,21 @@ savePricesButton.type="button";
 savePricesButton.textContent="حفظ الأسعار ومواعيد العرض";
 savePricesButton.onclick=()=>updateProductPrices(p.id,regularPriceInput.value,salePriceInput.value,saleStartInput.value,saleEndInput.value);
 
+const thresholdLabel=document.createElement("label");
+thresholdLabel.textContent="حد تنبيه المخزون (قطعة)";
+const thresholdInput=document.createElement("input");
+thresholdInput.type="number";
+thresholdInput.min="0";
+thresholdInput.step="1";
+thresholdInput.value=String(Number.isInteger(Number(p.low_stock_threshold))?Number(p.low_stock_threshold):3);
+thresholdInput.setAttribute("aria-label","حد تنبيه المخزون للمنتج "+String(p.name||""));
+thresholdInput.placeholder="مثال: 3";
+thresholdLabel.appendChild(thresholdInput);
+const saveThresholdButton=document.createElement("button");
+saveThresholdButton.type="button";
+saveThresholdButton.textContent="حفظ حد التنبيه";
+saveThresholdButton.onclick=()=>updateProductLowStockThreshold(p.id,thresholdInput.value);
+
 const activeButton=document.createElement("button");
 activeButton.type="button";
 activeButton.textContent=p.active?"إخفاء المنتج":"إظهار المنتج";
@@ -940,7 +1017,7 @@ loadVariants();
 document.getElementById("variantsSection").scrollIntoView({behavior:"smooth"});
 };
 
-div.append(title,detail,quantityLabel,imageCount,regularPriceInput,salePriceInput,saleStartInput,saleEndInput,saleScheduleNote,savePricesButton,purchaseCostInput,savePurchaseCostButton,descriptionInput,saveDescriptionButton,stockInput,saveButton,activeButton,variantsButton,deleteButton);
+div.append(title,detail,quantityLabel,imageCount,regularPriceInput,salePriceInput,saleStartInput,saleEndInput,saleScheduleNote,savePricesButton,purchaseCostInput,savePurchaseCostButton,descriptionInput,saveDescriptionButton,stockInput,saveButton,thresholdLabel,saveThresholdButton,activeButton,variantsButton,deleteButton);
 box.append(div);
 });
 

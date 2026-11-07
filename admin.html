@@ -899,8 +899,11 @@ details.textContent="الهاتف: "+o.phone+" | المحافظة: "+o.governora
 const address=document.createElement("p");
 address.textContent="العنوان: "+o.address;
 
+const shipping=document.createElement("p");
+shipping.textContent="الشحن: "+Number(o.shipping_fee||0).toLocaleString("ar-EG")+" جنيه";
+
 const total=document.createElement("p");
-total.textContent="الإجمالي: "+o.total+" جنيه";
+total.textContent="الإجمالي شامل الشحن: "+Number(o.total||0).toLocaleString("ar-EG")+" جنيه";
 
 const items=document.createElement("div");
 items.textContent="المنتجات: "+(o.order_items||[]).map(item=>item.product_name+" × "+item.quantity).join("، ");
@@ -920,7 +923,7 @@ select.append(option);
 
 select.onchange=()=>updateOrder(o.id,select.value);
 
-div.append(title,details,address,total,items,status,select);
+div.append(title,details,address,shipping,total,items,status,select);
 box.append(div);
 });
 }

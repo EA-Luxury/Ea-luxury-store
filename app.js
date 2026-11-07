@@ -122,6 +122,28 @@ function populateGovernorateSelect() {
 }
 let productSearchTerm = "";
 let productSortMode = "default";
+let selectedProductSize = "";
+let selectedProductColor = "";
+
+function populateProductVariantFilters() {
+  const sizeSelect = document.getElementById("productSizeFilter");
+  const colorSelect = document.getElementById("productColorFilter");
+  if (!sizeSelect || !colorSelect) return;
+  const currentSize = selectedProductSize;
+  const currentColor = selectedProductColor;
+  const sizes = [...new Set(productVariants.map(v => String(v.size || "").trim()).filter(Boolean))]
+    .sort((a,b) => a.localeCompare(b, "ar", { numeric: true }));
+  const colors = [...new Set(productVariants.map(v => String(v.color || "").trim()).filter(Boolean))]
+    .sort((a,b) => a.localeCompare(b, "ar"));
+  sizeSelect.innerHTML = '<option value="">كل المقاسات</option>' +
+    sizes.map(value => '<option value="' + escapeHTML(value) + '">' + escapeHTML(value) + '</option>').join("");
+  colorSelect.innerHTML = '<option value="">كل الألوان</option>' +
+    colors.map(value => '<option value="' + escapeHTML(value) + '">' + escapeHTML(value) + '</option>').join("");
+  if (sizes.includes(currentSize)) sizeSelect.value = currentSize;
+  else selectedProductSize = "";
+  if (colors.includes(currentColor)) colorSelect.value = currentColor;
+  else selectedProductColor = "";
+}
 let favoriteProductIds = (() => { try { const v = JSON.parse(localStorage.getItem("eaLuxuryFavorites") || "[]"); return Array.isArray(v) ? v.map(String) : []; } catch (_) { return []; } })();
 function saveFavoriteProducts() { try { localStorage.setItem("eaLuxuryFavorites", JSON.stringify(favoriteProductIds)); } catch (_) {} const c = document.getElementById("favoritesCount"); if (c) c.textContent = favoriteProductIds.length; }
 function toggleFavoriteProduct(id) { const key = String(id); favoriteProductIds = favoriteProductIds.includes(key) ? favoriteProductIds.filter(x => x !== key) : [...favoriteProductIds, key]; saveFavoriteProducts(); showProducts(); renderFavoritesSection(); }
@@ -440,6 +462,7 @@ async function loadProducts() {
     productVariants = variantsResult.data || [];
   }
 
+  populateProductVariantFilters();
   showProducts();
 }
 
@@ -493,6 +516,23 @@ function showProducts() {
     );
   }
 
+  if (selectedProductSize) {
+    filtered = filtered.filter(p => {
+      const variants = productVariants.filter(v => String(v.product_id) === String(p.id));
+      return variants.length
+        ? variants.some(v => String(v.size || "") === selectedProductSize && (!selectedProductColor || String(v.color || "") === selectedProductColor))
+        : (Array.isArray(p.sizes) ? p.sizes : [p.size]).some(value => String(value || "") === selectedProductSize);
+    });
+  }
+  if (selectedProductColor) {
+    filtered = filtered.filter(p => {
+      const variants = productVariants.filter(v => String(v.product_id) === String(p.id));
+      return variants.length
+        ? variants.some(v => String(v.color || "") === selectedProductColor && (!selectedProductSize || String(v.size || "") === selectedProductSize))
+        : (Array.isArray(p.colors) ? p.colors : [p.color]).some(value => String(value || "") === selectedProductColor);
+    });
+  }
+
   if (productSortMode === "offers") {
     filtered = filtered.filter(p => getEffectiveProductPrice(p) < Number(p.price || 0));
   } else if (productSortMode === "available") {
@@ -519,10 +559,14 @@ function showProducts() {
   }
 
   grid.innerHTML = filtered.map(p => {
-    const variants = productVariants.filter(
+    const allProductVariants = productVariants.filter(
       v => String(v.product_id) === String(p.id)
     );
-    const hasVariants = variants.length > 0;
+    const variants = allProductVariants.filter(v =>
+      (!selectedProductSize || String(v.size || "") === selectedProductSize) &&
+      (!selectedProductColor || String(v.color || "") === selectedProductColor)
+    );
+    const hasVariants = allProductVariants.length > 0;
     const availableVariants = variants.filter(v => Number(v.stock) > 0);
     const stock = hasVariants
       ? availableVariants.reduce((sum, v) => sum + Number(v.stock), 0)
@@ -959,6 +1003,38 @@ const productSortSelect = document.getElementById("productSort");
 if (productSortSelect) {
   productSortSelect.addEventListener("change", event => {
     productSortMode = event.target.value || "default";
+    showProducts();
+  });
+}
+const productSizeFilter = document.getElementById("productSizeFilter");
+if (productSizeFilter) {
+  productSizeFilter.addEventListener("change", event => {
+    selectedProductSize = event.target.value || "";
+    showProducts();
+  });
+}
+const productColorFilter = document.getElementById("productColorFilter");
+if (productColorFilter) {
+  productColorFilter.addEventListener("change", event => {
+    selectedProductColor = event.target.value || "";
+    showProducts();
+  });
+}
+const resetProductFilters = document.getElementById("resetProductFilters");
+if (resetProductFilters) {
+  resetProductFilters.addEventListener("click", () => {
+    selectedCategory = "الكل";
+    productSearchTerm = "";
+    productSortMode = "default";
+    selectedProductSize = "";
+    selectedProductColor = "";
+    if (productSearchInput) productSearchInput.value = "";
+    if (productSortSelect) productSortSelect.value = "default";
+    if (productSizeFilter) productSizeFilter.value = "";
+    if (productColorFilter) productColorFilter.value = "";
+    if (categoryNavigation) categoryNavigation.querySelectorAll(".category").forEach(item =>
+      item.classList.toggle("active", item.dataset.category === "الكل")
+    );
     showProducts();
   });
 }

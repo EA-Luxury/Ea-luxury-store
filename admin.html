@@ -210,7 +210,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <option value="حريمي">ملابس حريمي</option>
 <option value="رجالي">ملابس رجالي</option>
 </select>
-<input id="price" type="number" min="1" placeholder="السعر بالجنيه">
+<input id="price" type="number" min="1" placeholder="السعر حسب العملة المختارة">
+<label for="productCurrency">عملة سعر المنتج</label>
+<select id="productCurrency"><option value="EGP">جنيه مصري EGP</option><option value="AED">درهم إماراتي AED</option></select>
 <input id="salePrice" type="number" min="0.01" step="0.01" placeholder="سعر العرض بعد الخصم (اختياري)">
 <label for="saleStartAt">بداية العرض (اختياري)</label>
 <input id="saleStartAt" type="datetime-local">
@@ -325,8 +327,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <h3>أسعار الشحن حسب المحافظة</h3>
 <p class="status-text">الأسعار المبدئية حسب عرض شركة الشحن الذي أرسلته. راجع الضريبة ورسوم التحصيل قبل اعتمادها نهائيًا. اترك المحافظة بدون سعر إذا لم تؤكد الشركة تغطيتها.</p>
 <div id="shippingRatesEditor" class="shipping-rates-editor"></div>
-<label>الحد الأدنى للشحن المجاني</label>
+<label>الحد الأدنى للشحن المجاني (بالجنيه)</label>
 <input id="freeShipping" type="number" min="0" value="0">
+<hr>
+<h3>العملة وسعر الصرف</h3>
+<p class="status-text">سعر المنتجات يظل محفوظًا بعملته الأصلية. التحويل للعرض فقط، بينما الطلبات والفواتير والتقارير تُسجل بالجنيه المصري.</p>
+<label for="aedToEgpRate">قيمة 1 درهم إماراتي بالجنيه المصري</label>
+<input id="aedToEgpRate" type="number" min="0.01" step="0.0001" value="14.67">
 <label>اللون الأساسي</label>
 <input id="storeColor" type="color" value="#171717">
 <label>من نحن</label>
@@ -485,7 +492,7 @@ let bulkImportRows=[];
 let bulkImportFileName="";
 
 function downloadBulkProductsTemplate(){
-const headers=["name","category","price","purchase_cost","stock","description","sizes","colors","image_urls","sale_price","sale_starts_at","sale_ends_at"];
+const headers=["name","category","price","currency","purchase_cost","stock","description","sizes","colors","image_urls","sale_price","sale_starts_at","sale_ends_at"];
 const csv="\uFEFF"+headers.join(",")+"\r\n";
 const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
 const url=URL.createObjectURL(blob);
@@ -531,6 +538,8 @@ return item;
 function validateBulkProductRow(item){
 const errors=[];
 const price=Number(item.price),cost=Number(item.purchase_cost),stock=Number(item.stock);
+const currency=String(item.currency||"EGP").trim().toUpperCase();
+if(!["EGP","AED"].includes(currency))errors.push("العملة يجب أن تكون EGP أو AED");
 const saleRaw=item.sale_price||"";
 const sale=saleRaw===""?null:Number(saleRaw);
 if(!item.name)errors.push("اسم المنتج مطلوب");
@@ -576,7 +585,7 @@ const body=document.createElement("tbody");
 bulkImportRows.forEach(item=>{
 const tr=document.createElement("tr");
 tr.dataset.bulkRow=String(item._row);
-const vals=[String(item._row),item.name||"",item.category||"",item.price||"",item.stock||"",String((item.image_urls||"").split("|").filter(Boolean).length)];
+const vals=[String(item._row),item.name||"",item.category||"",String(item.price||"")+" "+(item.currency||"EGP").toUpperCase(),item.stock||"",String((item.image_urls||"").split("|").filter(Boolean).length)];
 vals.forEach(value=>{const td=document.createElement("td");td.textContent=value;tr.appendChild(td);});
 const uploadCell=document.createElement("td");
 const uploadInput=document.createElement("input");
@@ -681,7 +690,7 @@ const sale=item.sale_price===""?null:Number(item.sale_price);
 const start=item.sale_starts_at?new Date(item.sale_starts_at).toISOString():null;
 const end=item.sale_ends_at?new Date(item.sale_ends_at).toISOString():null;
 const {data:created,error}=await client.from("products").insert({
-name:item.name,category:item.category,price:Number(item.price),sale_price:sale,
+name:item.name,category:item.category,price:Number(item.price),currency:(item.currency||"EGP").toUpperCase(),sale_price:sale,
 sale_starts_at:start,sale_ends_at:end,stock:Number(item.stock),description:item.description||"",
 sizes:(item.sizes||"").split("|").map(v=>v.trim()).filter(Boolean),
 colors:(item.colors||"").split("|").map(v=>v.trim()).filter(Boolean),
@@ -716,6 +725,7 @@ const msg=document.getElementById("productMsg");
 const name=document.getElementById("name").value.trim();
 const category=document.getElementById("category").value;
 const price=Number(document.getElementById("price").value);
+const currency=document.getElementById("productCurrency").value==="AED"?"AED":"EGP";
 const salePriceValue=document.getElementById("salePrice").value.trim();
 const salePrice=salePriceValue===""?null:Number(salePriceValue);
 const saleStartValue=document.getElementById("saleStartAt").value;
@@ -774,6 +784,7 @@ const {data:createdProduct,error}=await client.from("products").insert({
 name:name,
 category:category,
 price:price,
+currency:currency,
 sale_price:salePrice,
 sale_starts_at:saleStartAt?saleStartAt.toISOString():null,
 sale_ends_at:saleEndAt?saleEndAt.toISOString():null,
@@ -913,7 +924,7 @@ return;
 data.forEach(p=>{
 const option=document.createElement("option");
 option.value=p.id;
-option.textContent=p.name+" - "+p.price+" جنيه";
+option.textContent=p.name+" - "+p.price+" "+(p.currency==="AED"?"درهم":"جنيه");
 select.appendChild(option);
 
 const div=document.createElement("div");
@@ -921,7 +932,7 @@ div.className="order productAdminCard";
 div.dataset.search=(String(p.name||"")+" "+String(p.category||"")).toLocaleLowerCase("ar");
 
 const title=document.createElement("b");
-title.textContent=p.name+" - "+(p.sale_price?Number(p.sale_price).toLocaleString("ar-EG")+" جنيه بدل "+Number(p.price).toLocaleString("ar-EG")+" جنيه":" "+p.price+" جنيه");
+title.textContent=p.name+" - "+(p.sale_price?Number(p.sale_price).toLocaleString("ar-EG")+" "+(p.currency==="AED"?"درهم":"جنيه")+" بدل "+Number(p.price).toLocaleString("ar-EG")+" "+(p.currency==="AED"?"درهم":"جنيه"):" "+p.price+" "+(p.currency==="AED"?"درهم":"جنيه"));
 
 const detail=document.createElement("p");
 detail.textContent=p.category+" | "+(p.active?"نشط":"مخفي");
@@ -978,7 +989,7 @@ regularPriceInput.type="number";
 regularPriceInput.min="0.01";
 regularPriceInput.step="0.01";
 regularPriceInput.inputMode="decimal";
-regularPriceInput.placeholder="السعر الأساسي بالجنيه";
+regularPriceInput.placeholder="السعر الأساسي ("+(p.currency==="AED"?"درهم":"جنيه")+")";
 regularPriceInput.value=String(p.price??"");
 
 const salePriceInput=document.createElement("input");
@@ -999,10 +1010,14 @@ saleEndInput.title="نهاية العرض (اختياري)";
 saleEndInput.value=toLocalDateTimeValue(p.sale_ends_at);
 const saleScheduleNote=document.createElement("small");
 saleScheduleNote.textContent="بداية: "+(p.sale_starts_at?new Date(p.sale_starts_at).toLocaleString("ar-EG"):"فوري")+" | نهاية: "+(p.sale_ends_at?new Date(p.sale_ends_at).toLocaleString("ar-EG"):"بدون موعد");
+const currencySelect=document.createElement("select");
+currencySelect.innerHTML='<option value="EGP">جنيه مصري EGP</option><option value="AED">درهم إماراتي AED</option>';
+currencySelect.value=p.currency==="AED"?"AED":"EGP";
+currencySelect.setAttribute("aria-label","عملة سعر المنتج");
 const savePricesButton=document.createElement("button");
 savePricesButton.type="button";
-savePricesButton.textContent="حفظ الأسعار ومواعيد العرض";
-savePricesButton.onclick=()=>updateProductPrices(p.id,regularPriceInput.value,salePriceInput.value,saleStartInput.value,saleEndInput.value);
+savePricesButton.textContent="حفظ الأسعار والعملة ومواعيد العرض";
+savePricesButton.onclick=()=>updateProductPrices(p.id,regularPriceInput.value,salePriceInput.value,saleStartInput.value,saleEndInput.value,currencySelect.value);
 
 const thresholdLabel=document.createElement("label");
 thresholdLabel.textContent="حد تنبيه المخزون (قطعة)";
@@ -1039,7 +1054,7 @@ loadVariants();
 document.getElementById("variantsSection").scrollIntoView({behavior:"smooth"});
 };
 
-const productCardControls=[title,detail,quantityLabel,imageCount,regularPriceInput,salePriceInput,saleStartInput,saleEndInput,saleScheduleNote,savePricesButton,purchaseCostInput,savePurchaseCostButton,descriptionInput,saveDescriptionButton];
+const productCardControls=[title,detail,quantityLabel,imageCount,currencySelect,regularPriceInput,salePriceInput,saleStartInput,saleEndInput,saleScheduleNote,savePricesButton,purchaseCostInput,savePurchaseCostButton,descriptionInput,saveDescriptionButton];
 if(hasProductVariants){
  const variantStockNote=document.createElement("small");
  variantStockNote.textContent="هذا المنتج يُدار بمخزون مستقل لكل مقاس ولون. عدّل الكميات من قسم «إدارة المقاسات والألوان» فقط.";
@@ -1112,7 +1127,7 @@ const local=new Date(date.getTime()-date.getTimezoneOffset()*60000);
 return local.toISOString().slice(0,16);
 }
 
-async function updateProductPrices(id,regularValue,saleValue,startValue,endValue){
+async function updateProductPrices(id,regularValue,saleValue,startValue,endValue,currencyValue="EGP"){
 if(!adminReady)return;
 const regularPrice=String(regularValue??"").trim()===""?NaN:Number(regularValue);
 const salePrice=String(saleValue??"").trim()===""?null:Number(saleValue);
@@ -1130,7 +1145,7 @@ if((saleStart&&!Number.isFinite(saleStart.getTime()))||(saleEnd&&!Number.isFinit
 alert("راجع مواعيد العرض: تاريخ النهاية يجب أن يكون بعد البداية، ولا يمكن تحديد موعد دون سعر عرض.");
 return;
 }
-const {error}=await client.from("products").update({price:regularPrice,sale_price:salePrice,sale_starts_at:saleStart?saleStart.toISOString():null,sale_ends_at:saleEnd?saleEnd.toISOString():null}).eq("id",id);
+const {error}=await client.from("products").update({price:regularPrice,currency:currencyValue==="AED"?"AED":"EGP",sale_price:salePrice,sale_starts_at:saleStart?saleStart.toISOString():null,sale_ends_at:saleEnd?saleEnd.toISOString():null}).eq("id",id);
 if(error){alert("تعذر حفظ أسعار المنتج: "+error.message);return;}
 alert("تم حفظ السعر الأساسي"+(salePrice===null?" وإلغاء الخصم.":" وسعر العرض بنجاح."));
 await loadProducts();
@@ -2287,6 +2302,7 @@ storeWhatsapp:s.storeWhatsapp,
 storeFacebook:s.storeFacebook,
 storeTiktok:s.storeTiktok,
 freeShipping:s.freeShipping,
+aedToEgpRate:s.aedToEgpRate===undefined?14.67:s.aedToEgpRate,
 storeColor:s.storeColor,
 aboutStore:s.aboutStore,
 returnPolicy:s.returnPolicy
@@ -2341,6 +2357,8 @@ const categoryNames=[...new Set(document.getElementById("productCategories").val
 if(!categoryNames.length)throw new Error("لازم تسيب قسم واحد على الأقل.");
 if(categoryNames.some(name=>name.length>60))throw new Error("اسم القسم لا يزيد عن 60 حرفًا.");
 
+const aedToEgpRate=Number(document.getElementById("aedToEgpRate").value);
+if(!Number.isFinite(aedToEgpRate)||aedToEgpRate<=0)throw new Error("أدخل سعر صرف صحيحًا للدرهم مقابل الجنيه.");
 const settings={
 productCategories:categoryNames,
 storeAnnouncement:document.getElementById("storeAnnouncement").value.trim(),
@@ -2355,6 +2373,7 @@ storeLogo:logoUrl,
 storeCover:coverUrl,
 shippingRates:readShippingRates(),
 freeShipping:Number(document.getElementById("freeShipping").value),
+aedToEgpRate:aedToEgpRate,
 storeColor:document.getElementById("storeColor").value,
 aboutStore:document.getElementById("aboutStore").value,
 returnPolicy:document.getElementById("returnPolicy").value

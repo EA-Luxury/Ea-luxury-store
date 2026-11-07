@@ -629,7 +629,7 @@ function showProducts() {
   }
 
   const productsSection = document.getElementById("products");
-  if (productsSection) productsSection.hidden = selectedCategory === "الكل" || (selectedCategory === "أحذية" && selectedBrand === "الكل");
+  if (productsSection) productsSection.hidden = !productSearchTerm && (selectedCategory === "الكل" || (selectedCategory === "أحذية" && selectedBrand === "الكل"));
 
   const count = document.getElementById("productResultsCount");
   if (count) count.textContent = "عرض " + filtered.length + " منتج" + (productSearchTerm ? " مطابق لبحثك" : "");

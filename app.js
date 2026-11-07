@@ -888,7 +888,7 @@ const checkoutPanel = document.getElementById("checkoutPanel");
 const cartActions = document.getElementById("cartActions");
 
 document.getElementById("cartButton").addEventListener("click", () => {
-  window.location.href = "cart.html";
+  window.location.href = "cart.html#cartSection";
 });
 
 document.getElementById("continueShoppingButton").addEventListener("click", () => {

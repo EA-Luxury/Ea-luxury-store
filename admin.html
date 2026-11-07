@@ -987,7 +987,14 @@ invoiceButton.textContent="طباعة الفاتورة";
 invoiceButton.onclick=()=>printOrderInvoice(o);
 actions.append(invoiceButton);
 
-div.append(title,date,details,address,shipping,total,items,status,select,actions);
+const cancellationReason=document.createElement("p");
+cancellationReason.className="orderCancellationReason";
+if(o.cancellation_reason){
+  cancellationReason.textContent="سبب إلغاء العميل: "+o.cancellation_reason;
+}else{
+  cancellationReason.hidden=true;
+}
+div.append(title,date,details,address,shipping,total,items,status,cancellationReason,select,actions);
 box.append(div);
 });
 filterOrders();

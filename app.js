@@ -64,6 +64,8 @@ async function sendOrderEmails(orderId, values, orderItems, orderTotal, shipping
     address: values.address,
     order_total: Number(orderTotal).toLocaleString("ar-EG") + " جنيه",
     shipping_fee: Number(shippingFee).toLocaleString("ar-EG") + " جنيه",
+    coupon_code: appliedCoupon?.code || "",
+    discount_amount: Number(appliedCoupon?.discount_amount || 0).toLocaleString("ar-EG") + " جنيه",
     items_text: itemsText,
     store_name: "EA Luxury",
     to_email: values.customer_email,
@@ -91,6 +93,8 @@ async function sendOrderEmails(orderId, values, orderItems, orderTotal, shipping
 let products = [];
 let productVariants = [];
 let cart = (() => { try { const saved = JSON.parse(localStorage.getItem("eaLuxuryCart") || "[]"); return Array.isArray(saved) ? saved.filter(item => item && item.id != null && Number(item.quantity) > 0) : []; } catch (_) { return []; } })();
+let appliedCoupon = null;
+let lastCouponCartFingerprint = "";
 let selectedCategory = "الكل";
 let storefrontSettings = {};
 const EGYPT_GOVERNORATES = [
@@ -779,6 +783,14 @@ function updateCart() {
   try { localStorage.setItem("eaLuxuryCart", JSON.stringify(cart)); }
   catch (error) { console.warn("تعذر حفظ السلة:", error); }
 
+  const fingerprint = JSON.stringify(cart.map(item => [item.id,item.variant_id||null,item.quantity,Number(item.price||0)]));
+  if (lastCouponCartFingerprint && fingerprint !== lastCouponCartFingerprint) {
+    appliedCoupon = null;
+    const couponMessage = document.getElementById("couponMessage");
+    if (couponMessage) couponMessage.textContent = "تغيرت السلة؛ أعد تطبيق كود الخصم للتأكد من صلاحيته.";
+  }
+  lastCouponCartFingerprint = fingerprint;
+
   const count = cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   if (cartCount) cartCount.textContent = count;
 
@@ -792,7 +804,10 @@ function updateCart() {
   const grandTotalElement = document.getElementById("cartGrandTotal");
   const quoteElement = document.getElementById("shippingQuote");
   if (shippingElement) shippingElement.textContent = shippingFee === null ? "يُحدد بعد اختيار المحافظة" : shippingFee.toLocaleString("ar-EG") + " جنيه";
-  if (grandTotalElement) grandTotalElement.textContent = (total + (shippingFee ?? 0)).toLocaleString("ar-EG");
+  const discount = Number(appliedCoupon?.discount_amount || 0);
+  const discountElement = document.getElementById("cartDiscount");
+  if (discountElement) discountElement.textContent = discount.toLocaleString("ar-EG") + " جنيه";
+  if (grandTotalElement) grandTotalElement.textContent = Math.max(0,total + (shippingFee ?? 0) - discount).toLocaleString("ar-EG");
   if (quoteElement) {
     quoteElement.textContent = !selectedGovernorate
       ? "اختار المحافظة لمعرفة تكلفة الشحن."
@@ -953,6 +968,37 @@ document.getElementById("backToCartButton").addEventListener("click", () => {
   cartActions.hidden = false;
 });
 
+// تطبيق كود الخصم بعد إدخال رقم الهاتف.
+async function applyStoreCoupon() {
+  const form = document.getElementById("checkoutForm");
+  const codeInput = document.getElementById("couponCode");
+  const message = document.getElementById("couponMessage");
+  if (!form || !codeInput || !message) return;
+  const code = codeInput.value.trim().toUpperCase();
+  const phone = form.querySelector('input[name="phone"]')?.value.trim() || "";
+  const subtotal = cart.reduce((sum,item)=>sum+Number(item.price||0)*Number(item.quantity||0),0);
+  if (!code) { message.textContent = "اكتب كود الخصم أولاً."; return; }
+  if (phone.replace(/[^0-9]/g,"").length < 10) { message.textContent = "اكتب رقم هاتف صحيحًا أولاً."; return; }
+  if (!cart.length) { message.textContent = "السلة فارغة."; return; }
+  message.textContent = "جاري التحقق من الكود...";
+  const button = document.getElementById("applyCouponButton");
+  if (button) button.disabled = true;
+  try {
+    const {data,error}=await db.rpc("preview_store_coupon",{p_code:code,p_subtotal:subtotal,p_phone:phone});
+    if(error) throw error;
+    const result=Array.isArray(data)?data[0]:data;
+    if(!result || !result.valid) { appliedCoupon=null; message.textContent=result?.message||"تعذر التحقق من كود الخصم."; updateCart(); return; }
+    appliedCoupon={code:result.coupon_code,discount_amount:Number(result.discount_amount||0)};
+    lastCouponCartFingerprint=JSON.stringify(cart.map(item=>[item.id,item.variant_id||null,item.quantity,Number(item.price||0)]));
+    message.textContent=result.message+" — تم خصم "+appliedCoupon.discount_amount.toLocaleString("ar-EG")+" جنيه.";
+    updateCart();
+  } catch(error) {
+    appliedCoupon=null;
+    message.textContent="تعذر تطبيق الكود: "+(error.message||"حدث خطأ");
+    updateCart();
+  } finally { if(button) button.disabled=false; }
+}
+
 // تحديث رسوم الشحن عند اختيار المحافظة
 document.querySelector('#checkoutForm select[name="governorate"]')?.addEventListener("change", updateCart);
 
@@ -995,7 +1041,8 @@ document.getElementById("checkoutForm")
             id: item.id,
             quantity: item.quantity,
             variant_id: item.variant_id
-          }))
+          })),
+          p_coupon_code: appliedCoupon?.code || ""
         }
       );
 
@@ -1005,7 +1052,8 @@ document.getElementById("checkoutForm")
       const productsTotal = orderSnapshot.reduce(
         (sum, item) => sum + Number(item.price) * item.quantity, 0
       );
-      const orderTotal = productsTotal + shippingFee;
+      const discountAmount = Number(appliedCoupon?.discount_amount || 0);
+      const orderTotal = Math.max(0,productsTotal + shippingFee - discountAmount);
 
       message.textContent =
         "تم استلام طلبك بنجاح! رقم طلبك: #" + data +
@@ -1021,6 +1069,8 @@ document.getElementById("checkoutForm")
       }
 
       cart = [];
+      appliedCoupon = null;
+      lastCouponCartFingerprint = "";
       updateCart();
       form.reset();
       checkoutPanel.hidden = true;
@@ -1040,6 +1090,9 @@ document.getElementById("checkoutForm")
       button.textContent = "تأكيد الطلب - الدفع عند الاستلام";
     }
   });
+
+// ربط زر تطبيق كود الخصم.
+document.getElementById("applyCouponButton")?.addEventListener("click", applyStoreCoupon);
 
 // عرض السلة المحفوظة عند فتح الموقع أو صفحة السلة.
 updateCart();

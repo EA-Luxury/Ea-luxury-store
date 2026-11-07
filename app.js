@@ -445,7 +445,12 @@ function escapeHTML(value) {
 function getEffectiveProductPrice(product) {
   const regular = Number(product?.price || 0);
   const sale = Number(product?.sale_price);
-  return Number.isFinite(sale) && sale > 0 && sale < regular ? sale : regular;
+  const now = Date.now();
+  const startsAt = product?.sale_starts_at ? Date.parse(product.sale_starts_at) : null;
+  const endsAt = product?.sale_ends_at ? Date.parse(product.sale_ends_at) : null;
+  const hasStarted = startsAt === null || (Number.isFinite(startsAt) && now >= startsAt);
+  const notEnded = endsAt === null || (Number.isFinite(endsAt) && now < endsAt);
+  return Number.isFinite(sale) && sale > 0 && sale < regular && hasStarted && notEnded ? sale : regular;
 }
 
 function renderProductPrice(product) {

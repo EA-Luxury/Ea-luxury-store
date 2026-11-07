@@ -2091,3 +2091,24 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 .brand-showcase-copy>span{font-size:11px;color:#9a7941;margin-top:4px}
 @media(max-width:900px){.brand-showcase-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.brand-showcase-image{height:130px}}
 @media(max-width:560px){.brandsSection{padding:38px 4% 24px}.brand-showcase-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.brand-showcase-image{height:135px}.brand-showcase-copy{padding:10px}.brand-showcase-copy strong{font-size:12px}}
+
+
+/* صور الأحذية داخل كروت المنتجات: حجم متوازن دون قصّ الصورة */
+.product img.product-main-image {
+  width: 84%;
+  height: 250px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+  object-fit: contain;
+  object-position: center;
+  background: #f7f6f3;
+}
+
+@media (max-width: 650px) {
+  .product img.product-main-image {
+    width: 86%;
+    height: 158px;
+    padding: 13px;
+  }
+}

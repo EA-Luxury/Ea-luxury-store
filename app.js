@@ -10,6 +10,11 @@ const EMAILJS_TEMPLATE_ID = "template_nbfsenl";
 const EMAILJS_PUBLIC_KEY = "cFAgCWXvFOilVQI7p";
 const OWNER_NOTIFICATION_EMAIL = "Ealuxury109@gmail.com";
 
+function cleanVariantDisplayValue(value) {
+  const text = String(value ?? "").trim();
+  return /^(بدون لون|بدون مقاس|لا يوجد|none|null|n\/a)$/i.test(text) ? "" : text;
+}
+
 async function ensureEmailJSSDK() {
   if (window.emailjs && typeof window.emailjs.send === "function") return true;
 
@@ -51,7 +56,7 @@ async function sendOrderEmails(orderId, values, orderItems, orderTotal, shipping
   }
 
   const itemsText = orderItems.map(item => {
-    const variant = [item.selected_size, item.selected_color].filter(Boolean).join(" / ");
+    const variant = [item.selected_size, item.selected_color].map(cleanVariantDisplayValue).filter(Boolean).join(" / ");
     return `${item.name}${variant ? " (" + variant + ")" : ""} × ${item.quantity} — ${formatStoreMoney(getItemPriceInEgp(item) * item.quantity, "EGP")}`;
   }).join("\\n");
 
@@ -1044,7 +1049,7 @@ function updateCart() {
         const safeKey = escapeHTML(key);
         const images = getProductImages(item);
         const image = images.length ? `<img src="${escapeHTML(images[0])}" alt="${escapeHTML(item.name || "صورة المنتج")}" loading="lazy">` : `<span class="cartItemImageFallback">EA</span>`;
-        const variant = [item.selected_size, item.selected_color].filter(Boolean).map(escapeHTML).join(" / ");
+        const variant = [item.selected_size, item.selected_color].map(cleanVariantDisplayValue).filter(Boolean).map(escapeHTML).join(" / ");
         const quantity = Math.max(1, Number(item.quantity) || 1);
         const unitPrice = convertCurrencyAmount(Number(item.price) || 0, item.currency || "EGP", selectedDisplayCurrency);
         return `
@@ -1650,7 +1655,7 @@ if (trackingForm) {
             returnPanel.querySelector(".customerReturnLoading").textContent="لا توجد كميات متاحة لطلب استبدال أو إرجاع لهذا الطلب.";
           } else {
             const options=available.map(item=>{
-              const variant=[item.selected_size?"المقاس: "+item.selected_size:"",item.selected_color?"اللون: "+item.selected_color:""].filter(Boolean).join(" / ");
+              const sizeLabel=cleanVariantDisplayValue(item.selected_size),colorLabel=cleanVariantDisplayValue(item.selected_color);const variant=[sizeLabel?"المقاس: "+sizeLabel:"",colorLabel?"اللون: "+colorLabel:""].filter(Boolean).join(" / ");
               return '<option value="'+Number(item.order_item_id)+'" data-max="'+(Number(item.ordered_quantity)-Number(item.already_requested))+'">'+escapeHTML(item.product_name)+(variant?" — "+escapeHTML(variant):"")+' (متاح طلب '+(Number(item.ordered_quantity)-Number(item.already_requested))+')</option>';
             }).join("");
             returnPanel.innerHTML='<h3>استبدال أو إرجاع منتج</h3><p>اختر المنتج والكمية واكتب السبب. لن يتغير المخزون بمجرد تقديم الطلب.</p><form id="customerReturnForm" class="customerReturnForm"><label>المنتج<select name="item_id" required>'+options+'</select></label><label>نوع الطلب<select name="request_type" required><option value="return">إرجاع</option><option value="exchange">استبدال</option></select></label><label>الكمية<input name="quantity" type="number" min="1" max="'+(Number(available[0].ordered_quantity)-Number(available[0].already_requested))+'" value="1" required></label><label>سبب الطلب<textarea name="reason" maxlength="500" minlength="3" required placeholder="اكتب سبب الاستبدال أو الإرجاع"></textarea></label><label>ملاحظات إضافية (اختياري)<textarea name="customer_note" maxlength="1000" placeholder="أي تفاصيل تساعدنا في مراجعة الطلب"></textarea></label><button type="submit" class="customerCancelOrderButton">إرسال الطلب</button><p class="customerReturnMessage" aria-live="polite"></p></form>';

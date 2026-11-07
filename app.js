@@ -97,7 +97,7 @@ async function sendOrderEmails(orderId, values, orderItems, orderTotal, shipping
 
 let products = [];
 let productVariants = [];
-let cart = (() => { try { const saved = JSON.parse(localStorage.getItem("eaLuxuryCart") || "[]"); return Array.isArray(saved) ? saved.filter(item => item && item.id != null && Number(item.quantity) > 0) : []; } catch (_) { return []; } })();
+let cart = (() => { try { const saved = JSON.parse(localStorage.getItem("eaLuxuryCart") || "[]"); return Array.isArray(saved) ? saved.filter(item => item && item.id != null && Number(item.quantity) > 0).map(item => ({ ...item, selected_size: cleanVariantDisplayValue(item.selected_size) || null, selected_color: cleanVariantDisplayValue(item.selected_color) || null })) : []; } catch (_) { return []; } })();
 let appliedCoupon = null;
 let lastCouponCartFingerprint = "";
 let selectedCategory = "الكل";

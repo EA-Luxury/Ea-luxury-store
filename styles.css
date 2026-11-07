@@ -1949,3 +1949,30 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
  .cart-page #checkoutForm .couponControls { grid-template-columns:1fr; }
  .cart-page #checkoutForm .couponControls button { width:100%; }
 }
+
+
+/* EA LUXURY — live product search suggestions */
+.store-search-field { position:relative; }
+.product-search-suggestions {
+  position:absolute; z-index:30; top:calc(100% + 7px); inset-inline:0;
+  max-height:320px; overflow:auto; padding:6px;
+  border:1px solid #e7dece; border-radius:9px; background:#fff;
+  box-shadow:0 16px 38px rgba(30,24,15,.14);
+}
+.product-search-suggestions[hidden] { display:none; }
+.search-suggestion {
+  display:flex; align-items:center; gap:11px; width:100%; min-height:58px;
+  padding:9px 11px; border:0; border-radius:6px; background:#fff;
+  color:#262219; text-align:right; font:inherit; cursor:pointer;
+}
+.search-suggestion:hover,.search-suggestion:focus-visible { outline:none; background:#f7f3eb; }
+.search-suggestion-icon { display:grid; place-items:center; flex:0 0 34px; width:34px; height:34px; border:1px solid #e6dcc9; border-radius:50%; color:#a4864e; font-size:22px; }
+.search-suggestion-copy { display:grid; gap:3px; min-width:0; flex:1; }
+.search-suggestion-copy strong { overflow:hidden; color:#29251e; font-size:13px; text-overflow:ellipsis; white-space:nowrap; }
+.search-suggestion-copy small { color:#918777; font-size:11px; }
+.search-suggestion-arrow { color:#a4864e; font-size:17px; }
+.search-suggestion-empty { padding:15px 12px; color:#81796d; font-size:12px; line-height:1.8; }
+@media(max-width:650px) {
+  .product-search-suggestions { max-height:260px; }
+  .search-suggestion { min-height:54px; }
+}

@@ -155,6 +155,7 @@
     <div class="cartSummary">
       <h3><span>إجمالي المنتجات</span><span><span id="cartTotal">0</span> جنيه</span></h3>
       <p class="cartSummaryNote">الشحن: <strong id="cartShippingFee">يُحدد بعد اختيار المحافظة</strong></p>
+      <p class="cartSummaryNote">الخصم: <strong id="cartDiscount">0 جنيه</strong></p>
       <h3><span>الإجمالي شامل الشحن</span><span><span id="cartGrandTotal">0</span> جنيه</span></h3>
       <p id="shippingQuote" class="cartSummaryNote">اختار المحافظة لمعرفة تكلفة الشحن.</p>
     </div>
@@ -175,6 +176,11 @@
         <input name="customer_name" placeholder="الاسم بالكامل" autocomplete="name" required>
         <input name="phone" type="tel" placeholder="رقم الموبايل" autocomplete="tel" required>
         <input name="customer_email" type="email" placeholder="البريد الإلكتروني لاستلام تأكيد الطلب" autocomplete="email" required>
+        <div class="couponEntry">
+          <label for="couponCode">كود الخصم (اختياري)</label>
+          <div class="couponControls"><input id="couponCode" name="coupon_code" maxlength="40" placeholder="اكتب كود الخصم" autocomplete="off"><button type="button" id="applyCouponButton">تطبيق الكود</button></div>
+          <p id="couponMessage" class="cartSummaryNote" role="status" aria-live="polite"></p>
+        </div>
         <select name="governorate" autocomplete="address-level1" required>
           <option value="">اختر المحافظة</option>
           <option value="القاهرة">القاهرة</option>

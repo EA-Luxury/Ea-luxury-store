@@ -171,7 +171,10 @@
     <div class="store-tools store-tools-pro" aria-label="البحث والتصفية">
       <label class="store-search">
         <span>ابحث عن منتجك</span>
-        <input id="productSearch" type="search" placeholder="اكتب اسم المنتج أو وصفه..." autocomplete="off">
+        <div class="store-search-field">
+          <input id="productSearch" type="search" placeholder="اسم المنتج، اللون، المقاس أو الوصف..." autocomplete="off" aria-label="ابحث عن المنتجات">
+          <button type="button" id="clearProductSearch" class="clear-product-search" aria-label="مسح البحث" hidden>×</button>
+        </div>
       </label>
       <label class="store-sort">
         <span>ترتيب حسب</span>
@@ -352,7 +355,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@5/dist/email.min.js"></script>
-  <script src="app.js?v=40"></script>
+  <script src="app.js?v=41"></script>
 
 </body>
 </html>

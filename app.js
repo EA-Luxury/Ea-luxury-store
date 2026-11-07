@@ -1059,6 +1059,10 @@ function updateCart() {
   }
 
   if (totalElement) totalElement.textContent = total.toLocaleString("ar-EG");
+  const totalCurrencyLabel=document.getElementById("cartTotalCurrency");
+  const grandCurrencyLabel=document.getElementById("cartGrandTotalCurrency");
+  if(totalCurrencyLabel)totalCurrencyLabel.textContent=selectedDisplayCurrency==="AED"?"درهم":"جنيه";
+  if(grandCurrencyLabel)grandCurrencyLabel.textContent=selectedDisplayCurrency==="AED"?"درهم":"جنيه";
   const countElement = document.getElementById("cartSummaryCount");
   if (countElement) countElement.textContent = count.toLocaleString("ar-EG");
   const actions = document.getElementById("cartActions");

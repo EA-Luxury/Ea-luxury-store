@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111111">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="ea-icon.svg" type="image/svg+xml">
+  <meta name="description" content="منتجاتك المفضلة من EA Luxury">
+  <title>المفضلة | EA Luxury</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=31">
+</head>
+<body class="favorites-page">
+  <div class="announcement"><span>EA LUXURY</span><span>اختياراتك المحفوظة في مكان واحد</span></div>
+  <header class="header">
+    <a href="index.html" class="logo" aria-label="EA Luxury - الرئيسية">
+      <span class="logo-main" aria-label="EA"><span class="logo-e">E</span><span class="logo-a">A</span></span>
+      <span class="logo-sub">LUXURY</span>
+    </a>
+    <button class="mobileMenuButton" id="favoritesMobileMenuButton" type="button" aria-label="فتح القائمة" aria-controls="favoritesMainNav" aria-expanded="false">☰</button>
+    <nav class="mainNav" id="favoritesMainNav">
+      <a href="index.html">الرئيسية</a>
+      <a href="index.html#products">المنتجات</a>
+      <a href="favorites.html" aria-current="page">♡ المفضلة</a>
+      <a href="cart.html">السلة</a>
+      <a href="index.html#trackOrder">متابعة الطلب</a>
+    </nav>
+    <a href="cart.html" class="cartButton favorites-cart-link"><span>🛒</span><span>السلة</span><span id="favoritesCartCount" class="cartCount">0</span></a>
+  </header>
+  <main class="favorites-page-main">
+    <div class="favorites-page-heading">
+      <span>YOUR SAVED PICKS</span>
+      <h1>منتجاتك المفضلة <em>♥</em></h1>
+      <p>كل اختياراتك اللي حبيت تحتفظ بيها، تقدر تضيفها للسلة أو تشيلها من هنا.</p>
+    </div>
+    <div id="favoritesPageStatus" class="favorites-page-status" role="status" aria-live="polite">جاري تحميل المنتجات المحفوظة...</div>
+    <div id="favoritesPageGrid" class="favorites-page-grid"></div>
+    <div id="favoritesPageEmpty" class="favorites-page-empty" hidden>
+      <span class="favorites-empty-heart">♡</span>
+      <h2>لسه مفيش منتجات في المفضلة</h2>
+      <p>احفظ المنتجات اللي تعجبك، وهتلاقيها هنا وقت ما تحب.</p>
+      <a href="index.html#products" class="favorites-continue-link">اكتشف المنتجات</a>
+    </div>
+  </main>
+  <footer><div class="footerLogo">EA <span>LUXURY</span></div><p>ملابس حريمي ورجالي - توصيل لجميع محافظات مصر</p><p>الدفع عند الاستلام</p><small>© EA Luxury - جميع الحقوق محفوظة</small></footer>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="favorites.js?v=1"></script>
+</body>
+</html>

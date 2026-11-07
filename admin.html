@@ -2622,6 +2622,19 @@ window.enableOrderNotifications=enableOrderNotifications;
 window.saveSettings=saveSettings;
 window.previewBulkShoePrices=previewBulkShoePrices;
 window.applyBulkShoePrices=applyBulkShoePrices;
+["bulkShoeBrand","bulkShoeAction","bulkShoeTarget","bulkShoeValue"].forEach(id=>{
+const control=document.getElementById(id);
+if(control)control.addEventListener("input",()=>{
+bulkShoePricePreview=[];
+document.getElementById("applyBulkShoePricesButton").disabled=true;
+document.getElementById("bulkShoePreview").textContent="تم تغيير الاختيارات؛ اعرض المعاينة من جديد قبل الحفظ.";
+});
+if(control&&control.tagName==="SELECT")control.addEventListener("change",()=>{
+bulkShoePricePreview=[];
+document.getElementById("applyBulkShoePricesButton").disabled=true;
+document.getElementById("bulkShoePreview").textContent="تم تغيير الاختيارات؛ اعرض المعاينة من جديد قبل الحفظ.";
+});
+});
 window.startBulkProductImport=startBulkProductImport;
 window.loadVariants=loadVariants;
 window.saveVariant=saveVariant;

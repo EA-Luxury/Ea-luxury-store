@@ -206,6 +206,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <section id="addProductSection">
 <h2>إضافة منتج جديد</h2>
 <input id="name" placeholder="اسم المنتج">
+<input id="brand" placeholder="الماركة / Brand">
 <select id="category">
 <option value="حريمي">ملابس حريمي</option>
 <option value="رجالي">ملابس رجالي</option>
@@ -747,6 +748,7 @@ if(!adminReady)return;
 
 const msg=document.getElementById("productMsg");
 const name=document.getElementById("name").value.trim();
+const brand=document.getElementById("brand").value.trim()||"متنوع";
 const category=document.getElementById("category").value;
 const price=Number(document.getElementById("price").value);
 const currency=document.getElementById("productCurrency").value==="AED"?"AED":"EGP";
@@ -806,6 +808,7 @@ msg.textContent="جاري حفظ بيانات المنتج...";
 
 const {data:createdProduct,error}=await client.from("products").insert({
 name:name,
+brand:brand,
 category:category,
 price:price,
 currency:currency,
@@ -826,7 +829,7 @@ if(error)throw error;
 const {error:costError}=await client.from("product_costs").upsert({product_id:createdProduct.id,purchase_cost:purchaseCost,updated_at:new Date().toISOString()},{onConflict:"product_id"});
 if(costError){
 msg.textContent="تم إنشاء المنتج ورفع الصور، لكن تعذر حفظ تكلفة الشراء. افتح بطاقة المنتج وأعد إدخال التكلفة. السبب: "+costError.message;
-["name","price","salePrice","saleStartAt","saleEndAt","purchaseCost","stock","description","sizes","colors","photo"].forEach(id=>{document.getElementById(id).value="";});
+["name","brand","price","salePrice","saleStartAt","saleEndAt","purchaseCost","stock","description","sizes","colors","photo"].forEach(id=>{document.getElementById(id).value="";});
 await loadProducts();
 return;
 }

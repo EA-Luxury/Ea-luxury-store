@@ -92,7 +92,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 <div id="dashboard" hidden>
 
-<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#salesReportsSection">تقارير المبيعات</a><a href="#expensesSection">المصروفات</a><a href="#couponsSection">كوبونات الخصم</a><a href="#customersSection">العملاء</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#settingsSection">إعدادات المتجر</a><a href="#ordersSection">الطلبات</a></nav>
+<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#salesReportsSection">تقارير المبيعات</a><a href="#expensesSection">المصروفات</a><a href="#couponsSection">كوبونات الخصم</a><a href="#customersSection">العملاء</a><a href="#reviewsSection">تقييمات العملاء</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#settingsSection">إعدادات المتجر</a><a href="#ordersSection">الطلبات</a></nav>
 <section id="overviewSection" class="overviewSection"><h2>ملخص المتجر</h2><div class="statsGrid"><article class="statCard"><span>إجمالي المنتجات</span><strong id="statProducts">—</strong></article><article class="statCard"><span>منتجات منخفضة المخزون</span><strong id="statLowStock">—</strong></article><article class="statCard"><span>إجمالي الطلبات</span><strong id="statOrders">—</strong></article><article class="statCard"><span>طلبات تحتاج متابعة</span><strong id="statPendingOrders">—</strong></article><article class="statCard"><span>الطلبات الملغاة</span><strong id="statCancelledOrders">—</strong></article></div><p class="status-text">الأرقام تتحدث عند تحميل المنتجات والطلبات.</p></section>
 <section id="salesReportsSection" class="overviewSection">
 <h2>تقارير المبيعات والأداء</h2>
@@ -168,6 +168,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <p class="status-text">قائمة مجمعة تلقائيًا من الطلبات المسجلة، دون إنشاء نسخة إضافية من بيانات العملاء. هذه البيانات تظهر للمسؤولين فقط.</p>
 <div class="statsGrid reportStats"><article class="statCard"><span>عدد العملاء</span><strong id="customersCount">—</strong></article><article class="statCard"><span>عملاء متكررون</span><strong id="repeatCustomersCount">—</strong></article></div>
 <input id="customerSearch" type="search" placeholder="ابحث باسم العميل أو الهاتف أو البريد أو المحافظة..."><div id="customersList">جاري تحميل العملاء...</div>
+</section>
+<section id="reviewsSection" class="overviewSection">
+<h2>تقييمات العملاء</h2>
+<p class="status-text">التقييمات الجديدة لا تظهر في المتجر إلا بعد اعتمادها. لا تظهر بيانات الاتصال الخاصة بالعميل هنا.</p>
+<div class="statsGrid reportStats"><article class="statCard"><span>بانتظار المراجعة</span><strong id="pendingReviewsCount">—</strong></article><article class="statCard"><span>التقييمات المعروضة</span><strong id="approvedReviewsCount">—</strong></article></div>
+<button type="button" class="secondary" onclick="loadProductReviews()">تحديث التقييمات</button>
+<div id="productReviewsAdminList">جاري تحميل التقييمات...</div>
 </section>
 <section id="addProductSection">
 <h2>إضافة منتج جديد</h2>
@@ -426,6 +433,7 @@ await loadProducts();
 await loadOrders();
 await loadExpenses();
 await loadCoupons();
+await loadProductReviews();
 await loadSettings();
 startOrderNotifications();
 
@@ -1490,6 +1498,69 @@ async function toggleCoupon(id,active){
  document.getElementById("couponAdminMsg").textContent=active?"تم تفعيل الكوبون.":"تم إيقاف الكوبون.";await loadCoupons();
 }
 
+
+async function loadProductReviews(){
+if(!adminReady)return;
+const box=document.getElementById("productReviewsAdminList");
+box.textContent="جاري تحميل تقييمات العملاء...";
+const {data,error}=await client.from("product_reviews")
+.select("id,product_id,order_id,rating,comment,status,created_at")
+.order("created_at",{ascending:false});
+if(error){box.textContent="تعذر تحميل التقييمات: "+error.message;return;}
+const reviews=data||[];
+document.getElementById("pendingReviewsCount").textContent=String(reviews.filter(r=>r.status==="pending").length);
+document.getElementById("approvedReviewsCount").textContent=String(reviews.filter(r=>r.status==="approved").length);
+if(!reviews.length){box.textContent="لا توجد تقييمات حتى الآن.";return;}
+const productIds=[...new Set(reviews.map(r=>r.product_id))];
+const {data:products,error:productsError}=await client.from("products").select("id,name").in("id",productIds);
+if(productsError){box.textContent="تعذر تحميل أسماء المنتجات: "+productsError.message;return;}
+const productNames=new Map((products||[]).map(p=>[String(p.id),p.name]));
+box.innerHTML="";
+reviews.forEach(review=>{
+const card=document.createElement("article");
+card.className="order orderAdminCard";
+card.style.cssText="border:1px solid #eee5d5;border-radius:10px;margin:12px 0;padding:16px;background:#fcfaf6";
+const heading=document.createElement("strong");
+heading.textContent=productNames.get(String(review.product_id))||("المنتج #"+review.product_id);
+const meta=document.createElement("p");
+meta.className="orderMeta";
+meta.textContent="طلب #"+review.order_id+" · "+(review.created_at?new Date(review.created_at).toLocaleString("ar-EG"):"") ;
+const stars=document.createElement("p");
+stars.style.cssText="color:#b18a45;font-size:20px;margin:6px 0";
+stars.textContent="★".repeat(Number(review.rating))+"☆".repeat(5-Number(review.rating));
+const comment=document.createElement("p");
+comment.style.whiteSpace="pre-wrap";
+comment.textContent=review.comment||"بدون تعليق";
+const status=document.createElement("p");
+status.className="status-text";
+status.textContent=review.status==="pending"?"الحالة: بانتظار المراجعة":review.status==="approved"?"الحالة: منشور":"الحالة: مرفوض";
+const actions=document.createElement("div");
+actions.className="orderActions";
+if(review.status!=="approved"){
+const approve=document.createElement("button");
+approve.type="button";approve.textContent="اعتماد ونشر";approve.onclick=()=>moderateProductReview(review.id,"approved");
+actions.append(approve);
+}
+if(review.status!=="rejected"){
+const reject=document.createElement("button");
+reject.type="button";reject.className="danger";reject.textContent="رفض";reject.onclick=()=>moderateProductReview(review.id,"rejected");
+actions.append(reject);
+}
+card.append(heading,meta,stars,comment,status,actions);
+box.append(card);
+});
+}
+
+async function moderateProductReview(id,status){
+if(!adminReady||!["approved","rejected"].includes(status))return;
+const message=status==="approved"?"اعتماد هذا التقييم ونشره للزوار؟":"رفض هذا التقييم؟";
+if(!confirm(message))return;
+const {error}=await client.from("product_reviews")
+.update({status,updated_at:new Date().toISOString()}).eq("id",id);
+if(error){alert("تعذر تحديث التقييم: "+error.message);return;}
+await loadProductReviews();
+}
+
 async function loadOrders(){
 if(!adminReady)return;
 
@@ -1835,6 +1906,8 @@ if(control)control.addEventListener(id==="adminOrderSearch"?"input":"change",fil
 
 document.getElementById("customerSearch")?.addEventListener("input",filterCustomers);
 document.getElementById("couponSearch")?.addEventListener("input",filterCoupons);
+window.loadProductReviews=loadProductReviews;
+window.moderateProductReview=moderateProductReview;
 window.login=login;
 window.addProduct=addProduct;
 window.loadOrders=loadOrders;

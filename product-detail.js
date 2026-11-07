@@ -59,9 +59,91 @@ function detailUpdateCartCount() {
     saved.reduce((sum, item) => sum + Math.max(0, Number(item.quantity) || 0), 0);
 }
 
+let detailZoomScale = 1;
+let detailZoomX = 0;
+let detailZoomY = 0;
+let detailZoomDrag = null;
+let detailPinchStartDistance = 0;
+let detailPinchStartScale = 1;
+
+function detailApplyZoom() {
+  const image = document.getElementById("detailLightboxImage");
+  const level = document.getElementById("detailZoomLevel");
+  if (image) image.style.transform = `translate(${detailZoomX}px, ${detailZoomY}px) scale(${detailZoomScale})`;
+  if (level) level.textContent = Math.round(detailZoomScale * 100) + "%";
+  const reset = document.getElementById("detailZoomReset");
+  if (reset) reset.disabled = detailZoomScale === 1 && detailZoomX === 0 && detailZoomY === 0;
+}
+
+function detailSetZoom(nextScale) {
+  detailZoomScale = Math.max(1, Math.min(4, Number(nextScale) || 1));
+  if (detailZoomScale === 1) { detailZoomX = 0; detailZoomY = 0; }
+  detailApplyZoom();
+}
+
+function detailResetZoom() {
+  detailZoomScale = 1;
+  detailZoomX = 0;
+  detailZoomY = 0;
+  detailApplyZoom();
+}
+
+function detailZoomDistance(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.hypot(dx, dy);
+}
+
+function detailBindZoomControls(overlay) {
+  const image = overlay.querySelector("#detailLightboxImage");
+  overlay.querySelector("#detailZoomIn").addEventListener("click", () => detailSetZoom(detailZoomScale + 0.5));
+  overlay.querySelector("#detailZoomOut").addEventListener("click", () => detailSetZoom(detailZoomScale - 0.5));
+  overlay.querySelector("#detailZoomReset").addEventListener("click", detailResetZoom);
+  image.addEventListener("wheel", event => {
+    event.preventDefault();
+    detailSetZoom(detailZoomScale + (event.deltaY < 0 ? 0.25 : -0.25));
+  }, { passive: false });
+  image.addEventListener("dblclick", event => {
+    event.preventDefault();
+    detailSetZoom(detailZoomScale > 1 ? 1 : 2);
+  });
+  image.addEventListener("pointerdown", event => {
+    if (event.pointerType === "touch" || detailZoomScale <= 1) return;
+    detailZoomDrag = { x: event.clientX, y: event.clientY, startX: detailZoomX, startY: detailZoomY };
+    image.setPointerCapture(event.pointerId);
+    image.classList.add("is-zoom-dragging");
+  });
+  image.addEventListener("pointermove", event => {
+    if (!detailZoomDrag || event.pointerType === "touch") return;
+    detailZoomX = detailZoomDrag.startX + event.clientX - detailZoomDrag.x;
+    detailZoomY = detailZoomDrag.startY + event.clientY - detailZoomDrag.y;
+    detailApplyZoom();
+  });
+  const stopDrag = () => { detailZoomDrag = null; image.classList.remove("is-zoom-dragging"); };
+  image.addEventListener("pointerup", stopDrag);
+  image.addEventListener("pointercancel", stopDrag);
+  image.addEventListener("touchstart", event => {
+    if (event.touches.length === 2) {
+      event.preventDefault();
+      detailPinchStartDistance = detailZoomDistance(event.touches);
+      detailPinchStartScale = detailZoomScale;
+    }
+  }, { passive: false });
+  image.addEventListener("touchmove", event => {
+    if (event.touches.length === 2 && detailPinchStartDistance > 0) {
+      event.preventDefault();
+      detailSetZoom(detailPinchStartScale * detailZoomDistance(event.touches) / detailPinchStartDistance);
+    }
+  }, { passive: false });
+  image.addEventListener("touchend", event => {
+    if (event.touches.length < 2) detailPinchStartDistance = 0;
+  });
+}
+
 function detailShowImage(index) {
   if (!detailImages.length) return;
   detailSelectedImage = index;
+  detailResetZoom();
   const main = document.getElementById("detailMainImage");
   if (main) main.src = detailImages[index];
   document.querySelectorAll(".product-detail-thumbnail").forEach((button, i) => {
@@ -114,11 +196,19 @@ function detailRenderLightbox() {
   overlay.hidden = true;
   overlay.innerHTML = `
     <button type="button" class="product-detail-lightbox-close" aria-label="إغلاق">×</button>
+    <div class="product-detail-zoom-tools" aria-label="أدوات تكبير الصورة">
+      <button type="button" id="detailZoomIn" aria-label="تكبير الصورة">+</button>
+      <span id="detailZoomLevel">100%</span>
+      <button type="button" id="detailZoomOut" aria-label="تصغير الصورة">−</button>
+      <button type="button" id="detailZoomReset" aria-label="إعادة الحجم الطبيعي" disabled>إعادة</button>
+    </div>
     <button type="button" class="product-detail-lightbox-nav prev" aria-label="الصورة السابقة">‹</button>
     <img id="detailLightboxImage" src="${detailEscape(detailImages[0])}" alt="صورة المنتج مكبرة">
     <button type="button" class="product-detail-lightbox-nav next" aria-label="الصورة التالية">›</button>
-    <span class="product-detail-lightbox-count" id="detailLightboxCount">1 / ${detailImages.length}</span>`;
+    <span class="product-detail-lightbox-count" id="detailLightboxCount">1 / ${detailImages.length}</span>
+    <span class="product-detail-zoom-hint">عجلة الماوس أو + و− للتكبير • بإصبعين على الهاتف</span>`;
   document.body.append(overlay);
+  detailBindZoomControls(overlay);
   overlay.querySelector(".product-detail-lightbox-close").addEventListener("click", detailCloseLightbox);
   overlay.querySelector(".prev").addEventListener("click", () => detailShowImage((detailSelectedImage - 1 + detailImages.length) % detailImages.length));
   overlay.querySelector(".next").addEventListener("click", () => detailShowImage((detailSelectedImage + 1) % detailImages.length));
@@ -131,6 +221,7 @@ function detailOpenLightbox() {
   overlay.hidden = false;
   document.body.classList.add("detail-lightbox-open");
   detailShowImage(detailSelectedImage);
+  detailResetZoom();
 }
 
 function detailCloseLightbox() {
@@ -141,6 +232,8 @@ function detailCloseLightbox() {
 
 document.addEventListener("keydown", event => {
   if (event.key === "Escape") detailCloseLightbox();
+  if (document.getElementById("detailLightbox")?.hidden === false && (event.key === "+" || event.key === "=")) detailSetZoom(detailZoomScale + 0.5);
+  if (document.getElementById("detailLightbox")?.hidden === false && event.key === "-") detailSetZoom(detailZoomScale - 0.5);
   if (document.getElementById("detailLightbox")?.hidden === false && detailImages.length > 1) {
     if (event.key === "ArrowLeft") detailShowImage((detailSelectedImage + 1) % detailImages.length);
     if (event.key === "ArrowRight") detailShowImage((detailSelectedImage - 1 + detailImages.length) % detailImages.length);

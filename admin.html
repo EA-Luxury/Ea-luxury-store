@@ -76,6 +76,13 @@ main{max-width:1180px}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #d6b36a;outline-offset:2px}
 @media(max-width:760px){main{margin:10px auto;padding:10px}section{padding:15px}.statsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.statCard{padding:13px}.statCard strong{font-size:23px}.adminNav{margin-inline:-10px}}
 .orderCancellationReason{padding:10px 12px;border-right:3px solid #c5a15b;border-radius:6px;background:#f8f3e8;color:#654d25;font-weight:600}
+.customerReturnPanel{margin:18px 0;padding:16px;border:1px solid #e7dcc7;border-radius:10px;background:#fcfaf6}
+.customerReturnPanel h3{margin:0 0 8px;color:#8a6b35}
+.customerReturnForm{display:grid;gap:11px;margin-top:12px}
+.customerReturnForm label{display:grid;gap:6px;font-weight:700}
+.customerReturnForm input,.customerReturnForm select,.customerReturnForm textarea{width:100%;padding:10px;border:1px solid #ddd2bf;border-radius:7px;background:#fff;font:inherit}
+.customerReturnMessage{font-weight:700;color:#6b552e}
+
 
 .bulk-import-preview{width:100%;border-collapse:collapse;min-width:680px;font-size:13px}.bulk-import-preview th,.bulk-import-preview td{padding:9px;border-bottom:1px solid #eee5d5;text-align:right;vertical-align:top}.bulk-import-preview th{background:#f8f4eb;color:#74664e}.bulk-import-error{color:#a52a2a;font-weight:700}.bulk-import-ok{color:#287a36;font-weight:700}.bulk-import-summary{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.bulk-import-summary span{padding:8px 12px;border:1px solid #eee5d5;border-radius:7px;background:#fcfaf6}
 </style>
@@ -94,7 +101,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 <div id="dashboard" hidden>
 
-<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#lowStockSection">تنبيهات المخزون</a><a href="#salesReportsSection">تقارير المبيعات</a><a href="#expensesSection">المصروفات</a><a href="#couponsSection">كوبونات الخصم</a><a href="#customersSection">العملاء</a><a href="#reviewsSection">تقييمات العملاء</a><a href="#bulkImportSection">استيراد بالجملة</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#settingsSection">إعدادات المتجر</a><a href="#ordersSection">الطلبات</a></nav>
+<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#lowStockSection">تنبيهات المخزون</a><a href="#salesReportsSection">تقارير المبيعات</a><a href="#expensesSection">المصروفات</a><a href="#couponsSection">كوبونات الخصم</a><a href="#customersSection">العملاء</a><a href="#reviewsSection">تقييمات العملاء</a><a href="#bulkImportSection">استيراد بالجملة</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#settingsSection">إعدادات المتجر</a><a href="#returnRequestsSection">الاستبدال والمرتجعات</a><a href="#ordersSection">الطلبات</a></nav>
 <section id="overviewSection" class="overviewSection"><h2>ملخص المتجر</h2><div class="statsGrid"><article class="statCard"><span>إجمالي المنتجات</span><strong id="statProducts">—</strong></article><article class="statCard"><span>منتجات/تركيبات منخفضة المخزون</span><strong id="statLowStock">—</strong></article><article class="statCard"><span>منتجات/تركيبات نافدة</span><strong id="statOutOfStock">—</strong></article><article class="statCard"><span>إجمالي الطلبات</span><strong id="statOrders">—</strong></article><article class="statCard"><span>طلبات تحتاج متابعة</span><strong id="statPendingOrders">—</strong></article><article class="statCard"><span>الطلبات الملغاة</span><strong id="statCancelledOrders">—</strong></article></div><p class="status-text">الأرقام تتحدث عند تحميل المنتجات والطلبات.</p></section>
 <section id="lowStockSection" class="overviewSection"><h2>تنبيهات المخزون</h2><p class="status-text">يعرض هذا القسم المنتجات أو المقاسات والألوان التي وصلت إلى حد التنبيه أو نفدت. يمكنك تعديل حد التنبيه من بطاقة المنتج، ولا تؤثر هذه التنبيهات على الكميات.</p><div id="lowStockAlerts" aria-live="polite">جاري تحميل التنبيهات...</div></section>
 <section id="salesReportsSection" class="overviewSection">
@@ -323,6 +330,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <p id="settingsMsg"></p>
 </section>
 
+<section id="returnRequestsSection" class="overviewSection"><h2>طلبات الاستبدال والمرتجعات</h2><p class="status-text">طلبات العملاء بعد استلام الطلب. لا تتم إعادة الكمية للمخزون إلا عند تسجيل استلام المنتج المرتجع فعليًا.</p><button type="button" class="secondary" onclick="loadReturnRequests()">تحديث الطلبات</button><div id="returnRequestsList">جاري تحميل طلبات الاستبدال والمرتجعات...</div></section>
 <section id="ordersSection">
 <h2>طلبات العملاء</h2>
 <input id="adminOrderSearch" type="search" placeholder="ابحث برقم الطلب أو اسم العميل أو الهاتف..." aria-label="البحث في الطلبات">
@@ -454,6 +462,7 @@ await loadOrders();
 await loadExpenses();
 await loadCoupons();
 await loadProductReviews();
+await loadReturnRequests();
 await loadSettings();
 startOrderNotifications();
 
@@ -1921,6 +1930,45 @@ if(error){alert("تعذر تحديث التقييم: "+error.message);return;}
 await loadProductReviews();
 }
 
+async function loadReturnRequests(){
+if(!adminReady)return;
+const box=document.getElementById("returnRequestsList");
+if(!box)return;
+box.textContent="جاري تحميل الطلبات...";
+const {data,error}=await client.from("order_return_requests")
+.select("*, orders(customer_name,phone), order_items(product_name,selected_size,selected_color)")
+.order("created_at",{ascending:false});
+if(error){box.textContent="تعذر تحميل طلبات الاستبدال والمرتجعات: "+error.message;return;}
+box.innerHTML="";
+if(!data||!data.length){box.textContent="لا توجد طلبات استبدال أو إرجاع حتى الآن.";return;}
+data.forEach(request=>{
+const card=document.createElement("article");card.className="order orderAdminCard";
+const order=request.orders||{},item=request.order_items||{};
+const title=document.createElement("b");title.textContent=(request.request_type==="return"?"طلب إرجاع":"طلب استبدال")+" #"+request.id+" — الطلب الأصلي #"+request.order_id;
+const customer=document.createElement("p");customer.textContent="العميل: "+(order.customer_name||"—")+" | الهاتف: "+(order.phone||"—");
+const product=document.createElement("p");product.textContent="المنتج: "+(item.product_name||"—")+" | الكمية: "+request.quantity+" | المقاس: "+(item.selected_size||"—")+" | اللون: "+(item.selected_color||"—");
+const reason=document.createElement("p");reason.textContent="السبب: "+request.reason;
+const status=document.createElement("p");status.textContent="الحالة: "+request.status;
+const note=document.createElement("textarea");note.rows=2;note.maxLength=1000;note.placeholder="ملاحظة إدارية أو سبب الرفض";note.value=request.admin_note||"";
+const actions=document.createElement("div");actions.className="orderActions";
+const addAction=(label,nextStatus,cls)=>{const button=document.createElement("button");button.type="button";button.textContent=label;if(cls)button.className=cls;button.onclick=()=>updateReturnRequest(request.id,nextStatus,note.value);actions.append(button);};
+if(request.status==="قيد المراجعة"){addAction("موافقة","تمت الموافقة");addAction("رفض","مرفوض","danger");}
+if(request.status==="تمت الموافقة")addAction("تأكيد استلام المنتج","تم الاستلام");
+if(request.status==="تم الاستلام")addAction("إكمال الطلب","مكتمل");
+if(request.stock_restored){const restored=document.createElement("p");restored.className="orderMeta";restored.textContent="تمت إعادة الكمية للمخزون مرة واحدة.";card.append(restored);}
+if(request.admin_note){const adminNote=document.createElement("p");adminNote.textContent="ملاحظة الإدارة: "+request.admin_note;card.append(adminNote);}
+card.append(title,customer,product,reason,status,note,actions);box.append(card);
+});
+}
+async function updateReturnRequest(id,status,note){
+if(!adminReady)return;
+const messages={"تمت الموافقة":"الموافقة على الطلب؟","مرفوض":"رفض الطلب؟","تم الاستلام":"تأكيد استلام المنتج المرتجع؟"+(status==="تم الاستلام"?" في حالة الإرجاع ستعود الكمية للمخزون.":""),"مكتمل":"إغلاق طلب الاستبدال أو الإرجاع؟"};
+if(!confirm(messages[status]||"تحديث الطلب؟"))return;
+const {error}=await client.rpc("admin_update_return_request",{p_request_id:id,p_new_status:status,p_admin_note:note||null});
+if(error){alert("تعذر تحديث الطلب: "+error.message);return;}
+alert(status==="تم الاستلام"?"تم تسجيل الاستلام. إذا كان الطلب إرجاعًا تمت إعادة الكمية للمخزون مرة واحدة.":"تم تحديث حالة الطلب.");
+await loadReturnRequests();
+}
 async function loadOrders(){
 if(!adminReady)return;
 

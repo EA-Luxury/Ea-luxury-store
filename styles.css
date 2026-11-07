@@ -859,6 +859,70 @@ footer small {
 .trackingResult p { margin: 6px 0; color: #666; }
 .trackingResult .trackingNote { color: #8c6828; font-weight: 700; }
 
+.trackingTimeline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 24px 0 18px;
+  position: relative;
+}
+.trackingStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  position: relative;
+  text-align: center;
+  color: #aaa;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.trackingStep:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 15px;
+  right: calc(50% + 19px);
+  width: calc(100% - 38px);
+  height: 2px;
+  background: #dedbd4;
+}
+.trackingStep.completed:not(:last-child)::after { background: #b99550; }
+.trackingStepDot {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 2px solid #d8d3c8;
+  border-radius: 50%;
+  background: #fff;
+  color: #999;
+  font-size: 12px;
+  font-weight: 800;
+  z-index: 1;
+}
+.trackingStep.completed .trackingStepDot {
+  border-color: #b99550;
+  background: #171717;
+  color: #d6b36a;
+}
+.trackingStep.current .trackingStepLabel { color: #8c6828; font-weight: 900; }
+.trackingStepLabel { max-width: 100%; }
+.trackingCancelled {
+  margin: 22px auto;
+  padding: 13px;
+  border: 1px solid #e4b9b3;
+  border-radius: 8px;
+  background: #fff4f1;
+  color: #a33b2d;
+  font-weight: 800;
+}
+@media (max-width: 520px) {
+  .trackingTimeline { gap: 2px; margin: 20px -8px 16px; }
+  .trackingStep { font-size: 10px; }
+  .trackingStepDot { width: 28px; height: 28px; }
+  .trackingStep:not(:last-child)::after { top: 13px; right: calc(50% + 16px); width: calc(100% - 32px); }
+}
+
 .customerCancelOrderButton {
   display: inline-flex;
   align-items: center;

@@ -538,13 +538,34 @@ function renderProductPrice(product) {
   return '<p class="product-regular-price">' + regular.toLocaleString("ar-EG") + ' جنيه</p>';
 }
 
+// توحيد أشكال الحروف العربية لتسهيل البحث بالاسم أو اللون أو المقاس.
+function normalizeStoreSearch(value) {
+  return String(value || "")
+    .normalize("NFKC")
+    .toLocaleLowerCase("ar")
+    .replace(/[\\u064B-\\u065F\\u0670]/g, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/[^\\p{L}\\p{N}\\s]/gu, " ")
+    .replace(/\\s+/g, " ")
+    .trim();
+}
+
 // عرض المنتجات ومعرض الصور
 function showProducts() {
   let filtered = selectedCategory === "الكل" ? [...products] : products.filter(p => p.category === selectedCategory);
   if (selectedProductCategories.length) filtered = filtered.filter(p => selectedProductCategories.includes(p.category));
   if (productSearchTerm) {
-    const term = productSearchTerm.toLocaleLowerCase("ar");
-    filtered = filtered.filter(p => [p.name,p.description,p.category].some(value => String(value||"").toLocaleLowerCase("ar").includes(term)));
+    const terms = normalizeStoreSearch(productSearchTerm).split(/\\s+/).filter(Boolean);
+    filtered = filtered.filter(p => {
+      const variants = productVariants.filter(v => String(v.product_id) === String(p.id));
+      const searchableText = normalizeStoreSearch([
+        p.name,p.description,p.category,p.brand,p.sku,p.code,p.color,p.size,
+        ...variants.flatMap(v => [v.size,v.color])
+      ].join(" "));
+      return terms.every(term => searchableText.includes(term));
+    });
   }
   if (selectedProductSizes.length || selectedProductColors.length) {
     filtered = filtered.filter(p => {
@@ -584,7 +605,7 @@ function showProducts() {
   }
 
   const count = document.getElementById("productResultsCount");
-  if (count) count.textContent = "عرض " + filtered.length + " منتج";
+  if (count) count.textContent = "عرض " + filtered.length + " منتج" + (productSearchTerm ? " مطابق لبحثك" : "");
   const drawerCount = document.getElementById("filterResultsCount");
   if (drawerCount) drawerCount.textContent = "عرض " + filtered.length + " منتج";
 
@@ -1066,9 +1087,25 @@ if (categoryNavigation) {
 
 // البحث وترتيب المنتجات — يعملان مع الأقسام دون إعادة تحميل الصفحة.
 const productSearchInput = document.getElementById("productSearch");
+const clearProductSearchButton = document.getElementById("clearProductSearch");
+function syncProductSearchControl() {
+  if (clearProductSearchButton) clearProductSearchButton.hidden = !productSearchTerm;
+}
 if (productSearchInput) {
   productSearchInput.addEventListener("input", event => {
     productSearchTerm = event.target.value.trim();
+    syncProductSearchControl();
+    showProducts();
+  });
+}
+if (clearProductSearchButton) {
+  clearProductSearchButton.addEventListener("click", () => {
+    productSearchTerm = "";
+    if (productSearchInput) {
+      productSearchInput.value = "";
+      productSearchInput.focus();
+    }
+    syncProductSearchControl();
     showProducts();
   });
 }
@@ -1098,7 +1135,7 @@ if(clearFiltersButton) clearFiltersButton.addEventListener("click",()=>{
 });
 const sortSelect=document.getElementById("productSort");
 if(sortSelect) sortSelect.addEventListener("change",event=>{productSortMode=event.target.value||"default";showProducts();});
-if(productSearchInput) productSearchInput.addEventListener("input",event=>{productSearchTerm=event.target.value.trim();showProducts();});
+
 // التنقل بين السلة وخطوة إتمام الطلب
 const checkoutPanel = document.getElementById("checkoutPanel");
 const cartActions = document.getElementById("cartActions");

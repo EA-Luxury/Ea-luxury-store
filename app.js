@@ -97,6 +97,28 @@ let appliedCoupon = null;
 let lastCouponCartFingerprint = "";
 let selectedCategory = "الكل";
 let storefrontSettings = {};
+let selectedDisplayCurrency = (() => { try { return localStorage.getItem("eaLuxuryDisplayCurrency") === "AED" ? "AED" : "EGP"; } catch (_) { return "EGP"; } })();
+function getAedToEgpRate() { const rate=Number(storefrontSettings?.aedToEgpRate||14.67); return Number.isFinite(rate)&&rate>0?rate:14.67; }
+function convertCurrencyAmount(amount,fromCurrency,toCurrency) {
+ const value=Number(amount)||0,from=fromCurrency==="AED"?"AED":"EGP",to=toCurrency==="AED"?"AED":"EGP";
+ if(from===to)return value; const rate=getAedToEgpRate(); return from==="AED"?value*rate:value/rate;
+}
+function formatStoreMoney(amount,currency=selectedDisplayCurrency) {
+ return Number(amount||0).toLocaleString("ar-EG",{maximumFractionDigits:2})+" "+(currency==="AED"?"درهم":"جنيه");
+}
+function getItemPriceInEgp(item) { return convertCurrencyAmount(Number(item?.price||0),item?.currency||"EGP","EGP"); }
+function syncCurrencyToggle() {
+ const button=document.getElementById("currencyToggleButton");
+ if(button){button.textContent="عرض: "+selectedDisplayCurrency;button.setAttribute("aria-label","تغيير العملة. العملة الحالية "+selectedDisplayCurrency);button.title="التبديل بين الجنيه المصري والدرهم الإماراتي";}
+}
+function setDisplayCurrency(currency) {
+ selectedDisplayCurrency=currency==="AED"?"AED":"EGP";
+ try{localStorage.setItem("eaLuxuryDisplayCurrency",selectedDisplayCurrency);}catch(_){}
+ syncCurrencyToggle(); if(typeof showProducts==="function")showProducts(); updateCart();
+}
+const currencyToggleButton=document.getElementById("currencyToggleButton");
+if(currencyToggleButton)currencyToggleButton.addEventListener("click",()=>setDisplayCurrency(selectedDisplayCurrency==="EGP"?"AED":"EGP"));
+syncCurrencyToggle();
 const EGYPT_GOVERNORATES = [
   "القاهرة","الجيزة","الإسكندرية","الدقهلية","دمياط","الشرقية","القليوبية",
   "كفر الشيخ","الغربية","المنوفية","البحيرة","بورسعيد","الإسماعيلية","السويس",
@@ -107,7 +129,7 @@ function getShippingQuote(governorate) {
   const rates = storefrontSettings.shippingRates || {};
   const raw = rates[governorate];
   if (raw === null || raw === undefined || raw === "" || !Number.isFinite(Number(raw)) || Number(raw) < 0) return null;
-  const subtotal = cart.reduce((sum,item) => sum + Number(item.price || 0) * Number(item.quantity || 0),0);
+  const subtotal = cart.reduce((sum,item) => sum + getItemPriceInEgp(item) * Number(item.quantity || 0),0);
   const freeThreshold = Number(storefrontSettings.freeShipping || 0);
   return freeThreshold > 0 && subtotal >= freeThreshold ? 0 : Number(raw);
 }
@@ -526,16 +548,11 @@ function getEffectiveProductPrice(product) {
 }
 
 function renderProductPrice(product) {
-  const regular = Number(product?.price || 0);
-  const sale = getEffectiveProductPrice(product);
-  if (sale < regular) {
-    const discount = Math.round((1 - sale / regular) * 100);
-    return '<div class="product-price-wrap"><strong class="product-sale-price">' +
-      sale.toLocaleString("ar-EG") + ' جنيه</strong> <del class="product-old-price">' +
-      regular.toLocaleString("ar-EG") + ' جنيه</del><span class="product-discount-badge">خصم ' +
-      discount + '%</span></div>';
-  }
-  return '<p class="product-regular-price">' + regular.toLocaleString("ar-EG") + ' جنيه</p>';
+  const source=product?.currency||"EGP";
+  const regular=convertCurrencyAmount(Number(product?.price||0),source,selectedDisplayCurrency);
+  const sale=convertCurrencyAmount(getEffectiveProductPrice(product),source,selectedDisplayCurrency);
+  if(sale<regular){const discount=Math.round((1-sale/regular)*100);return '<div class="product-price-wrap"><strong class="product-sale-price">'+formatStoreMoney(sale)+'</strong> <del class="product-old-price">'+formatStoreMoney(regular)+'</del><span class="product-discount-badge">خصم '+discount+'%</span></div>'; }
+  return '<p class="product-regular-price">'+formatStoreMoney(regular)+'</p>';
 }
 
 // توحيد أشكال الحروف العربية لتسهيل البحث بالاسم أو اللون أو المقاس.
@@ -580,8 +597,8 @@ function showProducts() {
         (!selectedProductColors.length || selectedProductColors.some(v=>colors.includes(v)));
     });
   }
-  if (filterMinPrice !== "") filtered = filtered.filter(p => getEffectiveProductPrice(p) >= Number(filterMinPrice));
-  if (filterMaxPrice !== "") filtered = filtered.filter(p => getEffectiveProductPrice(p) <= Number(filterMaxPrice));
+  if (filterMinPrice !== "") filtered = filtered.filter(p => convertCurrencyAmount(getEffectiveProductPrice(p),p.currency||"EGP",selectedDisplayCurrency) >= Number(filterMinPrice));
+  if (filterMaxPrice !== "") filtered = filtered.filter(p => convertCurrencyAmount(getEffectiveProductPrice(p),p.currency||"EGP",selectedDisplayCurrency) <= Number(filterMaxPrice));
   if (filterOffersOnly) filtered = filtered.filter(p => getEffectiveProductPrice(p) < Number(p.price||0));
   if (filterAvailableOnly || productSortMode === "available") filtered = filtered.filter(p => {
     const variants = productVariants.filter(v => String(v.product_id) === String(p.id));
@@ -597,9 +614,9 @@ function showProducts() {
         : Number(p.stock || 0) > 0;
     });
   } else if (productSortMode === "price-asc") {
-    filtered.sort((a, b) => getEffectiveProductPrice(a) - getEffectiveProductPrice(b));
+    filtered.sort((a,b)=>convertCurrencyAmount(getEffectiveProductPrice(a),a.currency||"EGP",selectedDisplayCurrency)-convertCurrencyAmount(getEffectiveProductPrice(b),b.currency||"EGP",selectedDisplayCurrency));
   } else if (productSortMode === "price-desc") {
-    filtered.sort((a, b) => getEffectiveProductPrice(b) - getEffectiveProductPrice(a));
+    filtered.sort((a,b)=>convertCurrencyAmount(getEffectiveProductPrice(b),b.currency||"EGP",selectedDisplayCurrency)-convertCurrencyAmount(getEffectiveProductPrice(a),a.currency||"EGP",selectedDisplayCurrency));
   } else if (productSortMode === "newest") {
     filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
   }

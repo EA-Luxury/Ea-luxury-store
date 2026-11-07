@@ -96,6 +96,7 @@ let cart = (() => { try { const saved = JSON.parse(localStorage.getItem("eaLuxur
 let appliedCoupon = null;
 let lastCouponCartFingerprint = "";
 let selectedCategory = "الكل";
+let selectedBrand = "الكل";
 let storefrontSettings = {};
 let selectedDisplayCurrency = (() => { try { return localStorage.getItem("eaLuxuryDisplayCurrency") === "AED" ? "AED" : "EGP"; } catch (_) { return "EGP"; } })();
 function getAedToEgpRate() { const rate=Number(storefrontSettings?.aedToEgpRate||14.67); return Number.isFinite(rate)&&rate>0?rate:14.67; }
@@ -572,6 +573,7 @@ function normalizeStoreSearch(value) {
 // عرض المنتجات ومعرض الصور
 function showProducts() {
   let filtered = selectedCategory === "الكل" ? [...products] : products.filter(p => p.category === selectedCategory);
+  if (selectedBrand !== "الكل") filtered = filtered.filter(p => String(p.brand || "").trim() === selectedBrand);
   if (selectedProductCategories.length) filtered = filtered.filter(p => selectedProductCategories.includes(p.category));
   if (productSearchTerm) {
     const terms = normalizeStoreSearch(productSearchTerm).split(/\\s+/).filter(Boolean);
@@ -835,6 +837,24 @@ function renderHomeCollections() {
     recentGrid.innerHTML = recentProducts.map(item => makeTile(item)).join("");
   }
   renderCategoryShowcase();
+  renderBrandShowcase();
+}
+
+function renderBrandShowcase() {
+  const host = document.getElementById("brandShowcaseGrid");
+  const section = document.getElementById("brandsSection");
+  if (!host || !section || !Array.isArray(products)) return;
+  const counts = new Map();
+  products.forEach(product => { const brand = String(product.brand || "").trim(); if (brand) counts.set(brand, (counts.get(brand) || 0) + 1); });
+  const brands = [...counts.entries()].sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], "ar"));
+  section.hidden = brands.length === 0;
+  host.innerHTML = brands.map(entry => {
+    const brand = entry[0], count = entry[1];
+    const product = products.find(item => String(item.brand || "").trim() === brand && getProductImages(item).length);
+    const image = product ? getProductImages(product)[0] : "";
+    const imageMarkup = image ? '<img src="' + escapeHTML(image) + '" alt="" loading="lazy">' : '<span>EA</span>';
+    return '<button type="button" class="brand-showcase-card' + (selectedBrand === brand ? " active" : "") + '" data-showcase-brand="' + escapeHTML(brand) + '" aria-pressed="' + (selectedBrand === brand) + '"><span class="brand-showcase-image">' + imageMarkup + '</span><span class="brand-showcase-copy"><strong>' + escapeHTML(brand) + '</strong><small>' + count.toLocaleString("ar-EG") + ' منتج</small><span>تسوق الماركة ←</span></span></button>';
+  }).join("");
 }
 
 // بطاقات أقسام مرئية بصور منتجات فعلية، وتستخدم نفس أزرار تصفية القسم الحالية.
@@ -865,6 +885,18 @@ function renderCategoryShowcase() {
     `;
   }).join("");
 }
+
+document.getElementById("brandShowcaseGrid")?.addEventListener("click", event => {
+  const card = event.target.closest("[data-showcase-brand]");
+  if (!card) return;
+  selectedBrand = card.dataset.showcaseBrand || "الكل";
+  selectedCategory = "الكل";
+  const categoryNav = document.getElementById("categoryNavigation");
+  categoryNav?.querySelectorAll("[data-category]").forEach(item => item.classList.toggle("active", item.dataset.category === "الكل"));
+  document.querySelectorAll("[data-showcase-brand]").forEach(item => { const active = item.dataset.showcaseBrand === selectedBrand; item.classList.toggle("active", active); item.setAttribute("aria-pressed", String(active)); });
+  showProducts();
+  document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
 
 document.getElementById("categoryShowcaseGrid")?.addEventListener("click", event => {
   const card = event.target.closest("[data-showcase-category]");
@@ -1123,6 +1155,8 @@ if (categoryNavigation) {
     const button = event.target.closest(".category");
     if (!button || !categoryNavigation.contains(button)) return;
     selectedCategory = button.dataset.category || "الكل";
+    selectedBrand = "الكل";
+    document.querySelectorAll("[data-showcase-brand]").forEach(item => { item.classList.remove("active"); item.setAttribute("aria-pressed","false"); });
     categoryNavigation.querySelectorAll(".category").forEach(item =>
       item.classList.toggle("active", item === button)
     );
@@ -1229,7 +1263,8 @@ const clearFiltersButton=document.getElementById("clearAdvancedFilters");
 if(clearFiltersButton) clearFiltersButton.addEventListener("click",()=>{
   selectedProductSizes=[];selectedProductColors=[];selectedProductCategories=[];
   filterMinPrice="";filterMaxPrice="";filterAvailableOnly=false;filterOffersOnly=false;
-  selectedCategory="الكل";
+  selectedCategory="الكل";selectedBrand="الكل";
+  document.querySelectorAll("[data-showcase-brand]").forEach(item=>{item.classList.remove("active");item.setAttribute("aria-pressed","false");});
   if(categoryNavigation) categoryNavigation.querySelectorAll(".category").forEach(item=>item.classList.toggle("active",item.dataset.category==="الكل"));
   syncAdvancedFilterControls();showProducts();
 });

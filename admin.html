@@ -71,6 +71,7 @@ main{max-width:1180px}
 .statusReportItem strong{font-size:22px;color:#171717}
 @media(max-width:600px){.reportToolbar{grid-template-columns:1fr 1fr}.reportToolbar label{grid-column:1/-1}.reportToolbar button{grid-column:1/-1}.salesTrend{gap:4px;padding:8px}.salesTrendDay{height:145px}.salesTrendDay strong{font-size:9px}.salesTrendDay small{font-size:9px}}
 
+.reportTable td:last-child{white-space:nowrap}.reportTable{min-width:560px}
 @media print{body{background:#fff}}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #d6b36a;outline-offset:2px}
 @media(max-width:760px){main{margin:10px auto;padding:10px}section{padding:15px}.statsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.statCard{padding:13px}.statCard strong{font-size:23px}.adminNav{margin-inline:-10px}}
@@ -103,8 +104,10 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <article class="statCard"><span>عدد الطلبات المكتملة</span><strong id="reportCompletedCount">—</strong></article>
 <article class="statCard"><span>متوسط الطلب المكتمل</span><strong id="reportAverageOrder">—</strong></article>
 <article class="statCard"><span>قيمة الطلبات غير الملغاة وغير المكتملة</span><strong id="reportPendingValue">—</strong><small>قيمة قيد التنفيذ وليست مبيعات محققة</small></article>
+<article class="statCard"><span>مجمل ربح المنتجات المسجل</span><strong id="reportGrossProfit">—</strong><small>قبل المصروفات والشحن والمرتجعات</small></article>
+<article class="statCard"><span>طلبات مكتملة تحتاج تسجيل تكلفة</span><strong id="reportMissingCosts">—</strong><small>لا تدخل في حساب الربح حتى تسجيل التكلفة</small></article>
 </div>
-<div class="reportNotice"><strong>الأرباح:</strong> لا يمكن حساب صافي أو مجمل الربح بدقة حتى نسجل تكلفة شراء كل منتج. لن نعرض تقديرات غير مؤكدة.</div>
+<div class="reportNotice"><strong>تنبيه محاسبي:</strong> مجمل الربح المعروض محسوب فقط لبنود الطلبات التي سُجلت لها تكلفة شراء وقت الطلب. لا يشمل مصاريف التشغيل أو تكلفة الشحن الفعلية أو الضرائب، ولا يمثل صافي الربح. الطلبات القديمة التي لا تحتوي على تكلفة ستظهر كبيانات ناقصة دون تخمين.</div>
 <h3>مبيعات آخر 7 أيام</h3><div id="salesTrend" class="salesTrend" aria-live="polite">جاري تجهيز التقرير...</div>
 <h3>أفضل المنتجات مبيعًا</h3><div id="topProductsReport" class="reportTableWrap">لا توجد بيانات كافية.</div>
 <h3>توزيع الطلبات حسب الحالة</h3><div id="orderStatusReport" class="statusReportGrid"></div>
@@ -119,6 +122,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 </select>
 <input id="price" type="number" min="1" placeholder="السعر بالجنيه">
 <input id="salePrice" type="number" min="0.01" step="0.01" placeholder="سعر العرض بعد الخصم (اختياري)">
+<input id="purchaseCost" type="number" min="0" step="0.01" placeholder="تكلفة شراء القطعة الواحدة بالجنيه (مطلوب)">
 <input id="stock" type="number" min="0" step="1" placeholder="الكمية الإجمالية القديمة للمنتج">
 <textarea id="description" rows="4" placeholder="وصف المنتج وتفاصيل الخامة والتصميم..."></textarea>
 <input id="sizes" placeholder="المقاسات مثال: M, L, XL">
@@ -374,6 +378,8 @@ const category=document.getElementById("category").value;
 const price=Number(document.getElementById("price").value);
 const salePriceValue=document.getElementById("salePrice").value.trim();
 const salePrice=salePriceValue===""?null:Number(salePriceValue);
+const purchaseCostValue=document.getElementById("purchaseCost").value.trim();
+const purchaseCost=purchaseCostValue===""?null:Number(purchaseCostValue);
 const stockValue=document.getElementById("stock").value;
 const stock=Number(stockValue);
 const description=document.getElementById("description").value.trim();
@@ -382,8 +388,8 @@ const sizes=document.getElementById("sizes").value.split(",").map(x=>x.trim()).f
 const colors=document.getElementById("colors").value.split(",").map(x=>x.trim()).filter(Boolean);
 const files=Array.from(document.getElementById("photo").files);
 
-if(!name||!Number.isFinite(price)||price<=0||(salePrice!==null&&(!Number.isFinite(salePrice)||salePrice<=0||salePrice>=price))||stockValue===""||!Number.isInteger(stock)||stock<0||files.length===0){
-msg.textContent="اكتب الاسم والسعر والكمية واختر صورة واحدة على الأقل.";
+if(!name||!Number.isFinite(price)||price<=0||(salePrice!==null&&(!Number.isFinite(salePrice)||salePrice<=0||salePrice>=price))||purchaseCost===null||!Number.isFinite(purchaseCost)||purchaseCost<0||stockValue===""||!Number.isInteger(stock)||stock<0||files.length===0){
+msg.textContent="اكتب الاسم والسعر وتكلفة الشراء والكمية واختر صورة واحدة على الأقل.";
 return;
 }
 
@@ -420,7 +426,7 @@ imageUrls.push(imageData.publicUrl);
 
 msg.textContent="جاري حفظ بيانات المنتج...";
 
-const {error}=await client.from("products").insert({
+const {data:createdProduct,error}=await client.from("products").insert({
 name:name,
 category:category,
 price:price,
@@ -432,13 +438,16 @@ colors:colors,
 image_url:imageUrls[0],
 image_urls:imageUrls,
 active:true
-});
+}).select("id").single();
 
 if(error)throw error;
 
-msg.textContent="تم إضافة المنتج بنجاح وحفظ "+imageUrls.length+" صور.";
+const {error:costError}=await client.from("product_costs").upsert({product_id:createdProduct.id,purchase_cost:purchaseCost,updated_at:new Date().toISOString()},{onConflict:"product_id"});
+if(costError)throw new Error("تم إنشاء المنتج لكن تعذر حفظ تكلفة الشراء. يمكنك إدخالها من بطاقة المنتج: "+costError.message);
 
-["name","price","salePrice","stock","description","sizes","colors","photo"].forEach(id=>{
+msg.textContent="تم إضافة المنتج بنجاح وحفظ التكلفة و"+imageUrls.length+" صور.";
+
+["name","price","salePrice","purchaseCost","stock","description","sizes","colors","photo"].forEach(id=>{
 document.getElementById(id).value="";
 });
 
@@ -528,6 +537,17 @@ saveButton.type="button";
 saveButton.textContent="حفظ الكمية الإجمالية";
 saveButton.onclick=()=>updateStock(p.id,stockInput.value);
 
+const purchaseCostInput=document.createElement("input");
+purchaseCostInput.type="number";
+purchaseCostInput.min="0";
+purchaseCostInput.step="0.01";
+purchaseCostInput.placeholder="تكلفة شراء القطعة الواحدة بالجنيه";
+purchaseCostInput.value="";
+const savePurchaseCostButton=document.createElement("button");
+savePurchaseCostButton.type="button";
+savePurchaseCostButton.textContent="حفظ تكلفة الشراء";
+savePurchaseCostButton.onclick=()=>updateProductPurchaseCost(p.id,purchaseCostInput.value);
+
 const salePriceInput=document.createElement("input");
 salePriceInput.type="number";
 salePriceInput.min="0.01";
@@ -560,7 +580,7 @@ loadVariants();
 document.getElementById("variantsSection").scrollIntoView({behavior:"smooth"});
 };
 
-div.append(title,detail,quantityLabel,imageCount,descriptionInput,saveDescriptionButton,stockInput,saveButton,salePriceInput,saveSalePriceButton,activeButton,variantsButton,deleteButton);
+div.append(title,detail,quantityLabel,imageCount,purchaseCostInput,savePurchaseCostButton,descriptionInput,saveDescriptionButton,stockInput,saveButton,salePriceInput,saveSalePriceButton,activeButton,variantsButton,deleteButton);
 box.append(div);
 });
 
@@ -588,6 +608,19 @@ return;
 }
 
 alert("تم تحديث الكمية الإجمالية القديمة للمنتج.");
+await loadProducts();
+}
+
+async function updateProductPurchaseCost(id,value){
+if(!adminReady)return;
+const cost=String(value??"").trim()===""?null:Number(value);
+if(cost===null||!Number.isFinite(cost)||cost<0){
+alert("اكتب تكلفة شراء صحيحة، صفر أو أكثر.");
+return;
+}
+const {error}=await client.from("product_costs").upsert({product_id:id,purchase_cost:cost,updated_at:new Date().toISOString()},{onConflict:"product_id"});
+if(error){alert("تعذر حفظ تكلفة الشراء: "+error.message);return;}
+alert("تم حفظ تكلفة الشراء. ستُستخدم في الطلبات الجديدة فقط، ولن تغيّر حسابات الطلبات القديمة.");
 await loadProducts();
 }
 
@@ -974,6 +1007,9 @@ const completedProducts=sum(completed.map(productTotal));
 const completedShipping=sum(completed.map(order=>order.shipping_fee));
 const completedRevenue=sum(completed.map(order=>order.total));
 const pendingValue=sum(active.map(order=>order.total));
+const costedCompletedItems=completed.flatMap(order=>(order.order_items||[]).filter(item=>item.unit_cost!==null&&item.unit_cost!==undefined).map(item=>({item,order})));
+const grossProfit=sum(costedCompletedItems.map(({item})=>(Number(item.unit_price||0)-Number(item.unit_cost||0))*Number(item.quantity||0)));
+const ordersMissingCosts=completed.filter(order=>(order.order_items||[]).some(item=>item.unit_cost===null||item.unit_cost===undefined)).length;
 const money=value=>Number(value||0).toLocaleString("ar-EG",{maximumFractionDigits:2})+" ج.م";
 const put=(id,value)=>{const node=document.getElementById(id);if(node)node.textContent=value;};
 put("reportCompletedRevenue",money(completedRevenue));
@@ -982,13 +1018,17 @@ put("reportShippingRevenue",money(completedShipping));
 put("reportCompletedCount",String(completed.length));
 put("reportAverageOrder",money(completed.length?completedRevenue/completed.length:0));
 put("reportPendingValue",money(pendingValue));
+put("reportGrossProfit",money(grossProfit));
+put("reportMissingCosts",String(ordersMissingCosts));
 
 const productMap=new Map();
 completed.forEach(order=>(order.order_items||[]).forEach(item=>{
 const key=String(item.product_id||item.product_name||"غير معروف");
-const current=productMap.get(key)||{name:item.product_name||"منتج غير معروف",quantity:0,revenue:0};
+const current=productMap.get(key)||{name:item.product_name||"منتج غير معروف",quantity:0,revenue:0,profit:0,hasCost:true};
 current.quantity+=Number(item.quantity||0);
 current.revenue+=Number(item.unit_price||0)*Number(item.quantity||0);
+if(item.unit_cost===null||item.unit_cost===undefined)current.hasCost=false;
+else current.profit+=(Number(item.unit_price||0)-Number(item.unit_cost||0))*Number(item.quantity||0);
 productMap.set(key,current);
 }));
 const top=[...productMap.values()].sort((a,b)=>b.quantity-a.quantity||b.revenue-a.revenue).slice(0,10);
@@ -999,10 +1039,10 @@ if(!top.length){topBox.textContent="لا توجد طلبات مكتملة في �
 else{
 const table=document.createElement("table");table.className="reportTable";
 const thead=document.createElement("thead");const headRow=document.createElement("tr");
-["المنتج","الكمية المباعة","قيمة المبيعات"].forEach(label=>{const th=document.createElement("th");th.textContent=label;headRow.append(th);});
+["المنتج","الكمية المباعة","قيمة المبيعات","مجمل الربح المسجل"].forEach(label=>{const th=document.createElement("th");th.textContent=label;headRow.append(th);});
 thead.append(headRow);table.append(thead);
 const tbody=document.createElement("tbody");
-top.forEach(item=>{const tr=document.createElement("tr");[item.name,item.quantity.toLocaleString("ar-EG"),money(item.revenue)].forEach(value=>{const td=document.createElement("td");td.textContent=String(value);tr.append(td);});tbody.append(tr);});
+top.forEach(item=>{const tr=document.createElement("tr");[item.name,item.quantity.toLocaleString("ar-EG"),money(item.revenue),item.hasCost?money(item.profit):"تكلفة ناقصة"].forEach(value=>{const td=document.createElement("td");td.textContent=String(value);tr.append(td);});tbody.append(tr);});
 table.append(tbody);topBox.append(table);
 }
 }

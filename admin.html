@@ -76,6 +76,8 @@ main{max-width:1180px}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #d6b36a;outline-offset:2px}
 @media(max-width:760px){main{margin:10px auto;padding:10px}section{padding:15px}.statsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.statCard{padding:13px}.statCard strong{font-size:23px}.adminNav{margin-inline:-10px}}
 .orderCancellationReason{padding:10px 12px;border-right:3px solid #c5a15b;border-radius:6px;background:#f8f3e8;color:#654d25;font-weight:600}
+
+.bulk-import-preview{width:100%;border-collapse:collapse;min-width:680px;font-size:13px}.bulk-import-preview th,.bulk-import-preview td{padding:9px;border-bottom:1px solid #eee5d5;text-align:right;vertical-align:top}.bulk-import-preview th{background:#f8f4eb;color:#74664e}.bulk-import-error{color:#a52a2a;font-weight:700}.bulk-import-ok{color:#287a36;font-weight:700}.bulk-import-summary{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.bulk-import-summary span{padding:8px 12px;border:1px solid #eee5d5;border-radius:7px;background:#fcfaf6}
 </style>
 </head>
 <body>
@@ -92,7 +94,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 <div id="dashboard" hidden>
 
-<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#salesReportsSection">تقارير المبيعات</a><a href="#expensesSection">المصروفات</a><a href="#couponsSection">كوبونات الخصم</a><a href="#customersSection">العملاء</a><a href="#reviewsSection">تقييمات العملاء</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#settingsSection">إعدادات المتجر</a><a href="#ordersSection">الطلبات</a></nav>
+<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#salesReportsSection">تقارير المبيعات</a><a href="#expensesSection">المصروفات</a><a href="#couponsSection">كوبونات الخصم</a><a href="#customersSection">العملاء</a><a href="#reviewsSection">تقييمات العملاء</a><a href="#bulkImportSection">استيراد بالجملة</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#settingsSection">إعدادات المتجر</a><a href="#ordersSection">الطلبات</a></nav>
 <section id="overviewSection" class="overviewSection"><h2>ملخص المتجر</h2><div class="statsGrid"><article class="statCard"><span>إجمالي المنتجات</span><strong id="statProducts">—</strong></article><article class="statCard"><span>منتجات منخفضة المخزون</span><strong id="statLowStock">—</strong></article><article class="statCard"><span>إجمالي الطلبات</span><strong id="statOrders">—</strong></article><article class="statCard"><span>طلبات تحتاج متابعة</span><strong id="statPendingOrders">—</strong></article><article class="statCard"><span>الطلبات الملغاة</span><strong id="statCancelledOrders">—</strong></article></div><p class="status-text">الأرقام تتحدث عند تحميل المنتجات والطلبات.</p></section>
 <section id="salesReportsSection" class="overviewSection">
 <h2>تقارير المبيعات والأداء</h2>
@@ -176,6 +178,22 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <button type="button" class="secondary" onclick="loadProductReviews()">تحديث التقييمات</button>
 <div id="productReviewsAdminList">جاري تحميل التقييمات...</div>
 </section>
+<section id="bulkImportSection" class="overviewSection">
+<h2>استيراد المنتجات بالجملة</h2>
+<p class="status-text">جهّز ملف CSV من Excel يحتوي على المنتجات كلها، ثم ارفعه هنا. راجع المعاينة والأخطاء قبل بدء الاستيراد. لن يتم تعديل أو حذف أي منتج موجود.</p>
+<div class="reportNotice"><strong>طريقة الاستخدام:</strong> نزّل النموذج، وافتحه في Excel، وأدخل كل منتج في صف مستقل. ضع روابط الصور المباشرة مفصولة بعلامة | بحد أقصى 5 صور. احفظ الملف بصيغة CSV UTF-8 ثم ارفعه.</div>
+<button type="button" class="secondary" onclick="downloadBulkProductsTemplate()">تنزيل نموذج Excel (CSV)</button>
+<label for="bulkProductsFile">اختيار ملف المنتجات</label>
+<input id="bulkProductsFile" type="file" accept=".csv,text/csv">
+<p id="bulkImportFileName" class="status-text">لم يتم اختيار ملف بعد.</p>
+<div id="bulkImportPreview" class="reportTableWrap" aria-live="polite">ارفع ملف CSV لعرض معاينة المنتجات.</div>
+<div id="bulkImportActions" hidden>
+<button type="button" id="startBulkImportButton" onclick="startBulkProductImport()">استيراد المنتجات المعاينة</button>
+</div>
+<p id="bulkImportMsg" class="status-text" aria-live="polite"></p>
+<div id="bulkImportResults"></div>
+</section>
+
 <section id="addProductSection">
 <h2>إضافة منتج جديد</h2>
 <input id="name" placeholder="اسم المنتج">
@@ -442,6 +460,177 @@ console.error(error);
 document.getElementById("loginMsg").textContent=
 "حدث خطأ أثناء فحص الصلاحيات: "+error.message;
 }
+}
+
+
+let bulkImportRows=[];
+let bulkImportFileName="";
+
+function downloadBulkProductsTemplate(){
+const headers=["name","category","price","purchase_cost","stock","description","sizes","colors","image_urls","sale_price","sale_starts_at","sale_ends_at"];
+const csv="\\uFEFF"+headers.join(",")+"\\r\\n";
+const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+const url=URL.createObjectURL(blob);
+const link=document.createElement("a");
+link.href=url;
+link.download="ea-luxury-products-template.csv";
+document.body.appendChild(link);
+link.click();
+link.remove();
+URL.revokeObjectURL(url);
+}
+
+function parseBulkCSV(text){
+const input=String(text||"").replace(/^\\uFEFF/,"");
+const rows=[];
+let row=[],field="",quoted=false;
+for(let i=0;i<input.length;i++){
+const ch=input[i],next=input[i+1];
+if(quoted){
+if(ch==='"'&&next==='"'){field+='"';i++;}
+else if(ch==='"')quoted=false;
+else field+=ch;
+}else if(ch==='"'&&field==="")quoted=true;
+else if(ch===","){row.push(field);field="";}
+else if(ch==="\\n"){row.push(field.replace(/\\r$/,""));if(row.some(v=>v.trim()))rows.push(row);row=[];field="";}
+else field+=ch;
+}
+row.push(field.replace(/\\r$/,""));
+if(row.some(v=>v.trim()))rows.push(row);
+if(quoted)throw new Error("يوجد حقل نصي مفتوح بعلامة اقتباس ولم يتم إغلاقه.");
+if(!rows.length)throw new Error("الملف فارغ.");
+const headers=rows.shift().map(v=>v.trim().toLowerCase());
+const required=["name","category","price","purchase_cost","stock","image_urls"];
+const missing=required.filter(key=>!headers.includes(key));
+if(missing.length)throw new Error("أعمدة أساسية ناقصة: "+missing.join(", "));
+return rows.map((values,index)=>{
+const item={_row:index+2};
+headers.forEach((key,i)=>item[key]=(values[i]||"").trim());
+return item;
+}).filter(item=>Object.keys(item).some(key=>key!=="_row"&&item[key]));
+}
+
+function validateBulkProductRow(item){
+const errors=[];
+const price=Number(item.price),cost=Number(item.purchase_cost),stock=Number(item.stock);
+const saleRaw=item.sale_price||"";
+const sale=saleRaw===""?null:Number(saleRaw);
+if(!item.name)errors.push("اسم المنتج مطلوب");
+if(!item.category)errors.push("القسم مطلوب");
+if(item.price===""||!Number.isFinite(price)||price<=0)errors.push("السعر غير صحيح");
+if(item.purchase_cost===""||!Number.isFinite(cost)||cost<0)errors.push("تكلفة الشراء غير صحيحة");
+if(item.stock===""||!Number.isInteger(stock)||stock<0)errors.push("الكمية يجب أن تكون صفرًا أو عددًا صحيحًا");
+if(sale!==null&&(!Number.isFinite(sale)||sale<=0||sale>=price))errors.push("سعر العرض يجب أن يكون أكبر من صفر وأقل من السعر الأساسي");
+if(sale===null&&(item.sale_starts_at||item.sale_ends_at))errors.push("لا يمكن تحديد موعد عرض دون سعر عرض");
+const start=item.sale_starts_at?new Date(item.sale_starts_at):null;
+const end=item.sale_ends_at?new Date(item.sale_ends_at):null;
+if(start&&!Number.isFinite(start.getTime()))errors.push("تاريخ بداية العرض غير صحيح");
+if(end&&!Number.isFinite(end.getTime()))errors.push("تاريخ نهاية العرض غير صحيح");
+if(start&&end&&end<=start)errors.push("نهاية العرض يجب أن تكون بعد بدايته");
+const images=(item.image_urls||"").split("|").map(v=>v.trim()).filter(Boolean);
+if(!images.length)errors.push("رابط صورة واحد على الأقل مطلوب");
+if(images.length>5)errors.push("الحد الأقصى 5 صور");
+if(images.some(url=>{try{return !["http:","https:"].includes(new URL(url).protocol);}catch(_){return true;}}))errors.push("راجع روابط الصور؛ يجب أن تكون روابط http أو https صحيحة");
+return errors;
+}
+
+function renderBulkImportPreview(){
+const box=document.getElementById("bulkImportPreview");
+const actions=document.getElementById("bulkImportActions");
+const valid=bulkImportRows.filter(item=>!item._errors.length).length;
+const invalid=bulkImportRows.length-valid;
+if(!bulkImportRows.length){box.textContent="لا توجد صفوف منتجات صالحة للمعاينة.";actions.hidden=true;return;}
+const summary=document.createElement("div");
+summary.className="bulk-import-summary";
+summary.innerHTML='<span>إجمالي الصفوف: <strong>'+bulkImportRows.length+'</strong></span><span class="bulk-import-ok">جاهز: '+valid+'</span><span class="bulk-import-error">يحتاج مراجعة: '+invalid+'</span>';
+const wrap=document.createElement("div");wrap.className="reportTableWrap";
+const table=document.createElement("table");table.className="bulk-import-preview";
+const head=document.createElement("thead");head.innerHTML="<tr><th>صف الملف</th><th>اسم المنتج</th><th>القسم</th><th>السعر</th><th>الكمية</th><th>الصور</th><th>الحالة</th></tr>";
+const body=document.createElement("tbody");
+bulkImportRows.slice(0,100).forEach(item=>{
+const tr=document.createElement("tr");
+const vals=[String(item._row),item.name||"",item.category||"",item.price||"",item.stock||"",String((item.image_urls||"").split("|").filter(Boolean).length)];
+vals.forEach(value=>{const td=document.createElement("td");td.textContent=value;tr.appendChild(td);});
+const status=document.createElement("td");status.className=item._errors.length?"bulk-import-error":"bulk-import-ok";status.textContent=item._errors.length?item._errors.join("، "):"جاهز للاستيراد";tr.appendChild(status);
+body.appendChild(tr);
+});
+table.append(head,body);wrap.appendChild(table);box.replaceChildren(summary,wrap);
+if(bulkImportRows.length>100){const note=document.createElement("p");note.className="status-text";note.textContent="تظهر أول 100 صف في المعاينة؛ سيتم فحص كل الصفوف عند الاستيراد.";box.appendChild(note);}
+actions.hidden=valid===0||invalid>0;
+if(invalid>0)actions.hidden=true;
+}
+
+document.getElementById("bulkProductsFile").addEventListener("change",function(){
+const file=this.files&&this.files[0];
+bulkImportRows=[];bulkImportFileName=file?.name||"";
+document.getElementById("bulkImportFileName").textContent=file?file.name:"لم يتم اختيار ملف بعد.";
+document.getElementById("bulkImportMsg").textContent="";
+document.getElementById("bulkImportResults").textContent="";
+document.getElementById("bulkImportActions").hidden=true;
+if(!file)return;
+if(file.size>5*1024*1024){document.getElementById("bulkImportMsg").textContent="حجم الملف أكبر من 5 ميجابايت.";this.value="";return;}
+const reader=new FileReader();
+reader.onload=()=>{
+try{
+bulkImportRows=parseBulkCSV(reader.result).map(item=>({...item,_errors:validateBulkProductRow(item)}));
+const seen=new Set();
+bulkImportRows.forEach(item=>{
+const key=String(item.name||"").normalize("NFKC").toLocaleLowerCase("ar").replace(/\\s+/g," ").trim();
+if(key&&seen.has(key))item._errors.push("اسم مكرر داخل الملف");
+if(key)seen.add(key);
+});
+renderBulkImportPreview();
+document.getElementById("bulkImportMsg").textContent="تمت قراءة الملف. راجع المعاينة قبل الاستيراد.";
+}catch(error){document.getElementById("bulkImportPreview").textContent="تعذر قراءة الملف: "+error.message;document.getElementById("bulkImportMsg").textContent=error.message;}
+};
+reader.onerror=()=>{document.getElementById("bulkImportMsg").textContent="تعذرت قراءة الملف."};
+reader.readAsText(file,"UTF-8");
+});
+
+async function startBulkProductImport(){
+if(!adminReady)return;
+const msg=document.getElementById("bulkImportMsg");
+const button=document.getElementById("startBulkImportButton");
+const valid=bulkImportRows.filter(item=>!item._errors.length);
+if(!valid.length||valid.length!==bulkImportRows.length){msg.textContent="صحح كل الأخطاء في الملف ثم ارفعه مرة أخرى.";return;}
+if(!confirm("سيتم إضافة "+valid.length+" منتجًا جديدًا. لن يتم تعديل المنتجات الموجودة. هل تريد المتابعة؟"))return;
+button.disabled=true;
+let added=0,skipped=0,failed=0,costFailed=0;
+const details=[];
+try{
+msg.textContent="جاري فحص المنتجات الموجودة...";
+const {data:existing,error:existingError}=await client.from("products").select("name");
+if(existingError)throw existingError;
+const existingNames=new Set((existing||[]).map(p=>String(p.name||"").normalize("NFKC").toLocaleLowerCase("ar").replace(/\\s+/g," ").trim()));
+for(let i=0;i<valid.length;i++){
+const item=valid[i];
+const key=String(item.name).normalize("NFKC").toLocaleLowerCase("ar").replace(/\\s+/g," ").trim();
+if(existingNames.has(key)){skipped++;details.push("تم تخطي الصف "+item._row+" ("+item.name+"): المنتج موجود بالفعل.");continue;}
+try{
+const images=item.image_urls.split("|").map(v=>v.trim()).filter(Boolean);
+const sale=item.sale_price===""?null:Number(item.sale_price);
+const start=item.sale_starts_at?new Date(item.sale_starts_at).toISOString():null;
+const end=item.sale_ends_at?new Date(item.sale_ends_at).toISOString():null;
+const {data:created,error}=await client.from("products").insert({
+name:item.name,category:item.category,price:Number(item.price),sale_price:sale,
+sale_starts_at:start,sale_ends_at:end,stock:Number(item.stock),description:item.description||"",
+sizes:(item.sizes||"").split("|").map(v=>v.trim()).filter(Boolean),
+colors:(item.colors||"").split("|").map(v=>v.trim()).filter(Boolean),
+image_url:images[0],image_urls:images,active:true
+}).select("id").single();
+if(error)throw error;
+const {error:costError}=await client.from("product_costs").upsert({product_id:created.id,purchase_cost:Number(item.purchase_cost),updated_at:new Date().toISOString()},{onConflict:"product_id"});
+if(costError){costFailed++;details.push("تمت إضافة "+item.name+" لكن لم تُحفظ تكلفة الشراء: "+costError.message);}
+existingNames.add(key);added++;
+}catch(error){failed++;details.push("فشل الصف "+item._row+" ("+item.name+"): "+error.message);}
+msg.textContent="تمت معالجة "+(i+1)+" من "+valid.length+" منتج...";
+}
+await loadProducts();
+document.getElementById("bulkImportResults").textContent=details.length?details.join("\\n"):"اكتمل الاستيراد دون أخطاء.";
+msg.textContent="انتهى الاستيراد: تمت إضافة "+added+"، تم تخطي الموجود "+skipped+"، فشل "+failed+"، تعذر حفظ التكلفة لـ "+costFailed+".";
+if(added===valid.length){bulkImportRows=[];document.getElementById("bulkProductsFile").value="";document.getElementById("bulkImportPreview").textContent="اكتمل الاستيراد. يمكنك رفع ملف آخر.";}
+}catch(error){msg.textContent="تعذر بدء الاستيراد: "+error.message;}
+finally{button.disabled=false;}
 }
 
 async function addProduct(){

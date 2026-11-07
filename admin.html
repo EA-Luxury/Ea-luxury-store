@@ -1046,7 +1046,7 @@ function filterOrders(){
 const query=document.getElementById("adminOrderSearch").value.trim().toLocaleLowerCase("ar");
 const status=document.getElementById("adminOrderStatusFilter").value;
 const governorate=document.getElementById("adminOrderGovernorateFilter").value;
-const cards=[...document.querySelectorAll(".orderAdminCard")];
+const cards=[...document.querySelectorAll("#ordersList .orderAdminCard")];
 let visible=0;
 cards.forEach(card=>{
 const matchesText=!query||String(card.dataset.search||"").includes(query);

@@ -181,9 +181,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <section id="bulkImportSection" class="overviewSection">
 <h2>استيراد المنتجات بالجملة</h2>
 <p class="status-text">جهّز ملف CSV من Excel يحتوي على المنتجات كلها، ثم ارفعه هنا. راجع المعاينة والأخطاء قبل بدء الاستيراد. لن يتم تعديل أو حذف أي منتج موجود.</p>
-<div class="reportNotice"><strong>طريقة الاستخدام:</strong> نزّل النموذج، وافتحه في Excel، وأدخل كل منتج في صف مستقل. ضع روابط الصور المباشرة مفصولة بعلامة | بحد أقصى 5 صور. احفظ الملف بصيغة CSV UTF-8 ثم ارفعه.</div>
+<div class="reportNotice"><strong>طريقة الاستخدام:</strong> نزّل النموذج، وافتحه في Excel، وأدخل كل منتج في صف مستقل. ضع روابط الصور المباشرة في عمود image_urls، أو اختر صورًا من جهازك بجوار كل منتج في المعاينة. الحد الأقصى 5 صور للمنتج. احفظ الملف بصيغة CSV UTF-8 ثم ارفعه.</div>
 <button type="button" class="secondary" onclick="downloadBulkProductsTemplate()">تنزيل نموذج Excel (CSV)</button>
-<p class="status-text">أسماء الأعمدة في النموذج: name للاسم، category للقسم، price للسعر، purchase_cost للتكلفة، stock للكمية، description للوصف، sizes وcolors مفصولة بعلامة |، image_urls لروابط الصور، وsale_price مع sale_starts_at وsale_ends_at للعرض الاختياري. صيغة التاريخ: YYYY-MM-DD أو YYYY-MM-DDTHH:MM.</p>
+<p class="status-text">أسماء الأعمدة في النموذج: name للاسم، category للقسم، price للسعر، purchase_cost للتكلفة، stock للكمية، description للوصف، sizes وcolors مفصولة بعلامة |، image_urls لروابط الصور (اختياري عند اختيار الصور من الجهاز في المعاينة)، وsale_price مع sale_starts_at وsale_ends_at للعرض الاختياري. صيغة التاريخ: YYYY-MM-DD أو YYYY-MM-DDTHH:MM.</p>
 <label for="bulkProductsFile">اختيار ملف المنتجات</label>
 <input id="bulkProductsFile" type="file" accept=".csv,text/csv">
 <p id="bulkImportFileName" class="status-text">لم يتم اختيار ملف بعد.</p>
@@ -535,31 +535,63 @@ if(images.some(url=>{try{return !["http:","https:"].includes(new URL(url).protoc
 return errors;
 }
 
+function updateBulkImportReadiness(){
+const valid=bulkImportRows.filter(item=>!item._errors.length).length;
+const invalid=bulkImportRows.length-valid;
+const summary=document.querySelector("#bulkImportPreview .bulk-import-summary");
+if(summary)summary.innerHTML='<span>إجمالي الصفوف: <strong>'+bulkImportRows.length+'</strong></span><span class="bulk-import-ok">جاهز: '+valid+'</span><span class="bulk-import-error">يحتاج مراجعة: '+invalid+'</span>';
+document.getElementById("bulkImportActions").hidden=valid===0||invalid>0;
+}
+
 function renderBulkImportPreview(){
 const box=document.getElementById("bulkImportPreview");
 const actions=document.getElementById("bulkImportActions");
-const valid=bulkImportRows.filter(item=>!item._errors.length).length;
-const invalid=bulkImportRows.length-valid;
 if(!bulkImportRows.length){box.textContent="لا توجد صفوف منتجات صالحة للمعاينة.";actions.hidden=true;return;}
 const summary=document.createElement("div");
 summary.className="bulk-import-summary";
-summary.innerHTML='<span>إجمالي الصفوف: <strong>'+bulkImportRows.length+'</strong></span><span class="bulk-import-ok">جاهز: '+valid+'</span><span class="bulk-import-error">يحتاج مراجعة: '+invalid+'</span>';
 const wrap=document.createElement("div");wrap.className="reportTableWrap";
 const table=document.createElement("table");table.className="bulk-import-preview";
-const head=document.createElement("thead");head.innerHTML="<tr><th>صف الملف</th><th>اسم المنتج</th><th>القسم</th><th>السعر</th><th>الكمية</th><th>الصور</th><th>الحالة</th></tr>";
+const head=document.createElement("thead");head.innerHTML="<tr><th>صف الملف</th><th>اسم المنتج</th><th>القسم</th><th>السعر</th><th>الكمية</th><th>روابط الصور</th><th>اختيار صور من الجهاز (حتى 5)</th><th>الحالة</th></tr>";
 const body=document.createElement("tbody");
-bulkImportRows.slice(0,100).forEach(item=>{
+bulkImportRows.forEach(item=>{
 const tr=document.createElement("tr");
+tr.dataset.bulkRow=String(item._row);
 const vals=[String(item._row),item.name||"",item.category||"",item.price||"",item.stock||"",String((item.image_urls||"").split("|").filter(Boolean).length)];
 vals.forEach(value=>{const td=document.createElement("td");td.textContent=value;tr.appendChild(td);});
-const status=document.createElement("td");status.className=item._errors.length?"bulk-import-error":"bulk-import-ok";status.textContent=item._errors.length?item._errors.join("، "):"جاهز للاستيراد";tr.appendChild(status);
+const uploadCell=document.createElement("td");
+const uploadInput=document.createElement("input");
+uploadInput.type="file";uploadInput.accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,image/gif";uploadInput.multiple=true;uploadInput.dataset.bulkImagesRow=String(item._row);uploadInput.setAttribute("aria-label","اختيار صور "+(item.name||"للمنتج"));
+uploadCell.appendChild(uploadInput);
+const uploadHint=document.createElement("small");uploadHint.textContent=item._imageFiles?.length?("تم اختيار "+item._imageFiles.length+" صورة"):"لم يتم اختيار صور";uploadCell.appendChild(uploadHint);
+tr.appendChild(uploadCell);
+const status=document.createElement("td");status.className="bulk-row-status "+(item._errors.length?"bulk-import-error":"bulk-import-ok");status.textContent=item._errors.length?item._errors.join("، "):"جاهز للاستيراد";tr.appendChild(status);
 body.appendChild(tr);
 });
 table.append(head,body);wrap.appendChild(table);box.replaceChildren(summary,wrap);
-if(bulkImportRows.length>100){const note=document.createElement("p");note.className="status-text";note.textContent="تظهر أول 100 صف في المعاينة؛ سيتم فحص كل الصفوف عند الاستيراد.";box.appendChild(note);}
-actions.hidden=valid===0||invalid>0;
-if(invalid>0)actions.hidden=true;
+updateBulkImportReadiness();
 }
+
+document.getElementById("bulkImportPreview").addEventListener("change",function(event){
+const input=event.target.closest("input[data-bulk-images-row]");
+if(!input)return;
+const item=bulkImportRows.find(row=>String(row._row)===input.dataset.bulkImagesRow);
+if(!item)return;
+const files=Array.from(input.files||[]);
+const invalid=files.map(validateImageFile).find(Boolean);
+if(files.length>5){alert("يمكن اختيار 5 صور كحد أقصى لكل منتج.");input.value="";return;}
+if(invalid){alert(invalid);input.value="";return;}
+item._imageFiles=files;
+item._errors=validateBulkProductRow(item);
+const urlCount=(item.image_urls||"").split("|").map(v=>v.trim()).filter(Boolean).length;
+if(urlCount+files.length>5)item._errors.push("إجمالي روابط الصور والصور المختارة لا يزيد عن 5");
+const row=input.closest("tr");
+const hint=input.parentElement.querySelector("small");
+if(hint)hint.textContent=files.length?"تم اختيار "+files.length+" صورة":"لم يتم اختيار صور";
+const status=row.querySelector(".bulk-row-status");
+status.className="bulk-row-status "+(item._errors.length?"bulk-import-error":"bulk-import-ok");
+status.textContent=item._errors.length?item._errors.join("، "):"جاهز للاستيراد";
+updateBulkImportReadiness();
+});
 
 document.getElementById("bulkProductsFile").addEventListener("change",function(){
 const file=this.files&&this.files[0];
@@ -573,7 +605,7 @@ if(file.size>5*1024*1024){document.getElementById("bulkImportMsg").textContent="
 const reader=new FileReader();
 reader.onload=()=>{
 try{
-bulkImportRows=parseBulkCSV(reader.result).map(item=>({...item,_errors:validateBulkProductRow(item)}));
+bulkImportRows=parseBulkCSV(reader.result).map(item=>({...item,_imageFiles:[],_errors:validateBulkProductRow(item)}));
 const seen=new Set();
 bulkImportRows.forEach(item=>{
 const key=String(item.name||"").normalize("NFKC").toLocaleLowerCase("ar").replace(/\s+/g," ").trim();
@@ -607,8 +639,24 @@ for(let i=0;i<valid.length;i++){
 const item=valid[i];
 const key=String(item.name).normalize("NFKC").toLocaleLowerCase("ar").replace(/\s+/g," ").trim();
 if(existingNames.has(key)){skipped++;details.push("تم تخطي الصف "+item._row+" ("+item.name+"): المنتج موجود بالفعل.");continue;}
+let uploadedPaths=[];
+let productCreated=false;
 try{
-const images=item.image_urls.split("|").map(v=>v.trim()).filter(Boolean);
+const images=(item.image_urls||"").split("|").map(v=>v.trim()).filter(Boolean);
+const selectedFiles=Array.isArray(item._imageFiles)?item._imageFiles:[];
+for(let imageIndex=0;imageIndex<selectedFiles.length;imageIndex++){
+const file=selectedFiles[imageIndex];
+const validationError=validateImageFile(file);
+if(validationError)throw new Error(validationError);
+const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+const path="bulk-products/"+Date.now()+"-"+Math.random().toString(36).slice(2)+"-"+imageIndex+"-"+safeName;
+const {error:uploadError}=await client.storage.from("product-images").upload(path,file);
+if(uploadError)throw uploadError;
+uploadedPaths.push(path);
+const {data:imageData}=client.storage.from("product-images").getPublicUrl(path);
+images.push(imageData.publicUrl);
+}
+if(!images.length||images.length>5)throw new Error("يجب توفير صورة واحدة على الأقل وبحد أقصى 5 صور.");
 const sale=item.sale_price===""?null:Number(item.sale_price);
 const start=item.sale_starts_at?new Date(item.sale_starts_at).toISOString():null;
 const end=item.sale_ends_at?new Date(item.sale_ends_at).toISOString():null;
@@ -620,10 +668,17 @@ colors:(item.colors||"").split("|").map(v=>v.trim()).filter(Boolean),
 image_url:images[0],image_urls:images,active:true
 }).select("id").single();
 if(error)throw error;
+productCreated=true;
 const {error:costError}=await client.from("product_costs").upsert({product_id:created.id,purchase_cost:Number(item.purchase_cost),updated_at:new Date().toISOString()},{onConflict:"product_id"});
 if(costError){costFailed++;details.push("تمت إضافة "+item.name+" لكن لم تُحفظ تكلفة الشراء: "+costError.message);}
 existingNames.add(key);added++;
-}catch(error){failed++;details.push("فشل الصف "+item._row+" ("+item.name+"): "+error.message);}
+}catch(error){
+if(!productCreated&&uploadedPaths.length){
+const {error:cleanupError}=await client.storage.from("product-images").remove(uploadedPaths);
+if(cleanupError)details.push("تعذر تنظيف الصور المؤقتة للصف "+item._row+": "+cleanupError.message);
+}
+failed++;details.push("فشل الصف "+item._row+" ("+item.name+"): "+error.message);
+}
 msg.textContent="تمت معالجة "+(i+1)+" من "+valid.length+" منتج...";
 }
 await loadProducts();

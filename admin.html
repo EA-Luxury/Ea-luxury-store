@@ -38,6 +38,11 @@ main{max-width:1180px}
 .statCard{padding:18px;border:1px solid #eee5d5;border-radius:10px;background:#fcfaf6;display:grid;gap:8px}
 .statCard span{font-size:13px;color:#74664e}.statCard strong{font-size:28px;color:#171717}
 #adminProductSearch,#adminOrderSearch{max-width:560px;background:#fcfbf8}
+.shipping-rates-editor{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.shipping-rate-row{display:grid;grid-template-columns:minmax(0,1fr) 110px;align-items:center;gap:8px;padding:10px;border:1px solid #eee5d5;border-radius:8px;background:#fcfaf6}
+.shipping-rate-row label{font-weight:700;font-size:14px}
+.shipping-rate-row input{margin:0;text-align:center}
+@media(max-width:560px){.shipping-rates-editor{grid-template-columns:1fr}.shipping-rate-row{grid-template-columns:minmax(0,1fr) 105px}}
 .orderAdminCard,.productAdminCard{padding:16px;margin:12px 0;border:1px solid #eee7da;border-radius:10px;background:#fff}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #d6b36a;outline-offset:2px}
 @media(max-width:760px){main{margin:10px auto;padding:10px}section{padding:15px}.statsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.statCard{padding:13px}.statCard strong{font-size:23px}.adminNav{margin-inline:-10px}}
@@ -165,8 +170,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <small id="coverStatus">لم يتم اختيار صورة جديدة.</small>
 
 <hr>
-<label>مصاريف الشحن بالجنيه</label>
-<input id="shippingFee" type="number" min="0" value="0">
+<h3>أسعار الشحن حسب المحافظة</h3>
+<p class="status-text">الأسعار المبدئية حسب عرض شركة الشحن الذي أرسلته. راجع الضريبة ورسوم التحصيل قبل اعتمادها نهائيًا. اترك المحافظة بدون سعر إذا لم تؤكد الشركة تغطيتها.</p>
+<div id="shippingRatesEditor" class="shipping-rates-editor"></div>
 <label>الحد الأدنى للشحن المجاني</label>
 <input id="freeShipping" type="number" min="0" value="0">
 <label>اللون الأساسي</label>
@@ -974,6 +980,57 @@ select.appendChild(option);
 if(names.includes(current))select.value=current;
 }
 
+const EGYPT_GOVERNORATES=[
+{name:"القاهرة",fee:97,zone:"القاهرة"},
+{name:"الجيزة",fee:97,zone:"القاهرة"},
+{name:"الإسكندرية",fee:102,zone:"الإسكندرية"},
+{name:"الدقهلية",fee:110,zone:"الدلتا والقناة"},
+{name:"دمياط",fee:110,zone:"الدلتا والقناة"},
+{name:"الشرقية",fee:110,zone:"الدلتا والقناة"},
+{name:"القليوبية",fee:110,zone:"الدلتا والقناة"},
+{name:"كفر الشيخ",fee:110,zone:"الدلتا والقناة"},
+{name:"الغربية",fee:110,zone:"الدلتا والقناة"},
+{name:"المنوفية",fee:110,zone:"الدلتا والقناة"},
+{name:"البحيرة",fee:110,zone:"الدلتا والقناة"},
+{name:"بورسعيد",fee:110,zone:"الدلتا والقناة"},
+{name:"الإسماعيلية",fee:110,zone:"الدلتا والقناة"},
+{name:"السويس",fee:110,zone:"الدلتا والقناة"},
+{name:"بني سويف",fee:124,zone:"الصعيد والبحر الأحمر"},
+{name:"الفيوم",fee:124,zone:"الصعيد والبحر الأحمر"},
+{name:"المنيا",fee:124,zone:"الصعيد والبحر الأحمر"},
+{name:"أسيوط",fee:124,zone:"الصعيد والبحر الأحمر"},
+{name:"سوهاج",fee:124,zone:"الصعيد والبحر الأحمر"},
+{name:"قنا",fee:124,zone:"الصعيد والبحر الأحمر"},
+{name:"الأقصر",fee:124,zone:"الصعيد والبحر الأحمر"},
+{name:"أسوان",fee:124,zone:"الصعيد والبحر الأحمر"},
+{name:"البحر الأحمر",fee:124,zone:"الصعيد والبحر الأحمر"},
+{name:"مطروح",fee:null,zone:"يحتاج تأكيد الشركة"},
+{name:"الوادي الجديد",fee:null,zone:"يحتاج تأكيد الشركة"},
+{name:"شمال سيناء",fee:null,zone:"يحتاج تأكيد الشركة"},
+{name:"جنوب سيناء",fee:null,zone:"يحتاج تأكيد الشركة"}
+];
+
+function renderShippingRatesEditor(rates={}){
+const editor=document.getElementById("shippingRatesEditor");
+if(!editor)return;
+editor.innerHTML=EGYPT_GOVERNORATES.map((item,index)=>{
+const value=rates[item.name]===undefined?item.fee:rates[item.name];
+return '<div class="shipping-rate-row"><label for="shippingRate'+index+'">'+item.name+'<small>'+item.zone+'</small></label><input id="shippingRate'+index+'" data-governorate="'+item.name+'" type="number" min="0" step="1" inputmode="numeric" placeholder="غير محدد" value="'+(value===null||value===undefined?"":String(value))+'"></div>';
+}).join("");
+}
+
+function readShippingRates(){
+const rates={};
+document.querySelectorAll("#shippingRatesEditor input[data-governorate]").forEach(input=>{
+const raw=input.value.trim();
+rates[input.dataset.governorate]=raw===""?null:Number(raw);
+if(raw!==""&&(!Number.isFinite(rates[input.dataset.governorate])||rates[input.dataset.governorate]<0)){
+throw new Error("راجع سعر الشحن لمحافظة "+input.dataset.governorate);
+}
+});
+return rates;
+}
+
 async function loadSettings(){
 const msg=document.getElementById("settingsMsg");
 
@@ -985,6 +1042,7 @@ return;
 }
 
 const s=data?.settings||{};
+renderShippingRatesEditor(s.shippingRates||{});
 
 const categoryNames=Array.isArray(s.productCategories)&&s.productCategories.length?s.productCategories:["حريمي","رجالي"];
 document.getElementById("productCategories").value=categoryNames.join(", ");
@@ -1003,7 +1061,6 @@ storePhone:s.storePhone,
 storeWhatsapp:s.storeWhatsapp,
 storeFacebook:s.storeFacebook,
 storeTiktok:s.storeTiktok,
-shippingFee:s.shippingFee,
 freeShipping:s.freeShipping,
 storeColor:s.storeColor,
 aboutStore:s.aboutStore,
@@ -1071,7 +1128,7 @@ storeFacebook:document.getElementById("storeFacebook").value,
 storeTiktok:document.getElementById("storeTiktok").value,
 storeLogo:logoUrl,
 storeCover:coverUrl,
-shippingFee:Number(document.getElementById("shippingFee").value),
+shippingRates:readShippingRates(),
 freeShipping:Number(document.getElementById("freeShipping").value),
 storeColor:document.getElementById("storeColor").value,
 aboutStore:document.getElementById("aboutStore").value,

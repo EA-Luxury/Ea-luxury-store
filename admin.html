@@ -238,6 +238,34 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <div id="productsList">جاري التحميل...</div>
 </section>
 
+<section id="bulkShoePricingSection">
+<h2>تعديل أسعار الأحذية بالجملة</h2>
+<p class="status-text">يتم تطبيق التعديل على منتجات قسم «أحذية» فقط. اختر كل الأحذية أو ماركة محددة، ثم اعرض المعاينة قبل الحفظ.</p>
+<label for="bulkShoeBrand">الماركة</label>
+<select id="bulkShoeBrand"><option value="__ALL__">كل ماركات الأحذية</option></select>
+<label for="bulkShoeAction">نوع التعديل</label>
+<select id="bulkShoeAction">
+<option value="increase_percent">زيادة بنسبة مئوية</option>
+<option value="decrease_percent">تخفيض بنسبة مئوية</option>
+<option value="add_amount">زيادة مبلغ ثابت</option>
+<option value="subtract_amount">خصم مبلغ ثابت</option>
+<option value="set_amount">تحديد سعر موحد</option>
+</select>
+<label for="bulkShoeTarget">الأسعار التي يشملها التعديل</label>
+<select id="bulkShoeTarget">
+<option value="regular">السعر الأساسي فقط</option>
+<option value="sale">سعر العرض فقط (المنتجات التي لها عرض)</option>
+<option value="both">السعر الأساسي وسعر العرض معًا</option>
+</select>
+<label for="bulkShoeValue">النسبة أو المبلغ</label>
+<input id="bulkShoeValue" type="number" min="0.01" step="0.01" placeholder="مثال: 10">
+<small>المبلغ يطبق بعملة كل منتج، والنسبة تحسب من السعر الحالي. الأسعار تُقرب إلى منزلتين عشريتين.</small>
+<button type="button" class="secondary" onclick="previewBulkShoePrices()">معاينة الأسعار الجديدة</button>
+<div id="bulkShoePreview" class="status-text" aria-live="polite">لم يتم إعداد معاينة بعد.</div>
+<button type="button" id="applyBulkShoePricesButton" onclick="applyBulkShoePrices()" disabled>تأكيد وحفظ تعديل الأسعار</button>
+<p id="bulkShoePricingMsg" role="status"></p>
+</section>
+
 <!-- إدارة المتغيرات -->
 <section id="variantsSection">
 <h2>إدارة المقاسات والألوان والمخزون</h2>
@@ -1221,6 +1249,84 @@ const {error}=await client.from("products").update({price:regularPrice,currency:
 if(error){alert("تعذر حفظ أسعار المنتج: "+error.message);return;}
 alert("تم حفظ السعر الأساسي"+(salePrice===null?" وإلغاء الخصم.":" وسعر العرض بنجاح."));
 await loadProducts();
+}
+
+let bulkShoePricePreview = [];
+
+async function loadBulkShoeBrandOptions(){
+if(!adminReady)return;
+const select=document.getElementById("bulkShoeBrand");
+if(!select)return;
+const {data,error}=await client.from("products").select("brand").eq("category","أحذية");
+if(error){document.getElementById("bulkShoePricingMsg").textContent="تعذر تحميل الماركات: "+error.message;return;}
+const brands=[...new Set((data||[]).map(p=>String(p.brand||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
+select.innerHTML='<option value="__ALL__">كل ماركات الأحذية</option>'+brands.map(brand=>'<option value="'+String(brand).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")+'">'+String(brand).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</option>').join("");
+}
+
+function calculateBulkShoePrice(price,action,value){
+const current=Number(price);
+let next=current;
+if(action==="increase_percent")next=current*(1+value/100);
+else if(action==="decrease_percent")next=current*(1-value/100);
+else if(action==="add_amount")next=current+value;
+else if(action==="subtract_amount")next=current-value;
+else if(action==="set_amount")next=value;
+return Math.round((next+Number.EPSILON)*100)/100;
+}
+
+async function previewBulkShoePrices(){
+if(!adminReady)return;
+const msg=document.getElementById("bulkShoePricingMsg");
+const preview=document.getElementById("bulkShoePreview");
+const button=document.getElementById("applyBulkShoePricesButton");
+button.disabled=true;bulkShoePricePreview=[];
+const action=document.getElementById("bulkShoeAction").value;
+const target=document.getElementById("bulkShoeTarget").value;
+const value=Number(document.getElementById("bulkShoeValue").value);
+const brand=document.getElementById("bulkShoeBrand").value;
+if(!Number.isFinite(value)||value<=0){msg.textContent="اكتب نسبة أو مبلغًا أكبر من صفر.";preview.textContent="";return;}
+if((action==="decrease_percent"&&value>=100)){msg.textContent="نسبة التخفيض يجب أن تكون أقل من 100%.";return;}
+const {data,error}=await client.from("products").select("id,name,brand,category,price,sale_price,currency").eq("category","أحذية").order("name");
+if(error){msg.textContent="تعذر تحميل الأحذية: "+error.message;return;}
+const selected=(data||[]).filter(p=>brand==="__ALL__"||String(p.brand||"").trim()===brand);
+const rows=[];
+for(const p of selected){
+const next={id:p.id,name:p.name,brand:p.brand||"بدون ماركة",currency:p.currency==="AED"?"AED":"EGP",oldPrice:Number(p.price),oldSale:p.sale_price===null||p.sale_price===""?null:Number(p.sale_price),newPrice:Number(p.price),newSale:p.sale_price===null||p.sale_price===""?null:Number(p.sale_price)};
+if(target==="regular"||target==="both")next.newPrice=calculateBulkShoePrice(p.price,action,value);
+if((target==="sale"||target==="both")&&next.oldSale!==null)next.newSale=calculateBulkShoePrice(next.oldSale,action,value);
+if(!Number.isFinite(next.newPrice)||next.newPrice<=0||(next.newSale!==null&&(!Number.isFinite(next.newSale)||next.newSale<=0||next.newSale>=next.newPrice))){
+msg.textContent="التعديل سيؤدي إلى سعر غير صالح أو يجعل سعر العرض أكبر من السعر الأساسي للمنتج: "+p.name+"؛ لم يتم حفظ أي تغيير.";preview.textContent="غيّر نوع التعديل أو قيمته ثم أعد المعاينة.";return;
+}
+if(target==="sale"&&next.oldSale===null)continue;
+rows.push(next);
+}
+if(!rows.length){msg.textContent="لا توجد منتجات تنطبق عليها هذه الشروط.";preview.textContent="";return;}
+bulkShoePricePreview=rows;
+const money=(n,c)=>Number(n).toLocaleString("ar-EG",{maximumFractionDigits:2})+(c==="AED"?" درهم":" جنيه");
+const lines=rows.slice(0,12).map(p=>p.name+": "+money(p.oldPrice,p.currency)+(p.oldSale!==null?" (عرض "+money(p.oldSale,p.currency)+")":"")+" ← "+money(p.newPrice,p.currency)+(p.newSale!==null?" (عرض "+money(p.newSale,p.currency)+")":""));
+preview.textContent="عدد المنتجات المتأثرة: "+rows.length+". المعاينة: "+lines.join(" | ")+(rows.length>12?" | ...":"");
+msg.textContent="تم تجهيز المعاينة. راجع عدد المنتجات والأسعار قبل التأكيد.";
+button.disabled=false;
+}
+
+async function applyBulkShoePrices(){
+if(!adminReady||!bulkShoePricePreview.length)return;
+const button=document.getElementById("applyBulkShoePricesButton");
+const msg=document.getElementById("bulkShoePricingMsg");
+if(!confirm("تأكيد تعديل أسعار "+bulkShoePricePreview.length+" حذاء؟ لا يمكن التراجع تلقائيًا بعد الحفظ."))return;
+button.disabled=true;let updated=0;const failures=[];
+for(const item of bulkShoePricePreview){
+const changes={};
+const target=document.getElementById("bulkShoeTarget").value;
+if(target==="regular"||target==="both")changes.price=item.newPrice;
+if((target==="sale"||target==="both")&&item.oldSale!==null)changes.sale_price=item.newSale;
+const {error}=await client.from("products").update(changes).eq("id",item.id).eq("category","أحذية");
+if(error)failures.push(item.name+": "+error.message);else updated++;
+}
+bulkShoePricePreview=[];
+document.getElementById("bulkShoePreview").textContent="انتهت العملية. تم تحديث "+updated+" منتج.";
+msg.textContent=failures.length?"تم تحديث "+updated+" منتج، وتعذر تحديث "+failures.length+". أول خطأ: "+failures[0]:"تم تحديث أسعار "+updated+" حذاء بنجاح.";
+await loadProducts();await loadBulkShoeBrandOptions();
 }
 
 async function updateProductDescription(id,value){
@@ -2513,6 +2619,8 @@ window.deleteExpense=deleteExpense;
 window.resetExpenseForm=resetExpenseForm;
 window.enableOrderNotifications=enableOrderNotifications;
 window.saveSettings=saveSettings;
+window.previewBulkShoePrices=previewBulkShoePrices;
+window.applyBulkShoePrices=applyBulkShoePrices;
 window.startBulkProductImport=startBulkProductImport;
 window.loadVariants=loadVariants;
 window.saveVariant=saveVariant;
@@ -2520,6 +2628,7 @@ window.bulkAddVariants=bulkAddVariants;
 window.resetVariantForm=resetVariantForm;
 
 // استعادة جلسة الإدارة المحفوظة بعد تحديث الصفحة أو فتح اللوحة مرة أخرى.
+loadBulkShoeBrandOptions();
 client.auth.getSession().then(async ({data,error})=>{
 if(error){
 console.warn("تعذر استعادة جلسة الإدارة:",error.message);

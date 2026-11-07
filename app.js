@@ -180,10 +180,11 @@ async function loadStoreSettings() {
     if (returnText && typeof settings.returnPolicy === "string" && settings.returnPolicy.trim()) {
       returnText.textContent = settings.returnPolicy.trim();
     }
-    const shippingFee = Number(settings.shippingFee || 0);
+    const shippingRates = Object.values(settings.shippingRates || {}).filter(value => value !== null && value !== "" && Number.isFinite(Number(value)) && Number(value) >= 0);
+    const minimumShippingFee = shippingRates.length ? Math.min(...shippingRates.map(Number)) : 0;
     const freeShipping = Number(settings.freeShipping || 0);
-    let shippingText = "التوصيل متاح لجميع محافظات مصر.";
-    if (shippingFee > 0) shippingText = "مصاريف الشحن تبدأ من " + shippingFee.toLocaleString("ar-EG") + " جنيه.";
+    let shippingText = "رسوم التوصيل تختلف حسب المحافظة وتظهر لك قبل تأكيد الطلب.";
+    if (minimumShippingFee > 0) shippingText = "مصاريف الشحن تبدأ من " + minimumShippingFee.toLocaleString("ar-EG") + " جنيه وتختلف حسب المحافظة.";
     if (freeShipping > 0) shippingText += " الشحن مجاني للطلبات من " + freeShipping.toLocaleString("ar-EG") + " جنيه فأكثر.";
     ["storeShippingText", "faqShippingText"].forEach(id => {
       const element = document.getElementById(id);

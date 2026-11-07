@@ -1232,6 +1232,20 @@ if (trackingForm) {
       const dateText = order.created_at
         ? new Date(order.created_at).toLocaleString("ar-EG", { dateStyle: "medium", timeStyle: "short" })
         : "";
+      const progressSteps = [
+        { status: "جديد", label: "تم استلام الطلب" },
+        { status: "قيد التجهيز", label: "جاري التجهيز" },
+        { status: "تم الشحن", label: "خرج للتوصيل" },
+        { status: "مكتمل", label: "تم التسليم" }
+      ];
+      const currentStep = progressSteps.findIndex(step => step.status === order.status);
+      const progressMarkup = order.status === "ملغي"
+        ? '<div class="trackingCancelled">تم إلغاء هذا الطلب</div>'
+        : '<div class="trackingTimeline" aria-label="مراحل الطلب">' + progressSteps.map((step,index) => {
+            const stepState = currentStep >= index ? " completed" : "";
+            const current = currentStep === index ? " current" : "";
+            return '<div class="trackingStep' + stepState + current + '"><span class="trackingStepDot">' + (currentStep > index ? "✓" : String(index + 1)) + '</span><span class="trackingStepLabel">' + step.label + '</span></div>';
+          }).join("") + '</div>';
 
       resultBox.classList.add("found");
       const canCancel = ["جديد", "قيد التجهيز"].includes(order.status);
@@ -1239,6 +1253,7 @@ if (trackingForm) {
         <div class="trackingOrderNumber">طلبك رقم #${escapeHTML(order.order_id)}</div>
         <div class="trackingStatus">${escapeHTML(statusLabel)}</div>
         ${dateText ? `<p>تاريخ الطلب: ${escapeHTML(dateText)}</p>` : ""}
+        ${progressMarkup}
         ${canCancel ? '<button type="button" id="customerCancelOrderButton" class="customerCancelOrderButton">إلغاء الطلب</button>' : ""}
         <p class="trackingNote">شكرًا لاختيارك EA Luxury</p>
       `;

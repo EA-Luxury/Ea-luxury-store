@@ -9,6 +9,13 @@
   let favoriteIds = readFavorites();
   let products = [];
   let variants = [];
+  let storeSettings = {};
+  let displayCurrency = (() => { try { return localStorage.getItem("eaLuxuryDisplayCurrency")==="AED"?"AED":"EGP"; } catch (_) { return "EGP"; } })();
+  function rate(){const n=Number(storeSettings?.aedToEgpRate||14.67);return Number.isFinite(n)&&n>0?n:14.67;}
+  function convert(value,from,to){const n=Number(value)||0,a=from==="AED"?"AED":"EGP",b=to==="AED"?"AED":"EGP";if(a===b)return n;return a==="AED"?n*rate():n/rate();}
+  function syncCurrencyButton(){const button=document.getElementById("currencyToggleButton");if(button){button.textContent="عرض: "+displayCurrency;button.title="التبديل بين الجنيه المصري والدرهم الإماراتي";}}
+  const currencyButton=document.getElementById("currencyToggleButton");
+  if(currencyButton)currencyButton.addEventListener("click",()=>{displayCurrency=displayCurrency==="EGP"?"AED":"EGP";try{localStorage.setItem("eaLuxuryDisplayCurrency",displayCurrency);}catch(_){}syncCurrencyButton();render();});
 
   function readFavorites() {
     try {
@@ -40,8 +47,8 @@
     const notEnded = ends === null || (Number.isFinite(ends) && now < ends);
     return Number.isFinite(sale) && sale > 0 && sale < regular && started && notEnded ? sale : regular;
   }
-  function money(value) {
-    return Number(value || 0).toLocaleString("ar-EG") + " جنيه";
+  function money(value,sourceCurrency="EGP") {
+    return convert(value,sourceCurrency,displayCurrency).toLocaleString("ar-EG",{maximumFractionDigits:2}) + (displayCurrency==="AED"?" درهم":" جنيه");
   }
   function render() {
     const saved = favoriteIds.map(id => products.find(product => String(product.id) === id)).filter(Boolean);
@@ -66,7 +73,7 @@
         '</a><div class="favorites-page-card-body">' +
           '<span class="favorites-page-category">' + escapeHTML(product.category || "EA LUXURY") + '</span>' +
           '<h2><a href="product.html?id=' + encodeURIComponent(String(product.id)) + '">' + escapeHTML(product.name) + '</a></h2>' +
-          '<div class="favorites-page-price">' + (price < regular ? '<del>' + money(regular) + '</del>' : '') + '<strong>' + money(price) + '</strong></div>' +
+          '<div class="favorites-page-price">' + (price < regular ? '<del>' + money(regular,product.currency||"EGP") + '</del>' : '') + '<strong>' + money(price,product.currency||"EGP") + '</strong></div>' +
           options +
           '<div class="favorites-page-actions"><button type="button" class="favorites-add-button" data-favorites-add="' + escapeHTML(product.id) + '" ' + (canAdd ? "" : "disabled") + '>أضف إلى السلة</button>' +
           '<button type="button" class="favorites-remove-button" data-favorites-remove="' + escapeHTML(product.id) + '">إزالة ♥</button></div>' +
@@ -112,6 +119,7 @@
     if (existing) {
       existing.quantity = quantity + 1;
       existing.price = effectivePrice(product);
+      existing.currency = product.currency || "EGP";
       existing.availableStock = stock;
     } else {
       cart.push({
@@ -155,6 +163,9 @@
 
   async function init() {
     updateCartCount();
+    const {data:settingsRow}=await db.from("store_settings").select("settings").eq("id",1).maybeSingle();
+    storeSettings=settingsRow?.settings||{};
+    syncCurrencyButton();
     if (!favoriteIds.length) {
       status.hidden = true;
       empty.hidden = false;

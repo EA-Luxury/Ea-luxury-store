@@ -50,6 +50,27 @@ main{max-width:1180px}
 .orderActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .orderActions button{width:auto;min-width:130px;margin:0}
 @media(max-width:560px){.orderFilters{grid-template-columns:1fr}.orderActions button{flex:1 1 100%}}
+
+.reportToolbar{display:grid;grid-template-columns:minmax(0,1fr) minmax(160px,220px) auto;align-items:center;gap:10px;margin:12px 0 18px}
+.reportToolbar label{font-weight:700;color:#74664e}
+.reportToolbar select,.reportToolbar button{margin:0}
+.reportStats{margin:14px 0}
+.reportNotice{margin:16px 0;padding:14px;border:1px solid #e5d5b4;border-right:4px solid #b58a43;border-radius:8px;background:#fbf7ed;color:#5e4a2b;line-height:1.8}
+.salesTrend{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;align-items:end;min-height:190px;padding:14px;border:1px solid #eee5d5;border-radius:10px;background:#fcfaf6}
+.salesTrendDay{display:grid;grid-template-rows:1fr auto auto;gap:6px;min-width:0;text-align:center;height:160px}
+.salesTrendBarWrap{display:flex;align-items:end;justify-content:center;height:100%;background:#f1ece2;border-radius:6px 6px 0 0;overflow:hidden}
+.salesTrendBar{width:70%;min-height:3px;background:linear-gradient(180deg,#d6b36a,#8d6b32);border-radius:5px 5px 0 0}
+.salesTrendDay strong{font-size:11px;overflow-wrap:anywhere;color:#51452f}
+.salesTrendDay small{font-size:10px;color:#766b58}
+.reportTableWrap{overflow-x:auto}
+.reportTable{width:100%;border-collapse:collapse;min-width:420px}
+.reportTable th,.reportTable td{padding:11px;text-align:right;border-bottom:1px solid #eee5d5}
+.reportTable th{background:#f8f4eb;color:#74664e}
+.statusReportGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px}
+.statusReportItem{padding:12px;border:1px solid #eee5d5;border-radius:8px;background:#fcfaf6;display:grid;gap:5px}
+.statusReportItem strong{font-size:22px;color:#171717}
+@media(max-width:600px){.reportToolbar{grid-template-columns:1fr 1fr}.reportToolbar label{grid-column:1/-1}.reportToolbar button{grid-column:1/-1}.salesTrend{gap:4px;padding:8px}.salesTrendDay{height:145px}.salesTrendDay strong{font-size:9px}.salesTrendDay small{font-size:9px}}
+
 @media print{body{background:#fff}}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #d6b36a;outline-offset:2px}
 @media(max-width:760px){main{margin:10px auto;padding:10px}section{padding:15px}.statsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.statCard{padding:13px}.statCard strong{font-size:23px}.adminNav{margin-inline:-10px}}
@@ -70,8 +91,25 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 <div id="dashboard" hidden>
 
-<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#settingsSection">إعدادات المتجر</a><a href="#ordersSection">الطلبات</a></nav>
+<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#salesReportsSection">تقارير المبيعات</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#settingsSection">إعدادات المتجر</a><a href="#ordersSection">الطلبات</a></nav>
 <section id="overviewSection" class="overviewSection"><h2>ملخص المتجر</h2><div class="statsGrid"><article class="statCard"><span>إجمالي المنتجات</span><strong id="statProducts">—</strong></article><article class="statCard"><span>منتجات منخفضة المخزون</span><strong id="statLowStock">—</strong></article><article class="statCard"><span>إجمالي الطلبات</span><strong id="statOrders">—</strong></article><article class="statCard"><span>طلبات تحتاج متابعة</span><strong id="statPendingOrders">—</strong></article><article class="statCard"><span>الطلبات الملغاة</span><strong id="statCancelledOrders">—</strong></article></div><p class="status-text">الأرقام تتحدث عند تحميل المنتجات والطلبات.</p></section>
+<section id="salesReportsSection" class="overviewSection">
+<h2>تقارير المبيعات والأداء</h2>
+<div class="reportToolbar"><label for="salesReportPeriod">الفترة الزمنية</label><select id="salesReportPeriod"><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يومًا</option><option value="90">آخر 90 يومًا</option><option value="all">كل الفترات</option></select><button type="button" class="secondary" onclick="loadOrders()">تحديث التقرير</button></div>
+<div class="statsGrid reportStats">
+<article class="statCard"><span>قيمة الطلبات المكتملة</span><strong id="reportCompletedRevenue">—</strong><small>شاملة الشحن</small></article>
+<article class="statCard"><span>قيمة المنتجات المباعة</span><strong id="reportProductRevenue">—</strong><small>بدون الشحن</small></article>
+<article class="statCard"><span>إجمالي الشحن للطلبات المكتملة</span><strong id="reportShippingRevenue">—</strong></article>
+<article class="statCard"><span>عدد الطلبات المكتملة</span><strong id="reportCompletedCount">—</strong></article>
+<article class="statCard"><span>متوسط الطلب المكتمل</span><strong id="reportAverageOrder">—</strong></article>
+<article class="statCard"><span>قيمة الطلبات غير الملغاة وغير المكتملة</span><strong id="reportPendingValue">—</strong><small>قيمة قيد التنفيذ وليست مبيعات محققة</small></article>
+</div>
+<div class="reportNotice"><strong>الأرباح:</strong> لا يمكن حساب صافي أو مجمل الربح بدقة حتى نسجل تكلفة شراء كل منتج. لن نعرض تقديرات غير مؤكدة.</div>
+<h3>مبيعات آخر 7 أيام</h3><div id="salesTrend" class="salesTrend" aria-live="polite">جاري تجهيز التقرير...</div>
+<h3>أفضل المنتجات مبيعًا</h3><div id="topProductsReport" class="reportTableWrap">لا توجد بيانات كافية.</div>
+<h3>توزيع الطلبات حسب الحالة</h3><div id="orderStatusReport" class="statusReportGrid"></div>
+<p class="status-text">التقرير يعتمد على الطلبات المسجلة في المتجر. المبيعات المكتملة تشمل الطلبات التي حالتها «مكتمل» فقط، والطلبات الملغاة مستبعدة.</p>
+</section>
 <section id="addProductSection">
 <h2>إضافة منتج جديد</h2>
 <input id="name" placeholder="اسم المنتج">
@@ -225,6 +263,7 @@ const SUPABASE_KEY="sb_publishable_hrP0-e5_ou1HHeKZpCu8jw_ORY_-zdh";
 const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let adminReady=false;
+let reportOrders=[];
 let ordersChannel=null;
 let logoUrl="";
 let coverUrl="";
@@ -914,6 +953,95 @@ const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"
 popup.document.open();popup.document.write(html);popup.document.close();
 }
 
+
+function renderSalesReports(orders){
+reportOrders=Array.isArray(orders)?orders:[];
+const period=document.getElementById("salesReportPeriod")?.value||"30";
+const now=new Date();
+const start=new Date(now);
+if(period!=="all")start.setDate(start.getDate()-Number(period)+1);
+start.setHours(0,0,0,0);
+const filtered=reportOrders.filter(order=>{
+if(!order.created_at)return period==="all";
+const date=new Date(order.created_at);
+return period==="all"||date>=start;
+});
+const completed=filtered.filter(order=>order.status==="مكتمل");
+const active=filtered.filter(order=>!["مكتمل","ملغي"].includes(order.status));
+const sum=(values)=>values.reduce((total,value)=>total+Number(value||0),0);
+const productTotal=order=>sum((order.order_items||[]).map(item=>Number(item.unit_price||0)*Number(item.quantity||0)));
+const completedProducts=sum(completed.map(productTotal));
+const completedShipping=sum(completed.map(order=>order.shipping_fee));
+const completedRevenue=sum(completed.map(order=>order.total));
+const pendingValue=sum(active.map(order=>order.total));
+const money=value=>Number(value||0).toLocaleString("ar-EG",{maximumFractionDigits:2})+" ج.م";
+const put=(id,value)=>{const node=document.getElementById(id);if(node)node.textContent=value;};
+put("reportCompletedRevenue",money(completedRevenue));
+put("reportProductRevenue",money(completedProducts));
+put("reportShippingRevenue",money(completedShipping));
+put("reportCompletedCount",String(completed.length));
+put("reportAverageOrder",money(completed.length?completedRevenue/completed.length:0));
+put("reportPendingValue",money(pendingValue));
+
+const productMap=new Map();
+completed.forEach(order=>(order.order_items||[]).forEach(item=>{
+const key=String(item.product_id||item.product_name||"غير معروف");
+const current=productMap.get(key)||{name:item.product_name||"منتج غير معروف",quantity:0,revenue:0};
+current.quantity+=Number(item.quantity||0);
+current.revenue+=Number(item.unit_price||0)*Number(item.quantity||0);
+productMap.set(key,current);
+}));
+const top=[...productMap.values()].sort((a,b)=>b.quantity-a.quantity||b.revenue-a.revenue).slice(0,10);
+const topBox=document.getElementById("topProductsReport");
+if(topBox){
+topBox.replaceChildren();
+if(!top.length){topBox.textContent="لا توجد طلبات مكتملة في الفترة المحددة."; }
+else{
+const table=document.createElement("table");table.className="reportTable";
+const thead=document.createElement("thead");const headRow=document.createElement("tr");
+["المنتج","الكمية المباعة","قيمة المبيعات"].forEach(label=>{const th=document.createElement("th");th.textContent=label;headRow.append(th);});
+thead.append(headRow);table.append(thead);
+const tbody=document.createElement("tbody");
+top.forEach(item=>{const tr=document.createElement("tr");[item.name,item.quantity.toLocaleString("ar-EG"),money(item.revenue)].forEach(value=>{const td=document.createElement("td");td.textContent=String(value);tr.append(td);});tbody.append(tr);});
+table.append(tbody);topBox.append(table);
+}
+}
+
+const statuses=["جديد","قيد التجهيز","تم الشحن","مكتمل","ملغي"];
+const statusBox=document.getElementById("orderStatusReport");
+if(statusBox){
+statusBox.replaceChildren();
+statuses.forEach(status=>{
+const count=filtered.filter(order=>order.status===status).length;
+const card=document.createElement("div");card.className="statusReportItem";
+const label=document.createElement("span");label.textContent=status;
+const value=document.createElement("strong");value.textContent=count.toLocaleString("ar-EG");
+card.append(label,value);statusBox.append(card);
+});
+}
+
+const trend=document.getElementById("salesTrend");
+if(trend){
+trend.replaceChildren();
+const days=[];
+for(let offset=6;offset>=0;offset--){
+const day=new Date(now);day.setDate(now.getDate()-offset);day.setHours(0,0,0,0);
+const next=new Date(day);next.setDate(day.getDate()+1);
+const amount=sum(completed.filter(order=>{const date=new Date(order.created_at);return date>=day&&date<next;}).map(order=>order.total));
+days.push({date:day,amount});
+}
+const max=Math.max(1,...days.map(day=>day.amount));
+days.forEach(day=>{
+const col=document.createElement("div");col.className="salesTrendDay";
+const wrap=document.createElement("div");wrap.className="salesTrendBarWrap";
+const bar=document.createElement("div");bar.className="salesTrendBar";bar.style.height=(day.amount/max*100)+"%";bar.title=money(day.amount);wrap.append(bar);
+const value=document.createElement("strong");value.textContent=day.amount?money(day.amount):"—";
+const label=document.createElement("small");label.textContent=day.date.toLocaleDateString("ar-EG",{weekday:"short",day:"numeric"});
+col.append(wrap,value,label);trend.append(col);
+});
+}
+}
+
 async function loadOrders(){
 if(!adminReady)return;
 
@@ -931,6 +1059,7 @@ box.innerHTML="";
 document.getElementById("statOrders").textContent=String(data?.length||0);
 document.getElementById("statPendingOrders").textContent=String((data||[]).filter(o=>!["مكتمل","ملغي"].includes(o.status)).length);
 document.getElementById("statCancelledOrders").textContent=String((data||[]).filter(o=>o.status==="ملغي").length);
+renderSalesReports(data||[]);
 
 if(!data||data.length===0){
 box.textContent="لا توجد طلبات حتى الآن.";
@@ -1245,6 +1374,7 @@ const input=document.getElementById(inputId);if(!input)return;
 input.addEventListener("input",()=>{const q=input.value.trim().toLocaleLowerCase("ar");document.querySelectorAll(selector).forEach(card=>{card.hidden=q!==""&&!String(card.dataset.search||"").includes(q);});});
 }
 filterAdminCards("adminProductSearch",".productAdminCard");
+document.getElementById("salesReportPeriod")?.addEventListener("change",()=>renderSalesReports(reportOrders));
 ["adminOrderSearch","adminOrderStatusFilter","adminOrderGovernorateFilter"].forEach(id=>{
 const control=document.getElementById(id);
 if(control)control.addEventListener(id==="adminOrderSearch"?"input":"change",filterOrders);
@@ -1253,6 +1383,7 @@ if(control)control.addEventListener(id==="adminOrderSearch"?"input":"change",fil
 window.login=login;
 window.addProduct=addProduct;
 window.loadOrders=loadOrders;
+window.renderSalesReports=renderSalesReports;
 window.enableOrderNotifications=enableOrderNotifications;
 window.saveSettings=saveSettings;
 window.loadVariants=loadVariants;

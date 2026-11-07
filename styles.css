@@ -2119,3 +2119,32 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 .product-detail-main-image {
   mix-blend-mode: multiply;
 }
+
+
+/* Brand navigation for new arrivals and recently viewed collections */
+.homeCollectionBrandPicker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill,minmax(190px,1fr));
+  gap: 16px;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.homeCollectionBrandCard { width: 100%; }
+.homeCollectionBrandProducts { max-width: 1180px; margin: 0 auto; }
+.homeCollectionBrandPanelHeading {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; margin: 0 0 20px;
+}
+.homeCollectionBrandPanelHeading h3 { margin: 0; font-size: 22px; font-weight: 800; }
+.homeCollectionBackButton {
+  border: 1px solid #c8b58e; background: transparent; color: #6f5932;
+  padding: 9px 15px; cursor: pointer; font: inherit; border-radius: 2px;
+}
+.homeCollectionBackButton:hover { background: #eee9df; }
+@media (max-width: 600px) {
+  .homeCollectionBrandPicker { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+  .homeCollectionBrandCard { grid-template-columns: 1fr; }
+  .homeCollectionBrandCard .brand-showcase-image { min-height: 140px; }
+  .homeCollectionBrandPanelHeading h3 { font-size: 17px; }
+  .homeCollectionBackButton { padding: 8px 10px; font-size: 12px; }
+}

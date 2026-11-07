@@ -59,7 +59,7 @@ function detailUpdateQuantity(nextValue) {
   const max = selected ? Number(selected.stock) : Number(detailProduct?.stock ?? 0);
   detailQuantity = Math.max(1, Math.min(max || 1, Number(nextValue) || 1));
   const input = document.getElementById("detailQuantityValue");
-  if (input) input.value = detailQuantity;
+  if (input) { input.max = max || 1; input.value = detailQuantity; }
   const minus = document.getElementById("detailQuantityMinus");
   const plus = document.getElementById("detailQuantityPlus");
   if (minus) minus.disabled = detailQuantity <= 1;

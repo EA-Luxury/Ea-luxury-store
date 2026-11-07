@@ -1597,6 +1597,47 @@ if (trackingForm) {
         <p class="trackingNote">شكرًا لاختيارك EA Luxury</p>
       `;
 
+      if (order.status === "مكتمل") {
+        const returnPanel=document.createElement("section");
+        returnPanel.className="customerReturnPanel";
+        returnPanel.innerHTML='<h3>استبدال أو إرجاع منتج</h3><p>يمكنك تقديم طلب بعد استلام الطلب. سنراجع طلبك ونتواصل معك.</p><p class="customerReturnLoading">جاري تحميل المنتجات...</p>';
+        resultBox.appendChild(returnPanel);
+        try {
+          const {data:items,error:itemsError}=await db.rpc("customer_list_returnable_items",{p_order_id:orderId,p_phone:values.phone});
+          if(itemsError)throw itemsError;
+          const available=(items||[]).filter(item=>Number(item.ordered_quantity)>Number(item.already_requested));
+          if(!available.length){
+            returnPanel.querySelector(".customerReturnLoading").textContent="لا توجد كميات متاحة لطلب استبدال أو إرجاع لهذا الطلب.";
+          } else {
+            const options=available.map(item=>{
+              const variant=[item.selected_size?"المقاس: "+item.selected_size:"",item.selected_color?"اللون: "+item.selected_color:""].filter(Boolean).join(" / ");
+              return '<option value="'+Number(item.order_item_id)+'" data-max="'+(Number(item.ordered_quantity)-Number(item.already_requested))+'">'+escapeHTML(item.product_name)+(variant?" — "+escapeHTML(variant):"")+' (متاح طلب '+(Number(item.ordered_quantity)-Number(item.already_requested))+')</option>';
+            }).join("");
+            returnPanel.innerHTML='<h3>استبدال أو إرجاع منتج</h3><p>اختر المنتج والكمية واكتب السبب. لن يتغير المخزون بمجرد تقديم الطلب.</p><form id="customerReturnForm" class="customerReturnForm"><label>المنتج<select name="item_id" required>'+options+'</select></label><label>نوع الطلب<select name="request_type" required><option value="return">إرجاع</option><option value="exchange">استبدال</option></select></label><label>الكمية<input name="quantity" type="number" min="1" max="'+(Number(available[0].ordered_quantity)-Number(available[0].already_requested))+'" value="1" required></label><label>سبب الطلب<textarea name="reason" maxlength="500" minlength="3" required placeholder="اكتب سبب الاستبدال أو الإرجاع"></textarea></label><label>ملاحظات إضافية (اختياري)<textarea name="customer_note" maxlength="1000" placeholder="أي تفاصيل تساعدنا في مراجعة الطلب"></textarea></label><button type="submit" class="customerCancelOrderButton">إرسال الطلب</button><p class="customerReturnMessage" aria-live="polite"></p></form>';
+            const form=returnPanel.querySelector("#customerReturnForm");
+            const itemSelect=form.elements.item_id,qtyInput=form.elements.quantity;
+            itemSelect.addEventListener("change",()=>{const max=Number(itemSelect.selectedOptions[0]?.dataset.max||1);qtyInput.max=String(max);qtyInput.value="1";});
+            form.addEventListener("submit",async e=>{
+              e.preventDefault();
+              const button=form.querySelector('button[type="submit"]'),message=form.querySelector(".customerReturnMessage");
+              const selected=itemSelect.selectedOptions[0],quantity=Number(qtyInput.value);
+              const max=Number(selected?.dataset.max||0);
+              if(!Number.isInteger(quantity)||quantity<1||quantity>max){message.textContent="راجع الكمية المتاحة لهذا المنتج.";return;}
+              button.disabled=true;button.textContent="جاري إرسال الطلب...";
+              try{
+                const {data:requestId,error}=await db.rpc("customer_submit_return_request",{p_order_id:orderId,p_phone:values.phone,p_order_item_id:Number(itemSelect.value),p_request_type:form.elements.request_type.value,p_quantity:quantity,p_reason:form.elements.reason.value.trim(),p_customer_note:form.elements.customer_note.value.trim()});
+                if(error)throw error;
+                message.textContent="تم استلام طلبك رقم #"+requestId+" وسيتم مراجعته. لم يتم تغيير المخزون.";
+                form.reset();form.querySelectorAll("input,textarea,select").forEach(el=>el.disabled=true);button.textContent="تم إرسال الطلب";
+              }catch(err){message.textContent=err.message||"تعذر إرسال الطلب. حاول مرة أخرى.";button.disabled=false;button.textContent="إرسال الطلب";}
+            });
+          }
+        } catch(err) {
+          const loading=returnPanel.querySelector(".customerReturnLoading");
+          if(loading)loading.textContent=err.message||"تعذر تحميل منتجات الطلب.";
+        }
+      }
+
       const cancelButton = document.getElementById("customerCancelOrderButton");
       if (cancelButton) {
         cancelButton.addEventListener("click", () => {

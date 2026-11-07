@@ -5,6 +5,22 @@ const detailDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const detailRoot = document.getElementById("productDetails");
 const detailId = new URLSearchParams(window.location.search).get("id");
 let detailProduct = null;
+let detailStoreSettings={};
+let detailDisplayCurrency=(()=>{try{return localStorage.getItem("eaLuxuryDisplayCurrency")==="AED"?"AED":"EGP";}catch(_){return "EGP";}})();
+function detailRate(){const n=Number(detailStoreSettings?.aedToEgpRate||14.67);return Number.isFinite(n)&&n>0?n:14.67;}
+function detailConvert(amount,from,to){const value=Number(amount)||0;const a=from==="AED"?"AED":"EGP",b=to==="AED"?"AED":"EGP";if(a===b)return value;return a==="AED"?value*detailRate():value/detailRate();}
+function detailMoney(amount){return Number(amount||0).toLocaleString("ar-EG",{maximumFractionDigits:2})+" "+(detailDisplayCurrency==="AED"?"درهم":"جنيه");}
+function detailSyncCurrencyButton(){const button=document.getElementById("currencyToggleButton");if(button){button.textContent="عرض: "+detailDisplayCurrency;button.title="التبديل بين الجنيه المصري والدرهم الإماراتي";}}
+const detailCurrencyButton=document.getElementById("currencyToggleButton");
+if(detailCurrencyButton)detailCurrencyButton.addEventListener("click",()=>{
+ detailDisplayCurrency=detailDisplayCurrency==="EGP"?"AED":"EGP";
+ try{localStorage.setItem("eaLuxuryDisplayCurrency",detailDisplayCurrency);}catch(_){}
+ detailSyncCurrencyButton();
+ const price=document.querySelector(".product-detail-price");
+ if(price&&detailProduct)price.innerHTML=detailPriceMarkup(detailProduct);
+});
+detailSyncCurrencyButton();
+
 let detailVariants = [];
 let detailImages = [];
 let detailSelectedImage = 0;
@@ -252,15 +268,11 @@ function detailEffectivePrice(product) {
 }
 
 function detailPriceMarkup(product) {
-  const regular = Number(product?.price || 0);
-  const sale = detailEffectivePrice(product);
-  if (sale < regular) {
-    const discount = Math.round((1 - sale / regular) * 100);
-    return '<strong class="product-sale-price">' + sale.toLocaleString("ar-EG") +
-      ' جنيه</strong> <del class="product-old-price">' + regular.toLocaleString("ar-EG") +
-      ' جنيه</del> <span class="product-discount-badge">خصم ' + discount + '%</span>';
-  }
-  return sale.toLocaleString("ar-EG") + " جنيه";
+  const source=product?.currency||"EGP";
+  const regular=detailConvert(Number(product?.price||0),source,detailDisplayCurrency);
+  const sale=detailConvert(detailEffectivePrice(product),source,detailDisplayCurrency);
+  if(sale<regular){const discount=Math.round((1-sale/regular)*100);return '<strong class="product-sale-price">'+detailMoney(sale)+'</strong> <del class="product-old-price">'+detailMoney(regular)+'</del> <span class="product-discount-badge">خصم '+discount+'%</span>';}
+  return detailMoney(sale);
 }
 
 
@@ -569,6 +581,7 @@ function detailAddToCart() {
   }
   if (item) {
     item.price = detailEffectivePrice(p);
+    item.currency = p.currency || "EGP";
     item.quantity = existingQuantity + requestedQuantity;
     item.availableStock = availableStock;
   } else {
@@ -605,6 +618,9 @@ async function detailLoadProduct() {
   }
 
   detailProduct = data;
+  const {data:settingsRow}=await detailDb.from("store_settings").select("settings").eq("id",1).maybeSingle();
+  detailStoreSettings=settingsRow?.settings||{};
+  detailSyncCurrencyButton();
   try {
     const key = "eaLuxuryRecentlyViewed";
     const saved = JSON.parse(localStorage.getItem(key) || "[]");

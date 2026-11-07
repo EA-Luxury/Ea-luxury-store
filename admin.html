@@ -178,6 +178,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 </select>
 <input id="price" type="number" min="1" placeholder="السعر بالجنيه">
 <input id="salePrice" type="number" min="0.01" step="0.01" placeholder="سعر العرض بعد الخصم (اختياري)">
+<label for="saleStartAt">بداية العرض (اختياري)</label>
+<input id="saleStartAt" type="datetime-local">
+<label for="saleEndAt">نهاية العرض (اختياري)</label>
+<input id="saleEndAt" type="datetime-local">
+<small>اترك التاريخين فارغين لتطبيق العرض فورًا دون موعد انتهاء.</small>
 <input id="purchaseCost" type="number" min="0" step="0.01" placeholder="تكلفة شراء القطعة الواحدة بالجنيه (مطلوب)">
 <input id="stock" type="number" min="0" step="1" placeholder="الكمية الإجمالية القديمة للمنتج">
 <textarea id="description" rows="4" placeholder="وصف المنتج وتفاصيل الخامة والتصميم..."></textarea>
@@ -440,6 +445,10 @@ const category=document.getElementById("category").value;
 const price=Number(document.getElementById("price").value);
 const salePriceValue=document.getElementById("salePrice").value.trim();
 const salePrice=salePriceValue===""?null:Number(salePriceValue);
+const saleStartValue=document.getElementById("saleStartAt").value;
+const saleEndValue=document.getElementById("saleEndAt").value;
+const saleStartAt=saleStartValue?new Date(saleStartValue):null;
+const saleEndAt=saleEndValue?new Date(saleEndValue):null;
 const purchaseCostValue=document.getElementById("purchaseCost").value.trim();
 const purchaseCost=purchaseCostValue===""?null:Number(purchaseCostValue);
 const stockValue=document.getElementById("stock").value;
@@ -450,7 +459,7 @@ const sizes=document.getElementById("sizes").value.split(",").map(x=>x.trim()).f
 const colors=document.getElementById("colors").value.split(",").map(x=>x.trim()).filter(Boolean);
 const files=Array.from(document.getElementById("photo").files);
 
-if(!name||!Number.isFinite(price)||price<=0||(salePrice!==null&&(!Number.isFinite(salePrice)||salePrice<=0||salePrice>=price))||purchaseCost===null||!Number.isFinite(purchaseCost)||purchaseCost<0||stockValue===""||!Number.isInteger(stock)||stock<0||files.length===0){
+if(!name||!Number.isFinite(price)||price<=0||(salePrice!==null&&(!Number.isFinite(salePrice)||salePrice<=0||salePrice>=price))||(saleStartAt&&!Number.isFinite(saleStartAt.getTime()))||(saleEndAt&&!Number.isFinite(saleEndAt.getTime()))||(saleStartAt&&saleEndAt&&saleEndAt<=saleStartAt)||(salePrice===null&&(saleStartAt||saleEndAt))||purchaseCost===null||!Number.isFinite(purchaseCost)||purchaseCost<0||stockValue===""||!Number.isInteger(stock)||stock<0||files.length===0){
 msg.textContent="اكتب الاسم والسعر وتكلفة الشراء والكمية واختر صورة واحدة على الأقل.";
 return;
 }
@@ -493,6 +502,8 @@ name:name,
 category:category,
 price:price,
 sale_price:salePrice,
+sale_starts_at:saleStartAt?saleStartAt.toISOString():null,
+sale_ends_at:saleEndAt?saleEndAt.toISOString():null,
 stock:stock,
 description:description,
 sizes:sizes,
@@ -507,7 +518,7 @@ if(error)throw error;
 const {error:costError}=await client.from("product_costs").upsert({product_id:createdProduct.id,purchase_cost:purchaseCost,updated_at:new Date().toISOString()},{onConflict:"product_id"});
 if(costError){
 msg.textContent="تم إنشاء المنتج ورفع الصور، لكن تعذر حفظ تكلفة الشراء. افتح بطاقة المنتج وأعد إدخال التكلفة. السبب: "+costError.message;
-["name","price","salePrice","purchaseCost","stock","description","sizes","colors","photo"].forEach(id=>{document.getElementById(id).value="";});
+["name","price","salePrice","saleStartAt","saleEndAt","purchaseCost","stock","description","sizes","colors","photo"].forEach(id=>{document.getElementById(id).value="";});
 await loadProducts();
 return;
 }
@@ -638,10 +649,20 @@ salePriceInput.inputMode="decimal";
 salePriceInput.placeholder="سعر العرض بعد الخصم (اختياري)";
 salePriceInput.value=p.sale_price??"";
 
+const saleStartInput=document.createElement("input");
+saleStartInput.type="datetime-local";
+saleStartInput.title="بداية العرض (اختياري)";
+saleStartInput.value=toLocalDateTimeValue(p.sale_starts_at);
+const saleEndInput=document.createElement("input");
+saleEndInput.type="datetime-local";
+saleEndInput.title="نهاية العرض (اختياري)";
+saleEndInput.value=toLocalDateTimeValue(p.sale_ends_at);
+const saleScheduleNote=document.createElement("small");
+saleScheduleNote.textContent="بداية: "+(p.sale_starts_at?new Date(p.sale_starts_at).toLocaleString("ar-EG"):"فوري")+" | نهاية: "+(p.sale_ends_at?new Date(p.sale_ends_at).toLocaleString("ar-EG"):"بدون موعد");
 const savePricesButton=document.createElement("button");
 savePricesButton.type="button";
-savePricesButton.textContent="حفظ الأسعار";
-savePricesButton.onclick=()=>updateProductPrices(p.id,regularPriceInput.value,salePriceInput.value);
+savePricesButton.textContent="حفظ الأسعار ومواعيد العرض";
+savePricesButton.onclick=()=>updateProductPrices(p.id,regularPriceInput.value,salePriceInput.value,saleStartInput.value,saleEndInput.value);
 
 const activeButton=document.createElement("button");
 activeButton.type="button";
@@ -663,7 +684,7 @@ loadVariants();
 document.getElementById("variantsSection").scrollIntoView({behavior:"smooth"});
 };
 
-div.append(title,detail,quantityLabel,imageCount,regularPriceInput,salePriceInput,savePricesButton,purchaseCostInput,savePurchaseCostButton,descriptionInput,saveDescriptionButton,stockInput,saveButton,activeButton,variantsButton,deleteButton);
+div.append(title,detail,quantityLabel,imageCount,regularPriceInput,salePriceInput,saleStartInput,saleEndInput,saleScheduleNote,savePricesButton,purchaseCostInput,savePurchaseCostButton,descriptionInput,saveDescriptionButton,stockInput,saveButton,activeButton,variantsButton,deleteButton);
 box.append(div);
 });
 
@@ -707,7 +728,15 @@ alert("تم حفظ تكلفة الشراء. ستُستخدم في الطلبات
 await loadProducts();
 }
 
-async function updateProductPrices(id,regularValue,saleValue){
+function toLocalDateTimeValue(value){
+if(!value)return "";
+const date=new Date(value);
+if(!Number.isFinite(date.getTime()))return "";
+const local=new Date(date.getTime()-date.getTimezoneOffset()*60000);
+return local.toISOString().slice(0,16);
+}
+
+async function updateProductPrices(id,regularValue,saleValue,startValue,endValue){
 if(!adminReady)return;
 const regularPrice=String(regularValue??"").trim()===""?NaN:Number(regularValue);
 const salePrice=String(saleValue??"").trim()===""?null:Number(saleValue);
@@ -719,7 +748,13 @@ if(salePrice!==null&&(!Number.isFinite(salePrice)||salePrice<=0||salePrice>=regu
 alert("سعر العرض يجب أن يكون أكبر من صفر وأقل من السعر الأساسي. اتركه فارغًا إذا لم يوجد عرض.");
 return;
 }
-const {error}=await client.from("products").update({price:regularPrice,sale_price:salePrice}).eq("id",id);
+const saleStart=startValue?new Date(startValue):null;
+const saleEnd=endValue?new Date(endValue):null;
+if((saleStart&&!Number.isFinite(saleStart.getTime()))||(saleEnd&&!Number.isFinite(saleEnd.getTime()))||(saleStart&&saleEnd&&saleEnd<=saleStart)||(salePrice===null&&(saleStart||saleEnd))){
+alert("راجع مواعيد العرض: تاريخ النهاية يجب أن يكون بعد البداية، ولا يمكن تحديد موعد دون سعر عرض.");
+return;
+}
+const {error}=await client.from("products").update({price:regularPrice,sale_price:salePrice,sale_starts_at:saleStart?saleStart.toISOString():null,sale_ends_at:saleEnd?saleEnd.toISOString():null}).eq("id",id);
 if(error){alert("تعذر حفظ أسعار المنتج: "+error.message);return;}
 alert("تم حفظ السعر الأساسي"+(salePrice===null?" وإلغاء الخصم.":" وسعر العرض بنجاح."));
 await loadProducts();

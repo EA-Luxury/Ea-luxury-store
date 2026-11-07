@@ -775,6 +775,44 @@ function renderHomeCollections() {
     offersSection.hidden = offers.length === 0;
     offersGrid.innerHTML = offers.map(item => makeTile(item, true)).join("");
   }
+  renderCategoryShowcase();
+}
+
+// بطاقات أقسام مرئية بصور منتجات فعلية، وتستخدم نفس أزرار تصفية القسم الحالية.
+function renderCategoryShowcase() {
+  const showcase = document.getElementById("categoryShowcaseGrid");
+  const navigation = document.getElementById("categoryNavigation");
+  if (!showcase || !navigation || !Array.isArray(products)) return;
+
+  const categoryNames = [...navigation.querySelectorAll("[data-category]")]
+    .map(button => button.dataset.category)
+    .filter(name => name && name !== "الكل");
+
+  showcase.innerHTML = categoryNames.map(name => {
+    const product = products.find(item => item.category === name && getProductImages(item).length);
+    const image = product ? getProductImages(product)[0] : "";
+    const count = products.filter(item => item.category === name).length;
+    return `
+      <button class="category-showcase-card" type="button" data-showcase-category="${escapeHTML(name)}">
+        <span class="category-showcase-image">
+          ${image ? `<img src="${escapeHTML(image)}" alt="" loading="lazy">` : '<span class="category-showcase-placeholder">EA</span>'}
+        </span>
+        <span class="category-showcase-copy">
+          <strong>${escapeHTML(name)}</strong>
+          <small>${count.toLocaleString("ar-EG")} منتج</small>
+          <span>تسوق القسم ←</span>
+        </span>
+      </button>
+    `;
+  }).join("");
+}
+
+document.getElementById("categoryShowcaseGrid")?.addEventListener("click", event => {
+  const card = event.target.closest("[data-showcase-category]");
+  if (!card) return;
+  const target = document.querySelector('#categoryNavigation [data-category="' + CSS.escape(card.dataset.showcaseCategory) + '"]');
+  target?.click();
+  document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 // الضغط على الصور الصغيرة أو الكبيرة

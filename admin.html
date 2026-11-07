@@ -234,7 +234,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 <section id="productsSection">
 <h2>المنتجات والمخزون</h2>
-<input id="adminProductSearch" type="search" placeholder="ابحث باسم المنتج أو القسم..." aria-label="البحث في المنتجات">
+<input id="adminProductSearch" type="search" placeholder="ابحث باسم المنتج أو الماركة أو القسم..." aria-label="البحث في المنتجات">
 <div id="productsList">جاري التحميل...</div>
 </section>
 
@@ -956,7 +956,7 @@ select.appendChild(option);
 
 const div=document.createElement("div");
 div.className="order productAdminCard";
-div.dataset.search=(String(p.name||"")+" "+String(p.category||"")).toLocaleLowerCase("ar");
+div.dataset.search=(String(p.name||"")+" "+String(p.brand||"")+" "+String(p.category||"")).toLocaleLowerCase("ar");
 
 const title=document.createElement("b");
 title.textContent=p.name+" - "+(p.sale_price?Number(p.sale_price).toLocaleString("ar-EG")+" "+(p.currency==="AED"?"درهم":"جنيه")+" بدل "+Number(p.price).toLocaleString("ar-EG")+" "+(p.currency==="AED"?"درهم":"جنيه"):" "+p.price+" "+(p.currency==="AED"?"درهم":"جنيه"));
@@ -1061,6 +1061,11 @@ saveThresholdButton.type="button";
 saveThresholdButton.textContent="حفظ حد التنبيه";
 saveThresholdButton.onclick=()=>updateProductLowStockThreshold(p.id,thresholdInput.value);
 
+const featuredButton=document.createElement("button");
+featuredButton.type="button";
+featuredButton.textContent=p.is_featured?"إزالة من ترشيحاتنا":"إضافة إلى ترشيحاتنا";
+featuredButton.onclick=()=>toggleProductFeatured(p.id,!p.is_featured);
+
 const activeButton=document.createElement("button");
 activeButton.type="button";
 activeButton.textContent=p.active?"إخفاء المنتج":"إظهار المنتج";
@@ -1089,7 +1094,7 @@ if(hasProductVariants){
 }else{
  productCardControls.push(stockInput,saveButton);
 }
-productCardControls.push(thresholdLabel,saveThresholdButton,activeButton,variantsButton,deleteButton);
+productCardControls.push(thresholdLabel,saveThresholdButton,featuredButton,activeButton,variantsButton,deleteButton);
 div.append(...productCardControls);
 box.append(div);
 });
@@ -1098,6 +1103,14 @@ if(oldValue && data.some(p=>String(p.id)===oldValue)){
 select.value=oldValue;
 await loadVariants();
 }
+}
+
+async function toggleProductFeatured(id,featured){
+if(!adminReady)return;
+const {error}=await client.from("products").update({is_featured:Boolean(featured)}).eq("id",id);
+if(error){alert("تعذر تحديث ترشيحات الصفحة الرئيسية: "+error.message);return;}
+alert(featured?"تمت إضافة المنتج إلى ترشيحات الصفحة الرئيسية.":"تمت إزالة المنتج من الترشيحات.");
+await loadProducts();
 }
 
 async function updateStock(id,value){

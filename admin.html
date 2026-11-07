@@ -1111,6 +1111,21 @@ window.loadVariants=loadVariants;
 window.saveVariant=saveVariant;
 window.resetVariantForm=resetVariantForm;
 
+// استعادة جلسة الإدارة المحفوظة بعد تحديث الصفحة أو فتح اللوحة مرة أخرى.
+client.auth.getSession().then(async ({data,error})=>{
+if(error){
+console.warn("تعذر استعادة جلسة الإدارة:",error.message);
+return;
+}
+const userId=data?.session?.user?.id;
+if(userId){
+document.getElementById("loginMsg").textContent="جاري استعادة جلسة الإدارة...";
+await checkAdmin(userId);
+}
+}).catch(error=>{
+console.error("Session restore failed:",error);
+});
+
 })();
 </script>
 </body>

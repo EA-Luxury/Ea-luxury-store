@@ -1260,32 +1260,52 @@ if (trackingForm) {
 
       const cancelButton = document.getElementById("customerCancelOrderButton");
       if (cancelButton) {
-        cancelButton.addEventListener("click", async () => {
-          if (!window.confirm("هل أنت متأكد من إلغاء هذا الطلب؟ سيتم إرجاع الكمية إلى المخزون.")) return;
+        cancelButton.addEventListener("click", () => {
+          if (document.getElementById("customerCancelReasonBox")) return;
+          const reasonBox = document.createElement("div");
+          reasonBox.id = "customerCancelReasonBox";
+          reasonBox.className = "customerCancelReasonBox";
+          reasonBox.innerHTML = `
+            <label for="customerCancelReason">سبب إلغاء الطلب (اختياري)</label>
+            <textarea id="customerCancelReason" maxlength="500" rows="3" placeholder="اكتب سبب الإلغاء لمساعدتنا على تحسين الخدمة..."></textarea>
+            <div class="customerCancelReasonActions">
+              <button type="button" id="confirmCustomerCancelButton" class="customerCancelOrderButton">تأكيد الإلغاء</button>
+              <button type="button" id="keepCustomerOrderButton" class="customerKeepOrderButton">رجوع</button>
+            </div>
+          `;
+          cancelButton.insertAdjacentElement("afterend", reasonBox);
 
-          cancelButton.disabled = true;
-          cancelButton.textContent = "جاري إلغاء الطلب...";
-          try {
-            const { data: cancelResult, error: cancelError } = await db.rpc("customer_cancel_order", {
-              p_order_id: orderId,
-              p_phone: values.phone
-            });
-            if (cancelError) throw cancelError;
+          document.getElementById("keepCustomerOrderButton").addEventListener("click", () => reasonBox.remove());
+          document.getElementById("confirmCustomerCancelButton").addEventListener("click", async () => {
+            const reason = document.getElementById("customerCancelReason").value.trim();
+            if (!window.confirm("هل أنت متأكد من إلغاء هذا الطلب؟ سيتم إرجاع الكمية إلى المخزون.")) return;
 
-            resultBox.classList.remove("notFound");
-            resultBox.classList.add("found");
-            resultBox.innerHTML = `
-              <div class="trackingOrderNumber">طلبك رقم #${escapeHTML(order.order_id)}</div>
-              <div class="trackingStatus">تم إلغاء الطلب بنجاح</div>
-              <p>تم تسجيل الإلغاء وإرجاع الكمية إلى المخزون.</p>
-              <p class="trackingNote">شكرًا لاختيارك EA Luxury</p>
-            `;
-          } catch (cancelError) {
-            console.error("خطأ إلغاء الطلب:", cancelError);
-            cancelButton.disabled = false;
-            cancelButton.textContent = "إلغاء الطلب";
-            resultBox.insertAdjacentHTML("beforeend", `<p class="trackingCancelError">${escapeHTML(cancelError.message || "تعذر إلغاء الطلب حاليًا. حاول مرة أخرى.")}</p>`);
-          }
+            const confirmButton = document.getElementById("confirmCustomerCancelButton");
+            confirmButton.disabled = true;
+            confirmButton.textContent = "جاري إلغاء الطلب...";
+            try {
+              const { error: cancelError } = await db.rpc("customer_cancel_order", {
+                p_order_id: orderId,
+                p_phone: values.phone,
+                p_reason: reason
+              });
+              if (cancelError) throw cancelError;
+
+              resultBox.classList.remove("notFound");
+              resultBox.classList.add("found");
+              resultBox.innerHTML = `
+                <div class="trackingOrderNumber">طلبك رقم #${escapeHTML(order.order_id)}</div>
+                <div class="trackingStatus">تم إلغاء الطلب بنجاح</div>
+                <p>تم تسجيل الإلغاء وإرجاع الكمية إلى المخزون.</p>
+                <p class="trackingNote">شكرًا لاختيارك EA Luxury</p>
+              `;
+            } catch (cancelError) {
+              console.error("خطأ إلغاء الطلب:", cancelError);
+              confirmButton.disabled = false;
+              confirmButton.textContent = "تأكيد الإلغاء";
+              reasonBox.insertAdjacentHTML("beforeend", `<p class="trackingCancelError">${escapeHTML(cancelError.message || "تعذر إلغاء الطلب حاليًا. حاول مرة أخرى.")}</p>`);
+            }
+          });
         });
       }
     } catch (error) {

@@ -443,7 +443,12 @@ active:true
 if(error)throw error;
 
 const {error:costError}=await client.from("product_costs").upsert({product_id:createdProduct.id,purchase_cost:purchaseCost,updated_at:new Date().toISOString()},{onConflict:"product_id"});
-if(costError)throw new Error("تم إنشاء المنتج لكن تعذر حفظ تكلفة الشراء. يمكنك إدخالها من بطاقة المنتج: "+costError.message);
+if(costError){
+msg.textContent="تم إنشاء المنتج ورفع الصور، لكن تعذر حفظ تكلفة الشراء. افتح بطاقة المنتج وأعد إدخال التكلفة. السبب: "+costError.message;
+["name","price","salePrice","purchaseCost","stock","description","sizes","colors","photo"].forEach(id=>{document.getElementById(id).value="";});
+await loadProducts();
+return;
+}
 
 msg.textContent="تم إضافة المنتج بنجاح وحفظ التكلفة و"+imageUrls.length+" صور.";
 
@@ -476,6 +481,13 @@ if(error){
 box.textContent="خطأ في تحميل المنتجات: "+error.message;
 return;
 }
+
+const {data:costRows,error:costLoadError}=await client.from("product_costs").select("product_id,purchase_cost");
+if(costLoadError){
+box.textContent="تعذر تحميل تكاليف الشراء: "+costLoadError.message;
+return;
+}
+const purchaseCosts=new Map((costRows||[]).map(row=>[String(row.product_id),row.purchase_cost]));
 
 box.innerHTML="";
 document.getElementById("statProducts").textContent=String(data?.length||0);
@@ -542,7 +554,7 @@ purchaseCostInput.type="number";
 purchaseCostInput.min="0";
 purchaseCostInput.step="0.01";
 purchaseCostInput.placeholder="تكلفة شراء القطعة الواحدة بالجنيه";
-purchaseCostInput.value="";
+purchaseCostInput.value=purchaseCosts.has(String(p.id))?String(purchaseCosts.get(String(p.id))):"";
 const savePurchaseCostButton=document.createElement("button");
 savePurchaseCostButton.type="button";
 savePurchaseCostButton.textContent="حفظ تكلفة الشراء";

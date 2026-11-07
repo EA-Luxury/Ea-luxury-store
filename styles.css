@@ -1423,3 +1423,53 @@ footer small {
   .aboutStoreSection { padding:42px 14px; }
   .faqSection { padding:42px 14px; }
 }
+
+
+/* سبب إلغاء الطلب من صفحة التتبع */
+.customerCancelReasonBox {
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid #c5a15b66;
+  border-radius: 12px;
+  background: #171511;
+  text-align: right;
+}
+.customerCancelReasonBox label {
+  display: block;
+  margin-bottom: 8px;
+  color: #d8bd83;
+  font-weight: 700;
+}
+.customerCancelReasonBox textarea {
+  display: block;
+  width: 100%;
+  min-height: 82px;
+  padding: 10px 12px;
+  border: 1px solid #8d7548;
+  border-radius: 8px;
+  background: #0e0e0e;
+  color: #fff;
+  font: inherit;
+  resize: vertical;
+}
+.customerCancelReasonActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.customerKeepOrderButton {
+  padding: 10px 16px;
+  border: 1px solid #8d7548;
+  border-radius: 8px;
+  background: transparent;
+  color: #e8e0d0;
+  cursor: pointer;
+}
+.orderCancellationReason {
+  padding: 10px 12px;
+  border-right: 3px solid #c5a15b;
+  border-radius: 6px;
+  background: #c5a15b12;
+  color: #e6d2a8;
+}

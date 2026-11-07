@@ -1049,7 +1049,7 @@ if(openFilterButton) openFilterButton.addEventListener("click",openAdvancedFilte
 document.querySelectorAll("[data-close-filter]").forEach(el=>el.addEventListener("click",closeAdvancedFilters));
 document.addEventListener("keydown",event=>{if(event.key==="Escape")closeAdvancedFilters();});
 const applyFiltersButton=document.getElementById("applyAdvancedFilters");
-if(applyFiltersButton) applyFiltersButton.addEventListener("click",()=>{setAdvancedFiltersFromPanel();showProducts();syncAdvancedFilterControls();closeAdvancedFilters();});
+if(applyFiltersButton) applyFiltersButton.addEventListener("click",()=>{const min=Number(document.getElementById("filterMinPrice")?.value||0),max=Number(document.getElementById("filterMaxPrice")?.value||0);if(document.getElementById("filterMinPrice")?.value!==""&&document.getElementById("filterMaxPrice")?.value!==""&&min>max){alert("السعر الأدنى لازم يكون أقل من أو يساوي السعر الأعلى.");return;}setAdvancedFiltersFromPanel();showProducts();syncAdvancedFilterControls();closeAdvancedFilters();});
 const clearFiltersButton=document.getElementById("clearAdvancedFilters");
 if(clearFiltersButton) clearFiltersButton.addEventListener("click",()=>{
   selectedProductSizes=[];selectedProductColors=[];selectedProductCategories=[];

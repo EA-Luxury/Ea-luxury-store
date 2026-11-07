@@ -2102,7 +2102,7 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
   box-sizing: border-box;
   object-fit: contain;
   object-position: center;
-  background: #f7f6f3;
+  background: transparent;
 }
 
 @media (max-width: 650px) {

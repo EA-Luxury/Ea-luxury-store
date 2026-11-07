@@ -662,26 +662,31 @@ reader.readAsText(file,"UTF-8");
 });
 
 async function startBulkProductImport(){
-if(!adminReady)return;
+if(!adminReady){
+document.getElementById("bulkImportMsg").textContent="سجّل دخولك كمدير أولًا ثم أعد المحاولة.";
+return;
+}
 const msg=document.getElementById("bulkImportMsg");
 const button=document.getElementById("startBulkImportButton");
 const valid=bulkImportRows.filter(item=>!item._errors.length);
 if(!valid.length||valid.length!==bulkImportRows.length){msg.textContent="صحح كل الأخطاء في الملف ثم ارفعه مرة أخرى.";return;}
-if(!confirm("سيتم إضافة "+valid.length+" منتجًا جديدًا. لن يتم تعديل المنتجات الموجودة. هل تريد المتابعة؟"))return;
+if(!confirm("سيتم تحديث المنتجات الموجودة بنفس الاسم وإضافة المنتجات الجديدة. سيتم استبدال بيانات المنتج ومخزونه وصوره ومقاساته بما هو موجود في الملف. هل تريد المتابعة؟"))return;
 button.disabled=true;
-let added=0,skipped=0,failed=0,costFailed=0;
+let added=0,updated=0,failed=0,costFailed=0,variantFailed=0;
 const details=[];
+const normalizeName=value=>String(value||"").normalize("NFKC").toLocaleLowerCase("ar").replace(/\s+/g," ").trim();
+const normalizeVariant=value=>String(value||"").normalize("NFKC").toLocaleLowerCase("ar").replace(/\s+/g," ").trim();
 try{
 msg.textContent="جاري فحص المنتجات الموجودة...";
-const {data:existing,error:existingError}=await client.from("products").select("name");
+const {data:existing,error:existingError}=await client.from("products").select("id,name");
 if(existingError)throw existingError;
-const existingNames=new Set((existing||[]).map(p=>String(p.name||"").normalize("NFKC").toLocaleLowerCase("ar").replace(/\s+/g," ").trim()));
+const existingByName=new Map();
+(existing||[]).forEach(p=>{const key=normalizeName(p.name);if(key&&!existingByName.has(key))existingByName.set(key,p);});
 for(let i=0;i<valid.length;i++){
 const item=valid[i];
-const key=String(item.name).normalize("NFKC").toLocaleLowerCase("ar").replace(/\s+/g," ").trim();
-if(existingNames.has(key)){skipped++;details.push("تم تخطي الصف "+item._row+" ("+item.name+"): المنتج موجود بالفعل.");continue;}
+const key=normalizeName(item.name);
+const matched=existingByName.get(key)||null;
 let uploadedPaths=[];
-let productCreated=false;
 try{
 const images=(item.image_urls||"").split("|").map(v=>v.trim()).filter(Boolean);
 const selectedFiles=Array.isArray(item._imageFiles)?item._imageFiles:[];
@@ -699,46 +704,73 @@ images.push(imageData.publicUrl);
 }
 if(!images.length||images.length>5)throw new Error("يجب توفير صورة واحدة على الأقل وبحد أقصى 5 صور.");
 const sale=item.sale_price===""?null:Number(item.sale_price);
-const start=item.sale_starts_at?new Date(item.sale_starts_at).toISOString():null;
-const end=item.sale_ends_at?new Date(item.sale_ends_at).toISOString():null;
+const saleStart=item.sale_starts_at?new Date(item.sale_starts_at).toISOString():null;
+const saleEnd=item.sale_ends_at?new Date(item.sale_ends_at).toISOString():null;
 const variants=item.variants_json?JSON.parse(item.variants_json):[];
 const activeValue=item.active===""?true:!["false","0","draft","no"].includes(String(item.active).trim().toLowerCase());
-const {data:created,error}=await client.from("products").insert({
-name:item.name,brand:(item.brand||"متنوع").trim(),category:item.category,price:Number(item.price),currency:(item.currency||"EGP").toUpperCase(),sale_price:sale,
-sale_starts_at:start,sale_ends_at:end,stock:Number(item.stock),description:item.description||"",
+const productPayload={
+name:item.name,brand:(item.brand||"متنوع").trim(),category:item.category,
+price:Number(item.price),currency:(item.currency||"EGP").toUpperCase(),
+sale_price:sale,sale_starts_at:saleStart,sale_ends_at:saleEnd,
+stock:Number(item.stock),description:item.description||"",
 sizes:(item.sizes||"").split("|").map(v=>v.trim()).filter(Boolean),
 colors:(item.colors||"").split("|").map(v=>v.trim()).filter(Boolean),
 image_url:images[0],image_urls:images,active:activeValue
-}).select("id").single();
-if(error)throw error;
-productCreated=true;
+};
+let productId;
+if(matched){
+const {error:updateError}=await client.from("products").update(productPayload).eq("id",matched.id);
+if(updateError)throw updateError;
+productId=matched.id;
+}else{
+const {data:created,error:createError}=await client.from("products").insert(productPayload).select("id").single();
+if(createError)throw createError;
+productId=created.id;
+}
 if(variants.length){
- const variantRows=variants.map(v=>({product_id:created.id,size:v.size||null,color:v.color||null,stock:Number(v.stock)||0,sku:v.sku||null,is_active:v.active===false?false:true}));
- const {error:variantError}=await client.from("product_variants").insert(variantRows);
- if(variantError){
-  await client.from("products").delete().eq("id",created.id);
-  productCreated=false;
-  throw new Error("تعذر حفظ المقاسات والمخزون: "+variantError.message);
- }
+const {data:currentVariants,error:currentVariantsError}=await client.from("product_variants").select("id,size,color").eq("product_id",productId);
+if(currentVariantsError)throw new Error("تعذر قراءة المقاسات الحالية: "+currentVariantsError.message);
+const currentByKey=new Map();
+(currentVariants||[]).forEach(v=>currentByKey.set(normalizeVariant(v.size)+"|"+normalizeVariant(v.color),v));
+const importedKeys=new Set();
+for(const v of variants){
+const size=v.size||null,color=v.color||null;
+const variantKey=normalizeVariant(size)+"|"+normalizeVariant(color);
+if(importedKeys.has(variantKey))continue;
+importedKeys.add(variantKey);
+const variantPayload={product_id:productId,size,color,stock:Number(v.stock)||0,sku:v.sku||null,is_active:v.active===false?false:true};
+const current=currentByKey.get(variantKey);
+const variantResult=current
+?await client.from("product_variants").update({size,color,stock:variantPayload.stock,sku:variantPayload.sku,is_active:variantPayload.is_active,updated_at:new Date().toISOString()}).eq("id",current.id)
+:await client.from("product_variants").insert(variantPayload);
+if(variantResult.error)throw new Error("تعذر حفظ المقاسات والمخزون: "+variantResult.error.message);
+}
+for(const [currentKey,current] of currentByKey){
+if(!importedKeys.has(currentKey)){
+const {error:deactivateError}=await client.from("product_variants").update({stock:0,is_active:false,updated_at:new Date().toISOString()}).eq("id",current.id);
+if(deactivateError)throw new Error("تعذر إيقاف تركيبة غير موجودة في الملف: "+deactivateError.message);
+}
+}
 }
 if(item.purchase_cost!==""){
- const {error:costError}=await client.from("product_costs").upsert({product_id:created.id,purchase_cost:Number(item.purchase_cost),updated_at:new Date().toISOString()},{onConflict:"product_id"});
- if(costError){costFailed++;details.push("تمت إضافة "+item.name+" لكن لم تُحفظ تكلفة الشراء: "+costError.message);}
+const {error:costError}=await client.from("product_costs").upsert({product_id:productId,purchase_cost:Number(item.purchase_cost),updated_at:new Date().toISOString()},{onConflict:"product_id"});
+if(costError){costFailed++;details.push((matched?"تم تحديث ":"تمت إضافة ")+item.name+" لكن لم تُحفظ تكلفة الشراء: "+costError.message);}
 }
-existingNames.add(key);added++;
+if(matched)updated++;else{added++;existingByName.set(key,{id:productId,name:item.name});}
 }catch(error){
-if(!productCreated&&uploadedPaths.length){
+if(uploadedPaths.length){
 const {error:cleanupError}=await client.storage.from("product-images").remove(uploadedPaths);
 if(cleanupError)details.push("تعذر تنظيف الصور المؤقتة للصف "+item._row+": "+cleanupError.message);
 }
-failed++;details.push("فشل الصف "+item._row+" ("+item.name+"): "+error.message);
+failed++;
+details.push("فشل الصف "+item._row+" ("+item.name+"): "+error.message);
 }
 msg.textContent="تمت معالجة "+(i+1)+" من "+valid.length+" منتج...";
 }
 await loadProducts();
-document.getElementById("bulkImportResults").textContent=details.length?details.join("\n"):"اكتمل الاستيراد دون أخطاء.";
-msg.textContent="انتهى الاستيراد: تمت إضافة "+added+"، تم تخطي الموجود "+skipped+"، فشل "+failed+"، تعذر حفظ التكلفة لـ "+costFailed+".";
-if(added===valid.length){bulkImportRows=[];document.getElementById("bulkProductsFile").value="";document.getElementById("bulkImportPreview").textContent="اكتمل الاستيراد. يمكنك رفع ملف آخر.";}
+document.getElementById("bulkImportResults").textContent=details.length?details.join("\n"):"اكتمل تحديث وإضافة المنتجات دون أخطاء.";
+msg.textContent="انتهت المعالجة: تمت إضافة "+added+"، تم تحديث "+updated+"، فشل "+failed+"، تعذر حفظ التكلفة لـ "+costFailed+".";
+if(failed===0){bulkImportRows=[];document.getElementById("bulkProductsFile").value="";document.getElementById("bulkImportPreview").textContent="اكتملت معالجة الملف. يمكنك رفع ملف آخر.";}
 }catch(error){msg.textContent="تعذر بدء الاستيراد: "+error.message;}
 finally{button.disabled=false;}
 }

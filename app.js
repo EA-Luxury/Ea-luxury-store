@@ -1093,6 +1093,8 @@ document.getElementById("checkoutForm")
 
 // ربط زر تطبيق كود الخصم.
 document.getElementById("applyCouponButton")?.addEventListener("click", applyStoreCoupon);
+document.getElementById("couponCode")?.addEventListener("input", () => { if (appliedCoupon && document.getElementById("couponCode").value.trim().toUpperCase() !== appliedCoupon.code) { appliedCoupon=null; updateCart(); } });
+document.querySelector('#checkoutForm input[name="phone"]')?.addEventListener("input", () => { if(appliedCoupon){appliedCoupon=null;document.getElementById("couponMessage").textContent="تغير رقم الهاتف؛ أعد تطبيق الكود للتحقق من صلاحيته.";updateCart();} });
 
 // عرض السلة المحفوظة عند فتح الموقع أو صفحة السلة.
 updateCart();

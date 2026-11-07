@@ -545,7 +545,7 @@ const sale=saleRaw===""?null:Number(saleRaw);
 if(!item.name)errors.push("اسم المنتج مطلوب");
 if(!item.category)errors.push("القسم مطلوب");
 if(item.price===""||!Number.isFinite(price)||price<=0)errors.push("السعر غير صحيح");
-if(item.purchase_cost===""||!Number.isFinite(cost)||cost<0)errors.push("تكلفة الشراء غير صحيحة");
+if(item.purchase_cost!==""&&(!Number.isFinite(cost)||cost<0))errors.push("تكلفة الشراء غير صحيحة");
 if(item.stock===""||!Number.isInteger(stock)||stock<0)errors.push("الكمية يجب أن تكون صفرًا أو عددًا صحيحًا");
 if(sale!==null&&(!Number.isFinite(sale)||sale<=0||sale>=price))errors.push("سعر العرض يجب أن يكون أكبر من صفر وأقل من السعر الأساسي");
 if(sale===null&&(item.sale_starts_at||item.sale_ends_at))errors.push("لا يمكن تحديد موعد عرض دون سعر عرض");

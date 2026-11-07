@@ -188,7 +188,7 @@ function syncAdvancedFilterControls() {
   const chips = document.getElementById("activeFilterChips");
   if (chips) {
     const values = [...selectedProductSizes.map(v=>"المقاس: "+v),...selectedProductColors.map(v=>"اللون: "+v),...selectedProductCategories.map(v=>"القسم: "+v)];
-    if(filterMinPrice!==""||filterMaxPrice!=="") values.push("السعر: "+(filterMinPrice||"0")+" - "+(filterMaxPrice||"∞")+" جنيه");
+    if(filterMinPrice!==""||filterMaxPrice!=="") values.push("السعر: "+(filterMinPrice||"0")+" - "+(filterMaxPrice||"∞")+" "+(selectedDisplayCurrency==="AED"?"درهم":"جنيه"));
     if(filterAvailableOnly) values.push("المتاح فقط");
     if(filterOffersOnly) values.push("العروض فقط");
     chips.innerHTML = values.map(v=>'<span class="filter-chip">'+escapeHTML(v)+'</span>').join("");
@@ -776,7 +776,7 @@ function renderHomeCollections() {
     const href = "product.html?id=" + encodeURIComponent(String(product.id));
     const priceMarkup = isOffer
       ? renderProductPrice(product)
-      : '<div class="homeCollectionPrice">' + getEffectiveProductPrice(product).toLocaleString("ar-EG") + ' جنيه</div>';
+      : '<div class="homeCollectionPrice">' + formatStoreMoney(convertCurrencyAmount(getEffectiveProductPrice(product),product.currency||"EGP",selectedDisplayCurrency)) + '</div>';
     return `
       <a class="homeCollectionCard${isOffer ? " homeOfferCard" : ""}" href="${href}">
         <div class="homeCollectionImage">
@@ -1297,7 +1297,7 @@ async function applyStoreCoupon() {
     if(!result || !result.valid) { appliedCoupon=null; message.textContent=result?.message||"تعذر التحقق من كود الخصم."; updateCart(); return; }
     appliedCoupon={code:result.coupon_code,discount_amount:Number(result.discount_amount||0)};
     lastCouponCartFingerprint=JSON.stringify(cart.map(item=>[item.id,item.variant_id||null,item.quantity,Number(item.price||0),item.currency||"EGP"]));
-    message.textContent=result.message+" — تم خصم "+appliedCoupon.discount_amount.toLocaleString("ar-EG")+" جنيه.";
+    message.textContent=result.message+" — تم خصم "+formatStoreMoney(convertCurrencyAmount(appliedCoupon.discount_amount,"EGP",selectedDisplayCurrency))+".";
     updateCart();
   } catch(error) {
     appliedCoupon=null;

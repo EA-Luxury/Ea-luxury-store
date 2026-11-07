@@ -44,6 +44,13 @@ main{max-width:1180px}
 .shipping-rate-row input{margin:0;text-align:center}
 @media(max-width:560px){.shipping-rates-editor{grid-template-columns:1fr}.shipping-rate-row{grid-template-columns:minmax(0,1fr) 105px}}
 .orderAdminCard,.productAdminCard{padding:16px;margin:12px 0;border:1px solid #eee7da;border-radius:10px;background:#fff}
+.orderFilters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:760px}
+.orderFilters select{background:#fcfbf8}
+.orderMeta{color:#766b58;font-size:13px}
+.orderActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.orderActions button{width:auto;min-width:130px;margin:0}
+@media(max-width:560px){.orderFilters{grid-template-columns:1fr}.orderActions button{flex:1 1 100%}}
+@media print{body{background:#fff}}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #d6b36a;outline-offset:2px}
 @media(max-width:760px){main{margin:10px auto;padding:10px}section{padding:15px}.statsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.statCard{padding:13px}.statCard strong{font-size:23px}.adminNav{margin-inline:-10px}}
 </style>
@@ -188,6 +195,17 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <section id="ordersSection">
 <h2>طلبات العملاء</h2>
 <input id="adminOrderSearch" type="search" placeholder="ابحث برقم الطلب أو اسم العميل أو الهاتف..." aria-label="البحث في الطلبات">
+<div class="orderFilters">
+<select id="adminOrderStatusFilter" aria-label="فلترة حسب حالة الطلب">
+<option value="">كل حالات الطلبات</option>
+<option value="جديد">جديد</option><option value="قيد التجهيز">قيد التجهيز</option><option value="تم الشحن">تم الشحن</option><option value="مكتمل">مكتمل</option><option value="ملغي">ملغي</option>
+</select>
+<select id="adminOrderGovernorateFilter" aria-label="فلترة حسب المحافظة">
+<option value="">كل المحافظات</option>
+<option value="القاهرة">القاهرة</option><option value="الجيزة">الجيزة</option><option value="الإسكندرية">الإسكندرية</option><option value="الدقهلية">الدقهلية</option><option value="دمياط">دمياط</option><option value="الشرقية">الشرقية</option><option value="القليوبية">القليوبية</option><option value="كفر الشيخ">كفر الشيخ</option><option value="الغربية">الغربية</option><option value="المنوفية">المنوفية</option><option value="البحيرة">البحيرة</option><option value="بورسعيد">بورسعيد</option><option value="الإسماعيلية">الإسماعيلية</option><option value="السويس">السويس</option><option value="بني سويف">بني سويف</option><option value="الفيوم">الفيوم</option><option value="المنيا">المنيا</option><option value="أسيوط">أسيوط</option><option value="سوهاج">سوهاج</option><option value="قنا">قنا</option><option value="الأقصر">الأقصر</option><option value="أسوان">أسوان</option><option value="البحر الأحمر">البحر الأحمر</option><option value="مطروح">مطروح</option><option value="الوادي الجديد">الوادي الجديد</option><option value="شمال سيناء">شمال سيناء</option><option value="جنوب سيناء">جنوب سيناء</option>
+</select>
+</div>
+<p id="ordersFilterCount" class="status-text" aria-live="polite"></p>
 <div id="newOrderNotice" class="order-notice" hidden></div>
 <button type="button" onclick="enableOrderNotifications()">تفعيل إشعارات الجهاز</button>
 <p id="notificationStatus" class="status-text">التنبيه المباشر يعمل عند فتح لوحة الإدارة.</p>
@@ -863,6 +881,38 @@ statusBox.textContent="تعذر تفعيل إشعارات الجهاز في هذ
 }
 }
 
+function filterOrders(){
+const query=document.getElementById("adminOrderSearch").value.trim().toLocaleLowerCase("ar");
+const status=document.getElementById("adminOrderStatusFilter").value;
+const governorate=document.getElementById("adminOrderGovernorateFilter").value;
+const cards=[...document.querySelectorAll(".orderAdminCard")];
+let visible=0;
+cards.forEach(card=>{
+const matchesText=!query||String(card.dataset.search||"").includes(query);
+const matchesStatus=!status||card.dataset.status===status;
+const matchesGovernorate=!governorate||card.dataset.governorate===governorate;
+const show=matchesText&&matchesStatus&&matchesGovernorate;
+card.hidden=!show;
+if(show)visible++;
+});
+const counter=document.getElementById("ordersFilterCount");
+if(counter)counter.textContent="عرض "+visible+" من "+cards.length+" طلب";
+}
+
+function escapeInvoiceText(value){
+return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+}
+
+function printOrderInvoice(order){
+const items=Array.isArray(order.order_items)?order.order_items:[];
+const rows=items.map(item=>'<tr><td>'+escapeInvoiceText(item.product_name||"منتج")+'</td><td>'+escapeInvoiceText(item.quantity??"—")+'</td></tr>').join("");
+const created=order.created_at?new Date(order.created_at).toLocaleString("ar-EG",{dateStyle:"medium",timeStyle:"short"}):"—";
+const popup=window.open("","_blank","width=800,height=900");
+if(!popup){alert("اسمح بفتح النوافذ المنبثقة لطباعة الفاتورة.");return;}
+const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>فاتورة EA Luxury - #'+escapeInvoiceText(order.id)+'</title><style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#222;margin:0;padding:28px;background:#fff}.invoice{max-width:760px;margin:auto;border:1px solid #ddd;padding:28px}.head{display:flex;justify-content:space-between;gap:16px;align-items:center;border-bottom:3px solid #c5a15b;padding-bottom:16px}.brand{font-size:26px;font-weight:bold;color:#171717}.gold{color:#9b793e}.meta,.customer{line-height:1.9;margin:20px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}table{width:100%;border-collapse:collapse;margin:18px 0}th,td{padding:12px;border:1px solid #ddd;text-align:right}th{background:#f5f2eb}.totals{margin-right:auto;width:min(100%,320px);line-height:2}.grand{font-size:20px;font-weight:bold;border-top:2px solid #c5a15b;padding-top:8px}.thanks{text-align:center;color:#9b793e;margin-top:28px}@media print{body{padding:0}.invoice{border:0;padding:12px}}</style></head><body><main class="invoice"><div class="head"><div><div class="brand">EA Luxury</div><div class="gold">فاتورة طلب عميل</div></div><strong>رقم الطلب: #'+escapeInvoiceText(order.id)+'</strong></div><div class="meta grid"><div>تاريخ الطلب: '+escapeInvoiceText(created)+'</div><div>حالة الطلب: '+escapeInvoiceText(order.status||"—")+'</div></div><section class="customer"><h3>بيانات العميل</h3><div>الاسم: '+escapeInvoiceText(order.customer_name||"—")+'</div><div>الهاتف: '+escapeInvoiceText(order.phone||"—")+'</div><div>المحافظة: '+escapeInvoiceText(order.governorate||"—")+'</div><div>العنوان: '+escapeInvoiceText(order.address||"—")+'</div></section><h3>تفاصيل المنتجات</h3><table><thead><tr><th>المنتج</th><th>الكمية</th></tr></thead><tbody>'+(rows||'<tr><td colspan="2">لا توجد تفاصيل منتجات</td></tr>')+'</tbody></table><div class="totals"><div>الشحن: '+Number(order.shipping_fee||0).toLocaleString("ar-EG")+' جنيه</div><div class="grand">الإجمالي شامل الشحن: '+Number(order.total||0).toLocaleString("ar-EG")+' جنيه</div></div><div class="thanks">شكرًا لاختيارك EA Luxury</div></main><script>window.addEventListener("load",()=>window.print());<\/script></body></html>';
+popup.document.open();popup.document.write(html);popup.document.close();
+}
+
 async function loadOrders(){
 if(!adminReady)return;
 
@@ -882,6 +932,7 @@ document.getElementById("statPendingOrders").textContent=String((data||[]).filte
 
 if(!data||data.length===0){
 box.textContent="لا توجد طلبات حتى الآن.";
+document.getElementById("ordersFilterCount").textContent="لا توجد طلبات";
 return;
 }
 
@@ -889,9 +940,15 @@ data.forEach(o=>{
 const div=document.createElement("div");
 div.className="order orderAdminCard";
 div.dataset.search=(String(o.id||"")+" "+String(o.customer_name||"")+" "+String(o.phone||"")).toLocaleLowerCase("ar");
+div.dataset.status=String(o.status||"");
+div.dataset.governorate=String(o.governorate||"");
 
 const title=document.createElement("b");
 title.textContent="طلب #"+o.id+" من: "+o.customer_name;
+
+const date=document.createElement("p");
+date.className="orderMeta";
+date.textContent="تاريخ الطلب: "+(o.created_at?new Date(o.created_at).toLocaleString("ar-EG",{dateStyle:"medium",timeStyle:"short"}):"غير متاح");
 
 const details=document.createElement("p");
 details.textContent="الهاتف: "+o.phone+" | المحافظة: "+o.governorate;
@@ -912,20 +969,28 @@ const status=document.createElement("p");
 status.textContent="الحالة الحالية: "+o.status;
 
 const select=document.createElement("select");
-
-["جديد","قيد التجهيز","تم الشحن","مكتمل","ملغي"].forEach(s=>{
+["جديد","قيد التجهيز","تم الشحن","مكتمل","ملغي"].forEach(value=>{
 const option=document.createElement("option");
-option.value=s;
-option.textContent=s;
-if(s===o.status)option.selected=true;
+option.value=value;
+option.textContent=value;
+if(value===o.status)option.selected=true;
 select.append(option);
 });
-
+select.setAttribute("aria-label","تغيير حالة الطلب رقم "+o.id);
 select.onchange=()=>updateOrder(o.id,select.value);
 
-div.append(title,details,address,shipping,total,items,status,select);
+const actions=document.createElement("div");
+actions.className="orderActions";
+const invoiceButton=document.createElement("button");
+invoiceButton.type="button";
+invoiceButton.textContent="طباعة الفاتورة";
+invoiceButton.onclick=()=>printOrderInvoice(o);
+actions.append(invoiceButton);
+
+div.append(title,date,details,address,shipping,total,items,status,select,actions);
 box.append(div);
 });
+filterOrders();
 }
 
 async function updateOrder(id,status){
@@ -1171,7 +1236,10 @@ const input=document.getElementById(inputId);if(!input)return;
 input.addEventListener("input",()=>{const q=input.value.trim().toLocaleLowerCase("ar");document.querySelectorAll(selector).forEach(card=>{card.hidden=q!==""&&!String(card.dataset.search||"").includes(q);});});
 }
 filterAdminCards("adminProductSearch",".productAdminCard");
-filterAdminCards("adminOrderSearch",".orderAdminCard");
+["adminOrderSearch","adminOrderStatusFilter","adminOrderGovernorateFilter"].forEach(id=>{
+const control=document.getElementById(id);
+if(control)control.addEventListener(id==="adminOrderSearch"?"input":"change",filterOrders);
+});
 
 window.login=login;
 window.addProduct=addProduct;

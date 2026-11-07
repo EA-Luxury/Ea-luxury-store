@@ -2075,3 +2075,19 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 @media (max-width: 700px) {
   .currencyToggleButton { padding: 8px 10px; font-size: 11px; }
 }
+
+
+/* EA Luxury brand directory */
+.brandsSection{padding:58px 6% 38px;background:#fbfaf7;border-top:1px solid #eee7da;border-bottom:1px solid #eee7da}
+.brand-showcase-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.brand-showcase-card{display:flex;flex-direction:column;min-width:0;padding:0;overflow:hidden;text-align:right;background:#fff;border:1px solid #e8dfcf;border-radius:9px;color:#211f1a;cursor:pointer;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.brand-showcase-card:hover,.brand-showcase-card.active{transform:translateY(-3px);border-color:#b89550;box-shadow:0 9px 22px #0000000d}
+.brand-showcase-image{display:grid;place-items:center;height:150px;overflow:hidden;background:#eee9df;color:#a4864e;font:32px Georgia,serif}
+.brand-showcase-image img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s ease}
+.brand-showcase-card:hover img{transform:scale(1.04)}
+.brand-showcase-copy{display:grid;gap:5px;padding:12px 13px 14px}
+.brand-showcase-copy strong{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand-showcase-copy small{font-size:11px;color:#777}
+.brand-showcase-copy>span{font-size:11px;color:#9a7941;margin-top:4px}
+@media(max-width:900px){.brand-showcase-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.brand-showcase-image{height:130px}}
+@media(max-width:560px){.brandsSection{padding:38px 4% 24px}.brand-showcase-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.brand-showcase-image{height:135px}.brand-showcase-copy{padding:10px}.brand-showcase-copy strong{font-size:12px}}

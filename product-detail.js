@@ -270,7 +270,7 @@ function detailAddToCart(buyNow = false) {
   localStorage.setItem("eaLuxuryCart", JSON.stringify(saved));
   detailUpdateCartCount();
   if (buyNow) {
-    window.location.href = "cart.html";
+    window.location.href = "cart.html#cartSection";
     return;
   }
   document.getElementById("detailMessage").textContent = "تمت إضافة المنتج إلى السلة.";
@@ -363,7 +363,7 @@ if (detailMenuButton && detailMainNav) {
 }
 
 document.getElementById("detailCartButton").addEventListener("click", () => {
-  window.location.href = "cart.html";
+  window.location.href = "cart.html#cartSection";
 });
 detailUpdateCartCount();
 detailLoadProduct();

@@ -367,3 +367,12 @@ document.getElementById("detailCartButton").addEventListener("click", () => {
 });
 detailUpdateCartCount();
 detailLoadProduct();
+
+
+// تسجيل نسخة EA Luxury القابلة للتثبيت على صفحة تفاصيل المنتج.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .catch(error => console.warn("تعذر تسجيل تطبيق EA Luxury:", error));
+  });
+}

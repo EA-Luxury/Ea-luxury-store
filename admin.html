@@ -191,7 +191,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <p class="status-text">جهّز ملف CSV من Excel يحتوي على المنتجات كلها، ثم ارفعه هنا. راجع المعاينة والأخطاء قبل بدء الاستيراد. لن يتم تعديل أو حذف أي منتج موجود.</p>
 <div class="reportNotice"><strong>طريقة الاستخدام:</strong> نزّل النموذج، وافتحه في Excel، وأدخل كل منتج في صف مستقل. ضع روابط الصور المباشرة في عمود image_urls، أو اختر صورًا من جهازك بجوار كل منتج في المعاينة. الحد الأقصى 5 صور للمنتج. احفظ الملف بصيغة CSV UTF-8 ثم ارفعه.</div>
 <button type="button" class="secondary" onclick="downloadBulkProductsTemplate()">تنزيل نموذج Excel (CSV)</button>
-<p class="status-text">أسماء الأعمدة في النموذج: name للاسم، category للقسم، price للسعر، purchase_cost للتكلفة، stock للكمية، description للوصف، sizes وcolors مفصولة بعلامة |، image_urls لروابط الصور (اختياري عند اختيار الصور من الجهاز في المعاينة)، وsale_price مع sale_starts_at وsale_ends_at للعرض الاختياري. صيغة التاريخ: YYYY-MM-DD أو YYYY-MM-DDTHH:MM.</p>
+<p class="status-text">أسماء الأعمدة في النموذج: name للاسم، category للقسم، price للسعر، currency للعملة (EGP أو AED، والافتراضي EGP)، purchase_cost للتكلفة بالجنيه، stock للكمية، description للوصف، sizes وcolors مفصولة بعلامة |، image_urls لروابط الصور، وsale_price مع sale_starts_at وsale_ends_at للعرض الاختياري. صيغة التاريخ: YYYY-MM-DD أو YYYY-MM-DDTHH:MM.</p>
 <label for="bulkProductsFile">اختيار ملف المنتجات</label>
 <input id="bulkProductsFile" type="file" accept=".csv,text/csv">
 <p id="bulkImportFileName" class="status-text">لم يتم اختيار ملف بعد.</p>

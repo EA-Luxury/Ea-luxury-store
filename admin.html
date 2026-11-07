@@ -191,7 +191,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <p class="status-text">جهّز ملف CSV من Excel يحتوي على المنتجات كلها، ثم ارفعه هنا. راجع المعاينة والأخطاء قبل بدء الاستيراد. لن يتم تعديل أو حذف أي منتج موجود.</p>
 <div class="reportNotice"><strong>طريقة الاستخدام:</strong> نزّل النموذج، وافتحه في Excel، وأدخل كل منتج في صف مستقل. ضع روابط الصور المباشرة في عمود image_urls، أو اختر صورًا من جهازك بجوار كل منتج في المعاينة. الحد الأقصى 5 صور للمنتج. احفظ الملف بصيغة CSV UTF-8 ثم ارفعه.</div>
 <button type="button" class="secondary" onclick="downloadBulkProductsTemplate()">تنزيل نموذج Excel (CSV)</button>
-<p class="status-text">أسماء الأعمدة في النموذج: name للاسم، category للقسم، price للسعر، currency للعملة (EGP أو AED، والافتراضي EGP)، purchase_cost للتكلفة بالجنيه، stock للكمية، description للوصف، sizes وcolors مفصولة بعلامة |، image_urls لروابط الصور، وsale_price مع sale_starts_at وsale_ends_at للعرض الاختياري. صيغة التاريخ: YYYY-MM-DD أو YYYY-MM-DDTHH:MM.</p>
+<p class="status-text">أسماء الأعمدة: name للاسم، category للقسم، price للسعر، currency للعملة (EGP أو AED)، purchase_cost للتكلفة بالجنيه (اختياري)، stock للكمية، description للوصف، sizes وcolors مفصولة بعلامة |، variants_json للمقاسات والمخزون المستقل، active لحالة النشر true/false، image_urls لروابط الصور، وsale_price مع sale_starts_at وsale_ends_at للعرض الاختياري. صيغة التاريخ: YYYY-MM-DD أو YYYY-MM-DDTHH:MM.</p>
 <label for="bulkProductsFile">اختيار ملف المنتجات</label>
 <input id="bulkProductsFile" type="file" accept=".csv,text/csv">
 <p id="bulkImportFileName" class="status-text">لم يتم اختيار ملف بعد.</p>
@@ -525,7 +525,7 @@ if(row.some(v=>v.trim()))rows.push(row);
 if(quoted)throw new Error("يوجد حقل نصي مفتوح بعلامة اقتباس ولم يتم إغلاقه.");
 if(!rows.length)throw new Error("الملف فارغ.");
 const headers=rows.shift().map(v=>v.trim().toLowerCase());
-const required=["name","category","price","purchase_cost","stock","image_urls"];
+const required=["name","category","price","stock","image_urls"];
 const missing=required.filter(key=>!headers.includes(key));
 if(missing.length)throw new Error("أعمدة أساسية ناقصة: "+missing.join(", "));
 return rows.map((values,index)=>{

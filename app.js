@@ -793,12 +793,37 @@ function renderHomeCollections() {
     .sort((a,b) => (1 - getEffectiveProductPrice(b) / Number(b.price || 1)) -
                    (1 - getEffectiveProductPrice(a) / Number(a.price || 1)));
 
-  const render = (target, items) => {
-    target.innerHTML = items.length
-      ? items.map(item => makeTile(item)).join("")
-      : '<p class="homeCollectionEmpty">سيتم عرض المنتجات هنا قريبًا.</p>';
+  const renderGroupedCollection = (target, items, collectionKey) => {
+    if (!target) return;
+    if (!items.length) {
+      target.innerHTML = '<p class="homeCollectionEmpty">سيتم عرض المنتجات هنا قريبًا.</p>';
+      return;
+    }
+    const groups = new Map();
+    items.forEach(product => {
+      const brand = String(product.brand || "").trim() || "منتجات متنوعة";
+      if (!groups.has(brand)) groups.set(brand, []);
+      groups.get(brand).push(product);
+    });
+    const picker = [...groups.entries()].map(([brand, group], index) => {
+      const image = getImage(group[0]);
+      const imageMarkup = image
+        ? '<img src="' + escapeHTML(image) + '" alt="" loading="lazy">'
+        : '<span>EA</span>';
+      return '<button type="button" class="brand-showcase-card homeCollectionBrandCard" data-home-collection-brand="' + escapeHTML(collectionKey) + '" data-brand-index="' + index + '">' +
+        '<span class="brand-showcase-image">' + imageMarkup + '</span>' +
+        '<span class="brand-showcase-copy"><strong>' + escapeHTML(brand) + '</strong><small>' + group.length.toLocaleString("ar-EG") + ' منتج</small><span>تسوق الماركة ←</span></span></button>';
+    }).join("");
+    const panels = [...groups.entries()].map(([brand, group], index) =>
+      '<section class="homeCollectionBrandPanel" data-brand-panel="' + index + '" hidden>' +
+        '<div class="homeCollectionBrandPanelHeading"><h3>' + escapeHTML(brand) + '</h3><button type="button" class="homeCollectionBackButton" data-home-collection-back="' + escapeHTML(collectionKey) + '">← كل الماركات</button></div>' +
+        '<div class="homeCollectionGrid">' + group.map(item => makeTile(item)).join("") + '</div>' +
+      '</section>'
+    ).join("");
+    target.innerHTML = '<div class="homeCollectionBrandPicker" data-brand-picker="' + escapeHTML(collectionKey) + '">' + picker + '</div>' +
+      '<div class="homeCollectionBrandProducts" data-brand-products="' + escapeHTML(collectionKey) + '" hidden>' + panels + '</div>';
   };
-  render(newestGrid, newest);
+  renderGroupedCollection(newestGrid, newest, "new");
   picksGrid.innerHTML = picks.length
     ? picks.map(item => makeTile(item)).join("")
     : '<p class="homeCollectionEmpty">ترشيحاتنا هتظهر هنا بعد اختيار المنتجات المميزة من لوحة الإدارة.</p>';
@@ -823,7 +848,7 @@ function renderHomeCollections() {
       })
       .slice(0, 8);
     recentSection.hidden = recentProducts.length === 0;
-    recentGrid.innerHTML = recentProducts.map(item => makeTile(item)).join("");
+    renderGroupedCollection(recentGrid, recentProducts, "recent");
   }
   renderCategoryShowcase();
   renderBrandShowcase();
@@ -1796,3 +1821,32 @@ if ("serviceWorker" in navigator) {
       .catch(error => console.warn("تعذر تسجيل تطبيق EA Luxury:", error));
   });
 }
+
+
+// التنقل داخل أقسام وصل حديثًا وشوهدت مؤخرًا حسب الماركة.
+document.addEventListener("click", event => {
+  const brandButton = event.target.closest("[data-home-collection-brand]");
+  if (brandButton) {
+    const key = brandButton.dataset.homeCollectionBrand;
+    const host = brandButton.closest(".homeCollectionGrid") || brandButton.parentElement?.parentElement;
+    const section = document.getElementById(key === "new" ? "newArrivalsSection" : "recentlyViewedSection");
+    const picker = section?.querySelector('[data-brand-picker="' + key + '"]');
+    const productsPanel = section?.querySelector('[data-brand-products="' + key + '"]');
+    if (!picker || !productsPanel) return;
+    picker.hidden = true;
+    productsPanel.hidden = false;
+    productsPanel.querySelectorAll("[data-brand-panel]").forEach(panel => {
+      panel.hidden = panel.dataset.brandPanel !== brandButton.dataset.brandIndex;
+    });
+    return;
+  }
+  const backButton = event.target.closest("[data-home-collection-back]");
+  if (backButton) {
+    const key = backButton.dataset.homeCollectionBack;
+    const section = document.getElementById(key === "new" ? "newArrivalsSection" : "recentlyViewedSection");
+    const picker = section?.querySelector('[data-brand-picker="' + key + '"]');
+    const productsPanel = section?.querySelector('[data-brand-products="' + key + '"]');
+    if (picker) picker.hidden = false;
+    if (productsPanel) productsPanel.hidden = true;
+  }
+});

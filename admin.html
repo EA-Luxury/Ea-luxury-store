@@ -238,7 +238,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <!-- إدارة المتغيرات -->
 <section id="variantsSection">
 <h2>إدارة المقاسات والألوان والمخزون</h2>
-<p class="status-text">اختر المنتج، ثم أضف كل تركيبة مقاس ولون وحدد الكمية المتاحة منها.</p>
+<p class="status-text">اختر المنتج، ثم سجّل كل تركيبة مقاس ولون بكمية مستقلة. عند وجود تركيبات، يعتمد المتجر على مخزونها ولا يستخدم الكمية الإجمالية القديمة للمنتج.</p>
 
 <label>اختر المنتج</label>
 <select id="variantProduct" onchange="loadVariants()">
@@ -261,6 +261,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 <label>كود المنتج (اختياري)</label>
 <input id="variantSku" placeholder="SKU">
+
+<div class="variant-bulk-entry" style="margin:18px 0;padding:16px;border:1px solid #d9c9a5;border-radius:10px;background:#fffdf8">
+<strong>إضافة عدة مقاسات وألوان مرة واحدة</strong>
+<p class="status-text">اكتب كل تركيبة في سطر بالشكل التالي: المقاس | اللون | الكمية | كود المنتج (اختياري). كل تركيبة لها مخزون مستقل.</p>
+<textarea id="variantBulkRows" rows="5" placeholder="M | أسود | 5 | M-BLK&#10;L | أسود | 3 | L-BLK&#10;M | أبيض | 4 | M-WHT"></textarea>
+<button type="button" class="secondary" onclick="bulkAddVariants()">حفظ كل التركيبات المكتوبة</button>
+</div>
 
 <button type="button" onclick="saveVariant()">حفظ التركيبة</button>
 <button type="button" class="secondary" onclick="resetVariantForm()">إلغاء التعديل</button>
@@ -1326,39 +1333,91 @@ await loadVariants();
 await loadProducts();
 }
 
-async function toggleVariant(id,active){
+async function bulkAddVariants(){
 if(!adminReady)return;
-
-const {error}=await client.from("product_variants")
-.update({is_active:active})
-.eq("id",id);
-
-if(error){
-alert("تعذر تغيير حالة التركيبة: "+error.message);
-return;
+const msg=document.getElementById("variantMsg");
+const productId=document.getElementById("variantProduct").value;
+const raw=document.getElementById("variantBulkRows").value;
+if(!productId){msg.textContent="اختر المنتج أولًا.";return;}
+const lines=raw.split(/\r?\n/).map(line=>line.trim()).filter(Boolean);
+if(!lines.length){msg.textContent="اكتب تركيبة واحدة على الأقل.";return;}
+if(lines.length>200){msg.textContent="يمكن إضافة 200 تركيبة كحد أقصى في المرة الواحدة.";return;}
+const parsed=[];
+const keys=new Set();
+for(let i=0;i<lines.length;i++){
+ const parts=lines[i].split("|").map(value=>value.trim());
+ if(parts.length<3||parts.length>4){
+  msg.textContent="السطر "+(i+1)+" غير صحيح. استخدم: المقاس | اللون | الكمية | كود المنتج (اختياري).";
+  return;
+ }
+ const size=parts[0],color=parts[1],stockText=parts[2],sku=parts[3]||"";
+ const stock=Number(stockText);
+ if(!size&&!color){msg.textContent="السطر "+(i+1)+": اكتب المقاس أو اللون على الأقل.";return;}
+ if(!/^\d+$/.test(stockText)||!Number.isSafeInteger(stock)||stock<0){
+  msg.textContent="السطر "+(i+1)+": الكمية يجب أن تكون رقمًا صحيحًا صفر أو أكثر.";return;
+ }
+ const key=[size.toLowerCase(),color.toLowerCase()].join("::");
+ if(keys.has(key)){msg.textContent="هناك تركيبة مكررة داخل القائمة: "+(size||"بدون مقاس")+" / "+(color||"بدون لون");return;}
+ keys.add(key);
+ parsed.push({product_id:Number(productId),size:size||null,color:color||null,stock,sku:sku||null,is_active:true});
+}
+msg.textContent="جاري التحقق من التركيبات وحفظها...";
+const {data:existing,error:existingError}=await client.from("product_variants")
+ .select("size,color").eq("product_id",productId);
+if(existingError){msg.textContent="تعذر التحقق من التركيبات الحالية: "+existingError.message;return;}
+const existingKeys=new Set((existing||[]).map(v=>[(v.size||"").trim().toLowerCase(),(v.color||"").trim().toLowerCase()].join("::")));
+const duplicate=parsed.find(v=>existingKeys.has([(v.size||"").toLowerCase(),(v.color||"").toLowerCase()].join("::")));
+if(duplicate){msg.textContent="التركيبة موجودة بالفعل: "+(duplicate.size||"بدون مقاس")+" / "+(duplicate.color||"بدون لون")+". عدّلها من قائمة التركيبات بدل إضافتها مرة أخرى.";return;}
+const {error}=await client.from("product_variants").insert(parsed);
+if(error){msg.textContent="تعذر حفظ التركيبات: "+error.message;return;}
+msg.textContent="تمت إضافة "+parsed.length+" تركيبة بنجاح. راجع الكميات في القائمة أدناه.";
+document.getElementById("variantBulkRows").value="";
+await loadVariants();
+await loadProducts();
 }
 
+async function toggleVariant(id,active){
+if(!adminReady)return;
+if(!active){
+ const {count,error}=await client.from("product_variants").select("id",{count:"exact",head:true}).eq("product_id",document.getElementById("variantProduct").value).eq("is_active",true);
+ if(error){alert("تعذر التحقق من التركيبات النشطة: "+error.message);return;}
+ if(Number(count||0)<=1){alert("لا يمكن إيقاف آخر تركيبة نشطة للمنتج. اجعل كميتها صفرًا بدلًا من ذلك حتى لا يعود المنتج إلى نظام المخزون الإجمالي.");return;}
+}
+const {error}=await client.from("product_variants")
+.update({is_active:active,updated_at:new Date().toISOString()})
+.eq("id",id);
+if(error){alert("تعذر تغيير حالة التركيبة: "+error.message);return;}
 await loadVariants();
 await loadProducts();
 }
 
 async function deleteVariant(id){
 if(!adminReady)return;
-
-if(!confirm("هل تريد حذف هذه التركيبة؟"))return;
-
-const {error}=await client.from("product_variants")
-.delete()
-.eq("id",id);
-
-if(error){
-alert("تعذر حذف التركيبة: "+error.message);
-return;
+const productId=document.getElementById("variantProduct").value;
+const {data:used,error:usedError}=await client.from("order_items").select("id").eq("variant_id",id).limit(1);
+if(usedError){alert("تعذر التحقق من سجل الطلبات: "+usedError.message);return;}
+if(used?.length){
+ const {count,error}=await client.from("product_variants").select("id",{count:"exact",head:true}).eq("product_id",productId).eq("is_active",true);
+ if(error){alert("تعذر التحقق من التركيبات النشطة: "+error.message);return;}
+ const {data:target}=await client.from("product_variants").select("is_active").eq("id",id).maybeSingle();
+ if(target?.is_active&&Number(count||0)<=1){alert("هذه التركيبة مرتبطة بطلبات سابقة وهي آخر تركيبة نشطة. لا يمكن حذفها أو إيقافها؛ اجعل مخزونها صفرًا للحفاظ على سجل الطلبات.");return;}
+ const {error:disableError}=await client.from("product_variants").update({is_active:false,updated_at:new Date().toISOString()}).eq("id",id);
+ if(disableError){alert("تعذر إيقاف التركيبة المرتبطة بطلب سابق: "+disableError.message);return;}
+ alert("التركيبة مرتبطة بطلب سابق، لذلك تم إيقافها بدل حذفها للحفاظ على سجل الطلبات.");
+ await loadVariants();await loadProducts();return;
 }
-
+const {data:target,error:targetError}=await client.from("product_variants").select("is_active").eq("id",id).maybeSingle();
+if(targetError||!target){alert("تعذر العثور على التركيبة.");return;}
+if(target.is_active){
+ const {count,error}=await client.from("product_variants").select("id",{count:"exact",head:true}).eq("product_id",productId).eq("is_active",true);
+ if(error){alert("تعذر التحقق من التركيبات النشطة: "+error.message);return;}
+ if(Number(count||0)<=1){alert("لا يمكن حذف آخر تركيبة نشطة. اجعل كميتها صفرًا بدلًا من ذلك.");return;}
+}
+if(!confirm("هل تريد حذف هذه التركيبة نهائيًا؟"))return;
+const {error}=await client.from("product_variants").delete().eq("id",id);
+if(error){alert("تعذر حذف التركيبة: "+error.message);return;}
 alert("تم حذف التركيبة.");
-await loadVariants();
-await loadProducts();
+await loadVariants();await loadProducts();
 }
 
 // ================================
@@ -2338,6 +2397,7 @@ window.enableOrderNotifications=enableOrderNotifications;
 window.saveSettings=saveSettings;
 window.loadVariants=loadVariants;
 window.saveVariant=saveVariant;
+window.bulkAddVariants=bulkAddVariants;
 window.resetVariantForm=resetVariantForm;
 
 // استعادة جلسة الإدارة المحفوظة بعد تحديث الصفحة أو فتح اللوحة مرة أخرى.

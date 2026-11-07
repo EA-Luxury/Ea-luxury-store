@@ -1,4 +1,4 @@
-const CACHE_NAME = "ea-luxury-shell-v8";
+const CACHE_NAME = "ea-luxury-shell-v9";
 const APP_SHELL = [
   "./",
   "./index.html",

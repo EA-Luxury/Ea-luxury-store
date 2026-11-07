@@ -172,8 +172,9 @@
       <label class="store-search">
         <span>ابحث عن منتجك</span>
         <div class="store-search-field">
-          <input id="productSearch" type="search" placeholder="اسم المنتج، اللون، المقاس أو الوصف..." autocomplete="off" aria-label="ابحث عن المنتجات">
+          <input id="productSearch" type="search" placeholder="اسم المنتج، اللون، المقاس أو الوصف..." autocomplete="off" aria-label="ابحث عن المنتجات" aria-controls="productSearchSuggestions" aria-autocomplete="list">
           <button type="button" id="clearProductSearch" class="clear-product-search" aria-label="مسح البحث" hidden>×</button>
+          <div id="productSearchSuggestions" class="product-search-suggestions" role="listbox" aria-label="اقتراحات البحث" hidden></div>
         </div>
       </label>
       <label class="store-sort">

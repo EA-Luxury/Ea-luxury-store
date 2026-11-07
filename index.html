@@ -121,7 +121,7 @@
     </div>
   </section>
 
-  <section class="homeCollectionSection" id="newArrivalsSection">
+  <section class="homeCollectionSection" id="newArrivalsSection" hidden>
     <div class="sectionHeading">
       <span>JUST ARRIVED</span>
       <h2>وصل حديثًا</h2>
@@ -130,7 +130,7 @@
     <div id="newArrivalsGrid" class="homeCollectionGrid"></div>
   </section>
 
-  <section class="homeCollectionSection homePicksSection" id="editorsPicksSection">
+  <section class="homeCollectionSection homePicksSection" id="editorsPicksSection" hidden>
     <div class="sectionHeading">
       <span>EA LUXURY PICKS</span>
       <h2>ترشيحاتنا ليك</h2>
@@ -181,8 +181,6 @@
     <div id="brandShowcaseGrid" class="brand-showcase-grid" aria-label="الماركات المتاحة"></div>
   </section>
 
-  <main id="products" class="productsSection" hidden>
-
     <div class="store-tools store-tools-pro" aria-label="البحث والتصفية">
       <label class="store-search">
         <span>ابحث عن منتجك</span>
@@ -206,6 +204,9 @@
       <div id="activeFilterChips" class="active-filter-chips" aria-live="polite"></div>
       <p id="productResultsCount" class="product-results-count" aria-live="polite"></p>
     </div>
+
+  <main id="products" class="productsSection" hidden>
+
     <div id="filterDrawer" class="filter-drawer" hidden>
       <button class="filter-backdrop" type="button" data-close-filter aria-label="إغلاق التصفية"></button>
       <aside class="filter-panel" role="dialog" aria-modal="true" aria-labelledby="filterPanelTitle">

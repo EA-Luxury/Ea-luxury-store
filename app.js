@@ -52,7 +52,7 @@ async function sendOrderEmails(orderId, values, orderItems, orderTotal, shipping
 
   const itemsText = orderItems.map(item => {
     const variant = [item.selected_size, item.selected_color].filter(Boolean).join(" / ");
-    return `${item.name}${variant ? " (" + variant + ")" : ""} × ${item.quantity} — ${(Number(item.price) * item.quantity).toLocaleString("ar-EG")} جنيه`;
+    return `${item.name}${variant ? " (" + variant + ")" : ""} × ${item.quantity} — ${formatStoreMoney(getItemPriceInEgp(item) * item.quantity, "EGP")}`;
   }).join("\\n");
 
   const templateParams = {
@@ -980,7 +980,7 @@ function updateCart() {
   try { localStorage.setItem("eaLuxuryCart", JSON.stringify(cart)); }
   catch (error) { console.warn("تعذر حفظ السلة:", error); }
 
-  const fingerprint = JSON.stringify(cart.map(item => [item.id,item.variant_id||null,item.quantity,Number(item.price||0)]));
+  const fingerprint = JSON.stringify(cart.map(item => [item.id,item.variant_id||null,item.quantity,Number(item.price||0),item.currency||"EGP"]));
   if (lastCouponCartFingerprint && fingerprint !== lastCouponCartFingerprint) {
     appliedCoupon = null;
     const couponMessage = document.getElementById("couponMessage");
@@ -993,24 +993,27 @@ function updateCart() {
 
   const cartItemsElement = document.getElementById("cartItems");
   const totalElement = document.getElementById("cartTotal");
-  const total = cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
+  const totalEgp = cart.reduce((sum, item) => sum + getItemPriceInEgp(item) * Number(item.quantity || 0), 0);
+  const total = convertCurrencyAmount(totalEgp, "EGP", selectedDisplayCurrency);
   const governorateSelect = document.querySelector('#checkoutForm select[name="governorate"]');
   const selectedGovernorate = governorateSelect?.value || "";
   const shippingFee = selectedGovernorate ? getShippingQuote(selectedGovernorate) : null;
   const shippingElement = document.getElementById("cartShippingFee");
   const grandTotalElement = document.getElementById("cartGrandTotal");
   const quoteElement = document.getElementById("shippingQuote");
-  if (shippingElement) shippingElement.textContent = shippingFee === null ? "يُحدد بعد اختيار المحافظة" : shippingFee.toLocaleString("ar-EG") + " جنيه";
+  if (shippingElement) shippingElement.textContent = shippingFee === null ? "يُحدد بعد اختيار المحافظة" : formatStoreMoney(convertCurrencyAmount(shippingFee, "EGP", selectedDisplayCurrency));
   const discount = Number(appliedCoupon?.discount_amount || 0);
   const discountElement = document.getElementById("cartDiscount");
-  if (discountElement) discountElement.textContent = discount.toLocaleString("ar-EG") + " جنيه";
-  if (grandTotalElement) grandTotalElement.textContent = Math.max(0,total + (shippingFee ?? 0) - discount).toLocaleString("ar-EG");
+  const displayDiscount = convertCurrencyAmount(discount, "EGP", selectedDisplayCurrency);
+  const displayShipping = shippingFee === null ? 0 : convertCurrencyAmount(shippingFee, "EGP", selectedDisplayCurrency);
+  if (discountElement) discountElement.textContent = formatStoreMoney(displayDiscount);
+  if (grandTotalElement) grandTotalElement.textContent = Math.max(0,total + displayShipping - displayDiscount).toLocaleString("ar-EG");
   if (quoteElement) {
     quoteElement.textContent = !selectedGovernorate
       ? "اختار المحافظة لمعرفة تكلفة الشحن."
       : shippingFee === null
         ? "تكلفة الشحن لهذه المحافظة غير محددة حاليًا. تواصل معنا قبل تأكيد الطلب."
-        : "رسوم الشحن إلى " + selectedGovernorate + ": " + shippingFee.toLocaleString("ar-EG") + " جنيه.";
+        : "رسوم الشحن إلى " + selectedGovernorate + ": " + formatStoreMoney(convertCurrencyAmount(shippingFee, "EGP", selectedDisplayCurrency)) + ".";
   }
 
   if (cartItemsElement) {
@@ -1030,7 +1033,7 @@ function updateCart() {
         const image = images.length ? `<img src="${escapeHTML(images[0])}" alt="${escapeHTML(item.name || "صورة المنتج")}" loading="lazy">` : `<span class="cartItemImageFallback">EA</span>`;
         const variant = [item.selected_size, item.selected_color].filter(Boolean).map(escapeHTML).join(" / ");
         const quantity = Math.max(1, Number(item.quantity) || 1);
-        const unitPrice = Number(item.price) || 0;
+        const unitPrice = convertCurrencyAmount(Number(item.price) || 0, item.currency || "EGP", selectedDisplayCurrency);
         return `
           <article class="cartItem cartItemCard">
             <div class="cartItemProduct">
@@ -1038,8 +1041,8 @@ function updateCart() {
               <div class="cartItemDetails">
                 <h3>${escapeHTML(item.name || "منتج")}</h3>
                 ${variant ? `<p class="cartItemVariant">الاختيار: ${variant}</p>` : ""}
-                <p class="cartItemUnitPrice">سعر القطعة: ${unitPrice.toLocaleString("ar-EG")} جنيه</p>
-                <strong class="cartItemLineTotal">${(unitPrice * quantity).toLocaleString("ar-EG")} جنيه</strong>
+                <p class="cartItemUnitPrice">سعر القطعة: ${formatStoreMoney(unitPrice)}</p>
+                <strong class="cartItemLineTotal">${formatStoreMoney(unitPrice * quantity)}</strong>
               </div>
             </div>
             <div class="cartItemControls">
@@ -1276,7 +1279,7 @@ async function applyStoreCoupon() {
   if (!form || !codeInput || !message) return;
   const code = codeInput.value.trim().toUpperCase();
   const phone = form.querySelector('input[name="phone"]')?.value.trim() || "";
-  const subtotal = cart.reduce((sum,item)=>sum+Number(item.price||0)*Number(item.quantity||0),0);
+  const subtotal = cart.reduce((sum,item)=>sum+getItemPriceInEgp(item)*Number(item.quantity||0),0);
   if (!code) { message.textContent = "اكتب كود الخصم أولاً."; return; }
   if (phone.replace(/[^0-9]/g,"").length < 10) { message.textContent = "اكتب رقم هاتف صحيحًا أولاً."; return; }
   if (!cart.length) { message.textContent = "السلة فارغة."; return; }
@@ -1289,7 +1292,7 @@ async function applyStoreCoupon() {
     const result=Array.isArray(data)?data[0]:data;
     if(!result || !result.valid) { appliedCoupon=null; message.textContent=result?.message||"تعذر التحقق من كود الخصم."; updateCart(); return; }
     appliedCoupon={code:result.coupon_code,discount_amount:Number(result.discount_amount||0)};
-    lastCouponCartFingerprint=JSON.stringify(cart.map(item=>[item.id,item.variant_id||null,item.quantity,Number(item.price||0)]));
+    lastCouponCartFingerprint=JSON.stringify(cart.map(item=>[item.id,item.variant_id||null,item.quantity,Number(item.price||0),item.currency||"EGP"]));
     message.textContent=result.message+" — تم خصم "+appliedCoupon.discount_amount.toLocaleString("ar-EG")+" جنيه.";
     updateCart();
   } catch(error) {
@@ -1350,7 +1353,7 @@ document.getElementById("checkoutForm")
 
       const orderSnapshot = cart.map(item => ({ ...item }));
       const productsTotal = orderSnapshot.reduce(
-        (sum, item) => sum + Number(item.price) * item.quantity, 0
+        (sum, item) => sum + getItemPriceInEgp(item) * item.quantity, 0
       );
       const discountAmount = Number(appliedCoupon?.discount_amount || 0);
       const orderTotal = Math.max(0,productsTotal + shippingFee - discountAmount);

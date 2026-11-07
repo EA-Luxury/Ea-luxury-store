@@ -190,13 +190,29 @@ function detailUpdateQuantity(nextValue) {
   if (plus) plus.disabled = detailQuantity >= max;
 }
 
+function detailCleanOptionValue(value) {
+  const text = String(value ?? "").trim();
+  return /^(بدون لون|بدون مقاس|لا يوجد|none|null|n\/a)$/i.test(text) ? "" : text;
+}
+function detailUniqueOptionValues(values) {
+  return [...new Set(values.map(detailCleanOptionValue).filter(Boolean))];
+}
 function detailApplyVariantSelection() {
   const sizeSelect = document.getElementById("detailSizeSelect");
   const colorSelect = document.getElementById("detailColorSelect");
-  const needsSize = detailVariants.some(v => String(v.size || "").trim());
-  const needsColor = detailVariants.some(v => String(v.color || "").trim());
-  const size = sizeSelect?.value || "";
-  const color = colorSelect?.value || "";
+  const sizeValues = detailUniqueOptionValues([
+    ...(Array.isArray(detailProduct?.sizes) ? detailProduct.sizes : []),
+    ...detailVariants.map(v => v.size)
+  ]);
+  const colorValues = detailUniqueOptionValues([
+    ...(Array.isArray(detailProduct?.colors) ? detailProduct.colors : []),
+    ...detailVariants.map(v => v.color)
+  ]);
+  const needsSize = sizeValues.length > 0;
+  const needsColor = colorValues.length > 1;
+  const size = detailCleanOptionValue(sizeSelect?.value);
+  const color = detailCleanOptionValue(colorSelect?.value);
+  const effectiveColor = needsColor ? color : (colorValues[0] || "");
   detailSelectedVariantId = null;
 
   const hint = document.getElementById("detailVariantHint");
@@ -211,13 +227,16 @@ function detailApplyVariantSelection() {
     return;
   }
 
-  const matching = detailVariants.filter(v =>
-    (!needsSize || String(v.size || "").trim() === size) &&
-    (!needsColor || String(v.color || "").trim() === color)
-  );
+  const matching = detailVariants.filter(v => {
+    const variantSize = detailCleanOptionValue(v.size);
+    const variantColor = detailCleanOptionValue(v.color);
+    return (!needsSize || variantSize === size) &&
+      (!effectiveColor || !variantColor || variantColor === effectiveColor) &&
+      (!needsColor || variantColor === color);
+  });
   const variant = matching.find(v => Number(v.stock) > 0) || matching[0] || null;
   if (!variant || Number(variant.stock) <= 0) {
-    if (hint) hint.textContent = "هذا الاختيار غير متاح حاليًا";
+    if (hint) hint.textContent = "هذا المقاس غير متاح حاليًا";
     detailUpdateQuantity(1);
     return;
   }
@@ -466,28 +485,34 @@ function detailRender() {
   const description = p.description && String(p.description).trim()
     ? p.description
     : "تفاصيل المنتج متاحة من خلال الصور والمقاسات والألوان الموضحة.";
-  const sizes = Array.isArray(p.sizes) ? p.sizes.filter(Boolean) : [];
-  const colors = Array.isArray(p.colors) ? p.colors.filter(Boolean) : [];
-  const availableSizes = [...new Set(detailVariants.filter(v => Number(v.stock) > 0).map(v => String(v.size || "").trim()).filter(Boolean))];
-  const availableColors = [...new Set(detailVariants.filter(v => Number(v.stock) > 0).map(v => String(v.color || "").trim()).filter(Boolean))];
-  const needsSize = detailVariants.some(v => String(v.size || "").trim());
-  const needsColor = detailVariants.some(v => String(v.color || "").trim());
+  const sizes = detailUniqueOptionValues(Array.isArray(p.sizes) ? p.sizes : []);
+  const colors = detailUniqueOptionValues(Array.isArray(p.colors) ? p.colors : []);
+  const availableSizes = detailUniqueOptionValues([
+    ...detailVariants.filter(v => Number(v.stock) > 0).map(v => v.size),
+    ...sizes
+  ]);
+  const availableColors = detailUniqueOptionValues([
+    ...detailVariants.filter(v => Number(v.stock) > 0).map(v => v.color),
+    ...colors
+  ]);
+  const needsSize = availableSizes.length > 0;
+  const needsColor = availableColors.length > 1;
   const firstAvailableVariant = availableVariants[0] || null;
   const variantControl = hasVariants && (needsSize || needsColor) ? `
     <div class="product-detail-options">
       <div class="product-detail-options-heading">
-        <label>اختار المقاس واللون</label>
-        <span id="detailVariantHint">اختر الخيارات المطلوبة قبل الإضافة إلى السلة</span>
+        <label>${needsSize ? "اختار المقاس" : "اختار اللون"}</label>
+        <span id="detailVariantHint">اختر المقاس قبل الإضافة إلى السلة</span>
       </div>
       ${needsSize ? `
         <label for="detailSizeSelect">المقاس</label>
-        <select id="detailSizeSelect">
+        <select id="detailSizeSelect" required>
           <option value="">اختر المقاس</option>
           ${availableSizes.map(value => `<option value="${detailEscape(value)}">${detailEscape(value)}</option>`).join("")}
         </select>` : ""}
       ${needsColor ? `
         <label for="detailColorSelect">اللون</label>
-        <select id="detailColorSelect">
+        <select id="detailColorSelect" required>
           <option value="">اختر اللون</option>
           ${availableColors.map(value => `<option value="${detailEscape(value)}">${detailEscape(value)}</option>`).join("")}
         </select>` : ""}
@@ -496,9 +521,9 @@ function detailRender() {
       <span id="detailVariantHint">${firstAvailableVariant ? "متاح " + Number(firstAvailableVariant.stock) + " قطعة" : "نفدت جميع الاختيارات"}</span>
     </div>` : (sizes.length || colors.length) ? `
     <div class="product-detail-options">
-      <span id="detailVariantHint">اختيارات المقاس واللون لم يتم ربط مخزونها بعد. يرجى مراجعة المتجر.</span>
+      <span id="detailVariantHint">اختيارات المنتج غير متاحة للشراء حاليًا.</span>
       ${sizes.length ? `<label>المقاسات المتاحة: ${sizes.map(detailEscape).join(" - ")}</label>` : ""}
-      ${colors.length ? `<label>الألوان المتاحة: ${colors.map(detailEscape).join(" - ")}</label>` : ""}
+      ${colors.length ? `<label>اللون: ${colors.map(detailEscape).join(" - ")}</label>` : ""}
     </div>` : "";
 
   detailRoot.className = "";
@@ -533,7 +558,7 @@ function detailRender() {
         <div class="product-detail-meta">
           <span>القسم: ${detailEscape(p.category || "غير محدد")}</span>
           ${sizes.length ? `<span>المقاسات: ${sizes.map(detailEscape).join(" - ")}</span>` : ""}
-          ${colors.length ? `<span>الألوان: ${colors.map(detailEscape).join(" - ")}</span>` : ""}
+          ${colors.length ? `<span>اللون: ${colors.join(" - ")}</span>` : ""}
           <span>المتاح: ${totalStock} قطعة</span>
         </div>
         ${variantControl}
@@ -595,7 +620,7 @@ function detailRender() {
 function detailAddToCart() {
   const p = detailProduct;
   const hasVariants = detailVariants.length > 0;
-  const productRequiresOptions = (Array.isArray(p.sizes) && p.sizes.length > 0) || (Array.isArray(p.colors) && p.colors.length > 0);
+  const productRequiresOptions = detailUniqueOptionValues([...(Array.isArray(p.sizes) ? p.sizes : []), ...detailVariants.map(v => v.size)]).length > 0 || detailUniqueOptionValues([...(Array.isArray(p.colors) ? p.colors : []), ...detailVariants.map(v => v.color)]).length > 1;
   let selectedVariant = null;
 
   if (productRequiresOptions && !hasVariants) {
@@ -606,7 +631,7 @@ function detailAddToCart() {
   if (hasVariants) {
     selectedVariant = detailVariants.find(v => String(v.id) === String(detailSelectedVariantId));
     if (!selectedVariant || Number(selectedVariant.stock) <= 0) {
-      document.getElementById("detailMessage").textContent = "اختار مقاسًا ولونًا متاحين.";
+      document.getElementById("detailMessage").textContent = "اختار المقاس المتاح أولًا.";
       return;
     }
   }
@@ -638,8 +663,8 @@ function detailAddToCart() {
       quantity: requestedQuantity,
       cartKey,
       variant_id: selectedVariant ? selectedVariant.id : null,
-      selected_size: selectedVariant?.size || null,
-      selected_color: selectedVariant?.color || null,
+      selected_size: detailCleanOptionValue(selectedVariant?.size) || null,
+      selected_color: detailCleanOptionValue(selectedVariant?.color) || null,
       availableStock
     });
   }

@@ -926,9 +926,15 @@ title.textContent=p.name+" - "+(p.sale_price?Number(p.sale_price).toLocaleString
 const detail=document.createElement("p");
 detail.textContent=p.category+" | "+(p.active?"نشط":"مخفي");
 
+const productVariantRows=(variantRows||[]).filter(v=>String(v.product_id)===String(p.id));
+const activeProductVariants=productVariantRows.filter(v=>v.is_active);
+const hasProductVariants=productVariantRows.length>0;
+const variantStockTotal=activeProductVariants.reduce((sum,v)=>sum+Math.max(0,Number(v.stock)||0),0);
 const quantityLabel=document.createElement("p");
-quantityLabel.className=Number(p.stock)>0?"stock":"out";
-quantityLabel.textContent=Number(p.stock)>0?"الكمية الإجمالية القديمة: "+p.stock:"نفد المخزون الإجمالي";
+quantityLabel.className=(hasProductVariants?variantStockTotal:Number(p.stock))>0?"stock":"out";
+quantityLabel.textContent=hasProductVariants
+ ? "إجمالي مخزون المقاسات والألوان: "+variantStockTotal+" قطعة ("+activeProductVariants.length+" تركيبة نشطة)"
+ : (Number(p.stock)>0?"المخزون الإجمالي: "+p.stock+" قطعة":"نفد المخزون الإجمالي");
 
 const images=Array.isArray(p.image_urls)?p.image_urls:[];
 const imageCount=document.createElement("p");
@@ -1033,7 +1039,16 @@ loadVariants();
 document.getElementById("variantsSection").scrollIntoView({behavior:"smooth"});
 };
 
-div.append(title,detail,quantityLabel,imageCount,regularPriceInput,salePriceInput,saleStartInput,saleEndInput,saleScheduleNote,savePricesButton,purchaseCostInput,savePurchaseCostButton,descriptionInput,saveDescriptionButton,stockInput,saveButton,thresholdLabel,saveThresholdButton,activeButton,variantsButton,deleteButton);
+const productCardControls=[title,detail,quantityLabel,imageCount,regularPriceInput,salePriceInput,saleStartInput,saleEndInput,saleScheduleNote,savePricesButton,purchaseCostInput,savePurchaseCostButton,descriptionInput,saveDescriptionButton];
+if(hasProductVariants){
+ const variantStockNote=document.createElement("small");
+ variantStockNote.textContent="هذا المنتج يُدار بمخزون مستقل لكل مقاس ولون. عدّل الكميات من قسم «إدارة المقاسات والألوان» فقط.";
+ productCardControls.push(variantStockNote);
+}else{
+ productCardControls.push(stockInput,saveButton);
+}
+productCardControls.push(thresholdLabel,saveThresholdButton,activeButton,variantsButton,deleteButton);
+div.append(...productCardControls);
 box.append(div);
 });
 
@@ -1045,6 +1060,18 @@ await loadVariants();
 
 async function updateStock(id,value){
 if(!adminReady)return;
+
+// حماية إضافية: لا تسمح بتعديل المخزون الإجمالي لمنتج يعتمد على تركيبات المقاس/اللون.
+const {data:variantExists,error:variantCheckError}=await client.from("product_variants")
+.select("id").eq("product_id",id).limit(1);
+if(variantCheckError){
+alert("تعذر التحقق من نظام مخزون المنتج: "+variantCheckError.message);
+return;
+}
+if(variantExists&&variantExists.length){
+alert("هذا المنتج له مخزون مستقل للمقاسات والألوان. عدّل الكمية من قسم «إدارة المقاسات والألوان» حتى لا تختلف الأرقام.");
+return;
+}
 
 const stock=Number(value);
 

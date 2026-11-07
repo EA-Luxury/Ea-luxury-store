@@ -36,7 +36,7 @@ async function ensureEmailJSSDK() {
   return false;
 }
 
-async function sendOrderEmails(orderId, values, orderItems, orderTotal) {
+async function sendOrderEmails(orderId, values, orderItems, orderTotal, shippingFee) {
   const configured = [EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY]
     .every(value => value && !value.startsWith("YOUR_"));
 
@@ -63,6 +63,7 @@ async function sendOrderEmails(orderId, values, orderItems, orderTotal) {
     governorate: values.governorate,
     address: values.address,
     order_total: Number(orderTotal).toLocaleString("ar-EG") + " جنيه",
+    shipping_fee: Number(shippingFee).toLocaleString("ar-EG") + " جنيه",
     items_text: itemsText,
     store_name: "EA Luxury",
     to_email: values.customer_email,
@@ -92,6 +93,29 @@ let productVariants = [];
 let cart = (() => { try { const saved = JSON.parse(localStorage.getItem("eaLuxuryCart") || "[]"); return Array.isArray(saved) ? saved.filter(item => item && item.id != null && Number(item.quantity) > 0) : []; } catch (_) { return []; } })();
 let selectedCategory = "الكل";
 let storefrontSettings = {};
+const EGYPT_GOVERNORATES = [
+  "القاهرة","الجيزة","الإسكندرية","الدقهلية","دمياط","الشرقية","القليوبية",
+  "كفر الشيخ","الغربية","المنوفية","البحيرة","بورسعيد","الإسماعيلية","السويس",
+  "بني سويف","الفيوم","المنيا","أسيوط","سوهاج","قنا","الأقصر","أسوان",
+  "البحر الأحمر","مطروح","الوادي الجديد","شمال سيناء","جنوب سيناء"
+];
+function getShippingQuote(governorate) {
+  const rates = storefrontSettings.shippingRates || {};
+  const raw = rates[governorate];
+  if (raw === null || raw === undefined || raw === "" || !Number.isFinite(Number(raw)) || Number(raw) < 0) return null;
+  const subtotal = cart.reduce((sum,item) => sum + Number(item.price || 0) * Number(item.quantity || 0),0);
+  const freeThreshold = Number(storefrontSettings.freeShipping || 0);
+  return freeThreshold > 0 && subtotal >= freeThreshold ? 0 : Number(raw);
+}
+function populateGovernorateSelect() {
+  const select = document.querySelector('#checkoutForm select[name="governorate"]');
+  if (!select) return;
+  const current = select.value;
+  select.innerHTML = '<option value="">اختر المحافظة</option>' + EGYPT_GOVERNORATES.map(name =>
+    '<option value="' + escapeHTML(name) + '">' + escapeHTML(name) + '</option>'
+  ).join("");
+  if (EGYPT_GOVERNORATES.includes(current)) select.value = current;
+}
 let productSearchTerm = "";
 let productSortMode = "default";
 
@@ -131,6 +155,8 @@ async function loadStoreSettings() {
 
     const settings = data?.settings || {};
     storefrontSettings = settings;
+    populateGovernorateSelect();
+    updateCart();
     applyStoreContactSettings(settings);
 
     renderStoreCategories(settings.productCategories);
@@ -758,6 +784,21 @@ function updateCart() {
   const cartItemsElement = document.getElementById("cartItems");
   const totalElement = document.getElementById("cartTotal");
   const total = cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
+  const governorateSelect = document.querySelector('#checkoutForm select[name="governorate"]');
+  const selectedGovernorate = governorateSelect?.value || "";
+  const shippingFee = selectedGovernorate ? getShippingQuote(selectedGovernorate) : null;
+  const shippingElement = document.getElementById("cartShippingFee");
+  const grandTotalElement = document.getElementById("cartGrandTotal");
+  const quoteElement = document.getElementById("shippingQuote");
+  if (shippingElement) shippingElement.textContent = shippingFee === null ? "يُحدد بعد اختيار المحافظة" : shippingFee.toLocaleString("ar-EG") + " جنيه";
+  if (grandTotalElement) grandTotalElement.textContent = (total + (shippingFee ?? 0)).toLocaleString("ar-EG");
+  if (quoteElement) {
+    quoteElement.textContent = !selectedGovernorate
+      ? "اختار المحافظة لمعرفة تكلفة الشحن."
+      : shippingFee === null
+        ? "تكلفة الشحن لهذه المحافظة غير محددة حاليًا. تواصل معنا قبل تأكيد الطلب."
+        : "رسوم الشحن إلى " + selectedGovernorate + ": " + shippingFee.toLocaleString("ar-EG") + " جنيه.";
+  }
 
   if (cartItemsElement) {
     if (!cart.length) {
@@ -911,6 +952,9 @@ document.getElementById("backToCartButton").addEventListener("click", () => {
   cartActions.hidden = false;
 });
 
+// تحديث رسوم الشحن عند اختيار المحافظة
+document.querySelector('#checkoutForm select[name="governorate"]')?.addEventListener("change", updateCart);
+
 // تأكيد الطلب وخصم المخزون
 document.getElementById("checkoutForm")
   .addEventListener("submit", async event => {
@@ -933,6 +977,10 @@ document.getElementById("checkoutForm")
       const values = Object.fromEntries(
         new FormData(form).entries()
       );
+      const shippingFee = getShippingQuote(values.governorate);
+      if (shippingFee === null) {
+        throw new Error("سعر الشحن للمحافظة المختارة غير متاح حاليًا. اختار محافظة أخرى أو تواصل معنا.");
+      }
 
       const { data, error } = await db.rpc(
         "create_order_with_variants",
@@ -953,15 +1001,16 @@ document.getElementById("checkoutForm")
       if (error) throw error;
 
       const orderSnapshot = cart.map(item => ({ ...item }));
-      const orderTotal = orderSnapshot.reduce(
+      const productsTotal = orderSnapshot.reduce(
         (sum, item) => sum + Number(item.price) * item.quantity, 0
       );
+      const orderTotal = productsTotal + shippingFee;
 
       message.textContent =
         "تم استلام طلبك بنجاح! رقم طلبك: #" + data +
         ". احتفظ بالرقم لمتابعة طلبك، وسنتواصل معك لتأكيده.";
 
-      const emailResult = await sendOrderEmails(data, values, orderSnapshot, orderTotal);
+      const emailResult = await sendOrderEmails(data, values, orderSnapshot, orderTotal, shippingFee);
       if (!emailResult.configured) {
         message.textContent += " سيتم تفعيل رسائل التأكيد بالبريد بعد ربط خدمة البريد.";
       } else if (emailResult.sent) {

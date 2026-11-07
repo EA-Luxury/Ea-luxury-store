@@ -1976,3 +1976,21 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
   .product-search-suggestions { max-height:260px; }
   .search-suggestion { min-height:54px; }
 }
+
+
+/* EA LUXURY — product detail favorites */
+.detail-favorite-button {
+  display:inline-flex; align-items:center; justify-content:center; gap:9px;
+  min-height:42px; margin:10px 0 14px; padding:8px 14px;
+  border:1px solid #c5a66b; border-radius:7px; background:#fff;
+  color:#8d713f; font:inherit; font-size:13px; font-weight:800; cursor:pointer;
+  transition:background .2s ease,color .2s ease,border-color .2s ease;
+}
+.detail-favorite-button::first-letter { font-size:21px; }
+.detail-favorite-button[aria-pressed="true"] {
+  background:#171717; border-color:#c5a66b; color:#d9b96f;
+}
+.detail-favorite-button:focus-visible { outline:2px solid #b99550; outline-offset:3px; }
+@media(max-width:650px) {
+  .detail-favorite-button { min-height:44px; }
+}

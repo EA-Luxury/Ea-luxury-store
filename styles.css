@@ -1489,3 +1489,12 @@ footer small {
 .favorite-product-actions { display:flex; justify-content:space-between; align-items:center; gap:8px; }
 .favorite-product-actions a,.favorite-product-actions button { padding:8px 10px; border:1px solid #b99550; border-radius:6px; background:#171717; color:#d6b36a; font:inherit; font-size:12px; text-decoration:none; cursor:pointer; }
 @media(max-width:760px) { .favorites-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .favorite-product-image { height:170px; } .favoritesSection { margin:20px 10px; padding:22px 10px; } }
+
+
+/* فلاتر المقاس واللون */
+.store-filter { display:flex; flex-direction:column; gap:7px; }
+.store-filter span { color:#7b6744; font-size:12px; font-weight:800; }
+.store-filter select { width:100%; min-height:48px; padding:11px 14px; border:1px solid #e5dfd3; border-radius:7px; background:#fcfbf8; color:#222; font:inherit; }
+.reset-product-filters { min-height:46px; padding:10px 16px; border:1px solid #b99550; border-radius:7px; background:#171717; color:#d6b36a; font:inherit; font-weight:800; cursor:pointer; }
+.reset-product-filters:hover { filter:brightness(1.12); }
+@media(max-width:650px) { .reset-product-filters { width:100%; } }

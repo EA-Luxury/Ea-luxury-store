@@ -1091,13 +1091,68 @@ const clearProductSearchButton = document.getElementById("clearProductSearch");
 function syncProductSearchControl() {
   if (clearProductSearchButton) clearProductSearchButton.hidden = !productSearchTerm;
 }
+const productSearchSuggestions = document.getElementById("productSearchSuggestions");
+function closeProductSearchSuggestions() {
+  if (productSearchSuggestions) productSearchSuggestions.hidden = true;
+}
+function renderProductSearchSuggestions() {
+  if (!productSearchSuggestions || !productSearchInput) return;
+  const query = normalizeStoreSearch(productSearchInput.value);
+  if (query.length < 2) { closeProductSearchSuggestions(); return; }
+  const terms = query.split(/\s+/).filter(Boolean);
+  const matches = products
+    .map(product => {
+      const variants = productVariants.filter(v => String(v.product_id) === String(product.id));
+      const searchable = normalizeStoreSearch([
+        product.name, product.category, product.brand, product.color, product.size,
+        ...variants.flatMap(v => [v.size, v.color])
+      ].join(" "));
+      const score = terms.reduce((total, term) => total + (searchable.includes(term) ? 1 : 0), 0);
+      return { product, score };
+    })
+    .filter(item => item.score === terms.length)
+    .sort((a,b) => b.score - a.score)
+    .slice(0,5);
+  if (!matches.length) {
+    productSearchSuggestions.innerHTML = '<div class="search-suggestion-empty">مفيش اقتراحات مطابقة — اضغط Enter لعرض النتائج</div>';
+  } else {
+    productSearchSuggestions.innerHTML = matches.map(({product}) =>
+      '<button type="button" class="search-suggestion" role="option" data-search-product="' + escapeHTML(product.name) + '">' +
+        '<span class="search-suggestion-icon" aria-hidden="true">⌕</span>' +
+        '<span class="search-suggestion-copy"><strong>' + escapeHTML(product.name) + '</strong><small>' + escapeHTML(product.category || "منتج من EA Luxury") + '</small></span>' +
+        '<span class="search-suggestion-arrow" aria-hidden="true">←</span>' +
+      '</button>'
+    ).join("");
+  }
+  productSearchSuggestions.hidden = false;
+}
 if (productSearchInput) {
   productSearchInput.addEventListener("input", event => {
     productSearchTerm = event.target.value.trim();
     syncProductSearchControl();
+    renderProductSearchSuggestions();
+    showProducts();
+  });
+  productSearchInput.addEventListener("focus", renderProductSearchSuggestions);
+  productSearchInput.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeProductSearchSuggestions();
+    if (event.key === "Enter") closeProductSearchSuggestions();
+  });
+}
+if (productSearchSuggestions) {
+  productSearchSuggestions.addEventListener("click", event => {
+    const option = event.target.closest("[data-search-product]");
+    if (!option) return;
+    productSearchTerm = option.dataset.searchProduct;
+    if (productSearchInput) productSearchInput.value = productSearchTerm;
+    syncProductSearchControl();
+    closeProductSearchSuggestions();
     showProducts();
   });
 }
+document.addEventListener("click", event => {
+  if (!event.target.closest(".store-search")) closeProductSearchSuggestions();
+});
 if (clearProductSearchButton) {
   clearProductSearchButton.addEventListener("click", () => {
     productSearchTerm = "";

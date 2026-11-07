@@ -547,6 +547,17 @@ if(!item.category)errors.push("القسم مطلوب");
 if(item.price===""||!Number.isFinite(price)||price<=0)errors.push("السعر غير صحيح");
 if(item.purchase_cost!==""&&(!Number.isFinite(cost)||cost<0))errors.push("تكلفة الشراء غير صحيحة");
 if(item.stock===""||!Number.isInteger(stock)||stock<0)errors.push("الكمية يجب أن تكون صفرًا أو عددًا صحيحًا");
+if(item.variants_json){
+ try{
+  const parsedVariants=JSON.parse(item.variants_json);
+  if(!Array.isArray(parsedVariants))throw new Error("يجب أن تكون مصفوفة");
+  parsedVariants.forEach((variant,index)=>{
+   if(!Number.isInteger(Number(variant.stock))||Number(variant.stock)<0)throw new Error("كمية التركيبة رقم غير صحيح في السطر "+(index+1));
+   if(variant.size!=null&&typeof variant.size!=="string")throw new Error("المقاس غير صحيح");
+   if(variant.color!=null&&typeof variant.color!=="string")throw new Error("اللون غير صحيح");
+  });
+ }catch(error){errors.push("بيانات المقاسات والمخزون غير صحيحة: "+error.message);}
+}
 if(sale!==null&&(!Number.isFinite(sale)||sale<=0||sale>=price))errors.push("سعر العرض يجب أن يكون أكبر من صفر وأقل من السعر الأساسي");
 if(sale===null&&(item.sale_starts_at||item.sale_ends_at))errors.push("لا يمكن تحديد موعد عرض دون سعر عرض");
 const start=item.sale_starts_at?new Date(item.sale_starts_at):null;

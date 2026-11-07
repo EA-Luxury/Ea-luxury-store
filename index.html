@@ -163,32 +163,41 @@
       <p>اكتشف تشكيلتنا المختارة بعناية</p>
     </div>
 
-    <div class="store-tools" aria-label="البحث وتصفية المنتجات">
+    <div class="store-tools store-tools-pro" aria-label="البحث والتصفية">
       <label class="store-search">
         <span>ابحث عن منتجك</span>
         <input id="productSearch" type="search" placeholder="اكتب اسم المنتج أو وصفه..." autocomplete="off">
       </label>
       <label class="store-sort">
-        <span>ترتيب وعرض المنتجات</span>
+        <span>ترتيب حسب</span>
         <select id="productSort">
-          <option value="default">الترتيب الافتراضي</option>
-          <option value="newest">الأحدث أولًا</option>
-          <option value="price-asc">السعر: من الأقل للأعلى</option>
-          <option value="price-desc">السعر: من الأعلى للأقل</option>
-          <option value="offers">العروض فقط</option>
+          <option value="default">الموصى به</option>
+          <option value="newest">الأحدث</option>
+          <option value="price-asc">السعر: الأقل أولًا</option>
+          <option value="price-desc">السعر: الأعلى أولًا</option>
           <option value="available">المتاح فقط</option>
         </select>
       </label>
-      <label class="store-filter">
-        <span>المقاس</span>
-        <select id="productSizeFilter"><option value="">كل المقاسات</option></select>
-      </label>
-      <label class="store-filter">
-        <span>اللون</span>
-        <select id="productColorFilter"><option value="">كل الألوان</option></select>
-      </label>
-      <button type="button" id="resetProductFilters" class="reset-product-filters">مسح كل الفلاتر</button>
+      <button type="button" id="openFilterDrawer" class="open-filter-drawer"><span>☷ تصفية المنتجات</span><b id="activeFilterCount" hidden>0</b></button>
+      <div id="activeFilterChips" class="active-filter-chips" aria-live="polite"></div>
       <p id="productResultsCount" class="product-results-count" aria-live="polite"></p>
+    </div>
+    <div id="filterDrawer" class="filter-drawer" hidden>
+      <button class="filter-backdrop" type="button" data-close-filter aria-label="إغلاق التصفية"></button>
+      <aside class="filter-panel" role="dialog" aria-modal="true" aria-labelledby="filterPanelTitle">
+        <header class="filter-panel-header"><div><span>EA LUXURY</span><h3 id="filterPanelTitle">تصفية المنتجات</h3></div><button type="button" data-close-filter aria-label="إغلاق">×</button></header>
+        <div class="filter-panel-content">
+          <details class="filter-group" open><summary>القسم</summary><div id="filterCategoryOptions" class="filter-options"></div></details>
+          <details class="filter-group" open><summary>السعر (جنيه)</summary><div class="filter-price-fields"><label>من<input id="filterMinPrice" type="number" min="0" placeholder="0"></label><label>إلى<input id="filterMaxPrice" type="number" min="0" placeholder="بدون حد"></label></div></details>
+          <details class="filter-group"><summary>المقاس</summary><div id="filterSizeOptions" class="filter-options"></div></details>
+          <details class="filter-group"><summary>اللون</summary><div id="filterColorOptions" class="filter-options"></div></details>
+          <details class="filter-group" open><summary>التوفر والعروض</summary><div class="filter-options">
+            <label class="filter-check"><input id="filterAvailableOnly" type="checkbox"><span>المنتجات المتاحة فقط</span></label>
+            <label class="filter-check"><input id="filterOffersOnly" type="checkbox"><span>العروض والخصومات فقط</span></label>
+          </div></details>
+        </div>
+        <footer class="filter-panel-footer"><button type="button" id="clearAdvancedFilters" class="filter-clear-button">مسح الكل</button><button type="button" id="applyAdvancedFilters" class="filter-apply-button"><span id="filterResultsCount">عرض المنتجات</span></button></footer>
+      </aside>
     </div>
     <div id="productGrid" class="productGrid">
       <p>جاري تحميل المنتجات...</p>
@@ -338,7 +347,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@5/dist/email.min.js"></script>
-  <script src="app.js?v=37"></script>
+  <script src="app.js?v=38"></script>
 
 </body>
 </html>

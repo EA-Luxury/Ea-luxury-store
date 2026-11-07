@@ -190,18 +190,42 @@ function detailUpdateQuantity(nextValue) {
   if (plus) plus.disabled = detailQuantity >= max;
 }
 
-function detailSelectVariant(id) {
-  const variant = detailVariants.find(v => String(v.id) === String(id));
-  if (!variant || Number(variant.stock) <= 0) return;
+function detailApplyVariantSelection() {
+  const sizeSelect = document.getElementById("detailSizeSelect");
+  const colorSelect = document.getElementById("detailColorSelect");
+  const needsSize = detailVariants.some(v => String(v.size || "").trim());
+  const needsColor = detailVariants.some(v => String(v.color || "").trim());
+  const size = sizeSelect?.value || "";
+  const color = colorSelect?.value || "";
+  detailSelectedVariantId = null;
+
+  const hint = document.getElementById("detailVariantHint");
+  const addButton = document.getElementById("detailAddToCart");
+  if (addButton) addButton.disabled = true;
+
+  if ((needsSize && !size) || (needsColor && !color)) {
+    if (hint) hint.textContent = needsSize && needsColor
+      ? "من فضلك اختر المقاس واللون أولًا"
+      : needsSize ? "من فضلك اختر المقاس أولًا" : "من فضلك اختر اللون أولًا";
+    detailUpdateQuantity(1);
+    return;
+  }
+
+  const matching = detailVariants.filter(v =>
+    (!needsSize || String(v.size || "").trim() === size) &&
+    (!needsColor || String(v.color || "").trim() === color)
+  );
+  const variant = matching.find(v => Number(v.stock) > 0) || matching[0] || null;
+  if (!variant || Number(variant.stock) <= 0) {
+    if (hint) hint.textContent = "هذا الاختيار غير متاح حاليًا";
+    detailUpdateQuantity(1);
+    return;
+  }
+
   detailSelectedVariantId = variant.id;
   detailUpdateQuantity(1);
-  document.querySelectorAll("[data-detail-variant]").forEach(button => {
-    const selected = String(button.dataset.detailVariant) === String(id);
-    button.classList.toggle("selected", selected);
-    button.setAttribute("aria-pressed", String(selected));
-  });
-  const hint = document.getElementById("detailVariantHint");
-  if (hint) hint.textContent = "اختيارك: " + (variant.size || "بدون مقاس") + " - " + (variant.color || "بدون لون") + " | متاح " + Number(variant.stock) + " قطعة";
+  if (hint) hint.textContent = "المتاح من اختيارك: " + Number(variant.stock) + " قطعة";
+  if (addButton) addButton.disabled = false;
 }
 
 function detailRenderLightbox() {
@@ -444,27 +468,37 @@ function detailRender() {
     : "تفاصيل المنتج متاحة من خلال الصور والمقاسات والألوان الموضحة.";
   const sizes = Array.isArray(p.sizes) ? p.sizes.filter(Boolean) : [];
   const colors = Array.isArray(p.colors) ? p.colors.filter(Boolean) : [];
-
+  const availableSizes = [...new Set(detailVariants.filter(v => Number(v.stock) > 0).map(v => String(v.size || "").trim()).filter(Boolean))];
+  const availableColors = [...new Set(detailVariants.filter(v => Number(v.stock) > 0).map(v => String(v.color || "").trim()).filter(Boolean))];
+  const needsSize = detailVariants.some(v => String(v.size || "").trim());
+  const needsColor = detailVariants.some(v => String(v.color || "").trim());
   const firstAvailableVariant = availableVariants[0] || null;
-  const variantControl = hasVariants ? `
+  const variantControl = hasVariants && (needsSize || needsColor) ? `
     <div class="product-detail-options">
       <div class="product-detail-options-heading">
         <label>اختار المقاس واللون</label>
-        <span id="detailVariantHint">${firstAvailableVariant ? "اختار التركيبة المناسبة لك" : "نفدت جميع الاختيارات"}</span>
+        <span id="detailVariantHint">اختر الخيارات المطلوبة قبل الإضافة إلى السلة</span>
       </div>
-      <div class="product-detail-variant-list" role="group" aria-label="اختيارات المقاس واللون">
-        ${detailVariants.map(v => `
-          <button type="button"
-            class="product-detail-variant ${firstAvailableVariant && String(v.id) === String(firstAvailableVariant.id) ? "selected" : ""}"
-            data-detail-variant="${detailEscape(v.id)}"
-            aria-pressed="${firstAvailableVariant && String(v.id) === String(firstAvailableVariant.id) ? "true" : "false"}"
-            ${Number(v.stock) <= 0 ? "disabled" : ""}>
-            <strong>${detailEscape(v.size || "بدون مقاس")}</strong>
-            <span>${detailEscape(v.color || "بدون لون")}</span>
-            <small>${Number(v.stock) > 0 ? "متاح " + Number(v.stock) + " قطعة" : "غير متاح"}</small>
-          </button>
-        `).join("")}
-      </div>
+      ${needsSize ? `
+        <label for="detailSizeSelect">المقاس</label>
+        <select id="detailSizeSelect">
+          <option value="">اختر المقاس</option>
+          ${availableSizes.map(value => `<option value="${detailEscape(value)}">${detailEscape(value)}</option>`).join("")}
+        </select>` : ""}
+      ${needsColor ? `
+        <label for="detailColorSelect">اللون</label>
+        <select id="detailColorSelect">
+          <option value="">اختر اللون</option>
+          ${availableColors.map(value => `<option value="${detailEscape(value)}">${detailEscape(value)}</option>`).join("")}
+        </select>` : ""}
+    </div>` : hasVariants ? `
+    <div class="product-detail-options">
+      <span id="detailVariantHint">${firstAvailableVariant ? "متاح " + Number(firstAvailableVariant.stock) + " قطعة" : "نفدت جميع الاختيارات"}</span>
+    </div>` : (sizes.length || colors.length) ? `
+    <div class="product-detail-options">
+      <span id="detailVariantHint">اختيارات المقاس واللون لم يتم ربط مخزونها بعد. يرجى مراجعة المتجر.</span>
+      ${sizes.length ? `<label>المقاسات المتاحة: ${sizes.map(detailEscape).join(" - ")}</label>` : ""}
+      ${colors.length ? `<label>الألوان المتاحة: ${colors.map(detailEscape).join(" - ")}</label>` : ""}
     </div>` : "";
 
   detailRoot.className = "";
@@ -528,9 +562,8 @@ function detailRender() {
   detailRoot.querySelectorAll("[data-detail-image]").forEach(button => {
     button.addEventListener("click", () => detailShowImage(Number(button.dataset.detailImage)));
   });
-  detailRoot.querySelectorAll("[data-detail-variant]").forEach(button => {
-    button.addEventListener("click", () => detailSelectVariant(button.dataset.detailVariant));
-  });
+  document.getElementById("detailSizeSelect")?.addEventListener("change", detailApplyVariantSelection);
+  document.getElementById("detailColorSelect")?.addEventListener("change", detailApplyVariantSelection);
   const mainImage = document.getElementById("detailMainImage");
   if (mainImage && detailImages.length) {
     mainImage.addEventListener("click", detailOpenLightbox);
@@ -542,19 +575,33 @@ function detailRender() {
   document.getElementById("detailNextImage")?.addEventListener("click", () => detailShowImage((detailSelectedImage + 1) % detailImages.length));
   document.getElementById("detailFavoriteButton")?.addEventListener("click", detailToggleFavorite);
   detailUpdateFavoriteButton();
-  document.getElementById("detailAddToCart").addEventListener("click", () => detailAddToCart());
+  const addButton = document.getElementById("detailAddToCart");
+  addButton.addEventListener("click", () => detailAddToCart());
   document.getElementById("detailQuantityMinus").addEventListener("click", () => detailUpdateQuantity(detailQuantity - 1));
   document.getElementById("detailQuantityPlus").addEventListener("click", () => detailUpdateQuantity(detailQuantity + 1));
   document.getElementById("detailQuantityValue").addEventListener("change", event => detailUpdateQuantity(event.target.value));
-  if (firstAvailableVariant) detailSelectVariant(firstAvailableVariant.id);
-  else detailUpdateQuantity(1);
+  if (hasVariants && !needsSize && !needsColor && firstAvailableVariant) {
+    detailSelectedVariantId = firstAvailableVariant.id;
+    detailUpdateQuantity(1);
+  } else {
+    detailSelectedVariantId = null;
+    detailUpdateQuantity(1);
+    if (hasVariants && (needsSize || needsColor)) addButton.disabled = true;
+    if (!hasVariants && (sizes.length || colors.length)) addButton.disabled = true;
+  }
   detailRenderLightbox();
 }
 
 function detailAddToCart() {
   const p = detailProduct;
   const hasVariants = detailVariants.length > 0;
+  const productRequiresOptions = (Array.isArray(p.sizes) && p.sizes.length > 0) || (Array.isArray(p.colors) && p.colors.length > 0);
   let selectedVariant = null;
+
+  if (productRequiresOptions && !hasVariants) {
+    document.getElementById("detailMessage").textContent = "هذا المنتج يحتاج إلى تجهيز المقاسات والألوان ومخزونها من لوحة الإدارة قبل الشراء.";
+    return;
+  }
 
   if (hasVariants) {
     selectedVariant = detailVariants.find(v => String(v.id) === String(detailSelectedVariantId));
@@ -640,7 +687,7 @@ async function detailLoadProduct() {
 
   if (variantsError) console.error("Variant load error:", variantsError);
   detailVariants = variantsError ? [] : (variants || []);
-  detailSelectedVariantId = detailVariants.find(v => Number(v.stock) > 0)?.id ?? null;
+  detailSelectedVariantId = null;
   document.title = data.name + " | EA Luxury";
   detailRender();
   detailLoadRelatedProducts();

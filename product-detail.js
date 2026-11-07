@@ -32,7 +32,7 @@ function detailUpdateFavoriteButton() {
   const active = detailIsFavorite();
   button.setAttribute("aria-pressed", String(active));
   button.setAttribute("aria-label", active ? "إزالة من المفضلة" : "أضف للمفضلة");
-  button.innerHTML = (active ? "♥" : "♡") + '<span>' + (active ? "محفوظ في المفضلة" : "أضف إلى المفضلة") + '</span>';
+  button.textContent = active ? "♥" : "♡";
 }
 
 function detailEscape(value) {

@@ -92,7 +92,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 <div id="dashboard" hidden>
 
-<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#salesReportsSection">تقارير المبيعات</a><a href="#expensesSection">المصروفات</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#settingsSection">إعدادات المتجر</a><a href="#ordersSection">الطلبات</a></nav>
+<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#salesReportsSection">تقارير المبيعات</a><a href="#expensesSection">المصروفات</a><a href="#couponsSection">كوبونات الخصم</a><a href="#customersSection">العملاء</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#settingsSection">إعدادات المتجر</a><a href="#ordersSection">الطلبات</a></nav>
 <section id="overviewSection" class="overviewSection"><h2>ملخص المتجر</h2><div class="statsGrid"><article class="statCard"><span>إجمالي المنتجات</span><strong id="statProducts">—</strong></article><article class="statCard"><span>منتجات منخفضة المخزون</span><strong id="statLowStock">—</strong></article><article class="statCard"><span>إجمالي الطلبات</span><strong id="statOrders">—</strong></article><article class="statCard"><span>طلبات تحتاج متابعة</span><strong id="statPendingOrders">—</strong></article><article class="statCard"><span>الطلبات الملغاة</span><strong id="statCancelledOrders">—</strong></article></div><p class="status-text">الأرقام تتحدث عند تحميل المنتجات والطلبات.</p></section>
 <section id="salesReportsSection" class="overviewSection">
 <h2>تقارير المبيعات والأداء</h2>
@@ -144,6 +144,30 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <input id="expenseSearch" type="search" placeholder="ابحث في المصروفات..." aria-label="البحث في المصروفات">
 <div id="expensesList">جاري تحميل المصروفات...</div>
 <div class="reportNotice"><strong>ملاحظة محاسبية:</strong> صافي الربح هنا تقديري، ويعتمد على تكاليف شراء المنتجات المسجلة والمصروفات التي تدخلها فقط. لا يشمل أي مصروف لم يتم تسجيله، ولا الضرائب أو تكلفة الشحن الفعلية غير المسجلة.</div>
+</section>
+<section id="couponsSection" class="overviewSection">
+<h2>إدارة كوبونات الخصم</h2>
+<p class="status-text">أنشئ أكواد خصم بنسبة مئوية أو مبلغ ثابت. التحقق النهائي وعدد مرات الاستخدام يتمان داخل قاعدة البيانات عند إتمام الطلب.</p>
+<input id="couponId" type="hidden">
+<label for="couponCodeAdmin">كود الخصم</label><input id="couponCodeAdmin" maxlength="40" placeholder="مثال: WELCOME10" autocomplete="off">
+<label for="couponType">نوع الخصم</label><select id="couponType"><option value="percent">نسبة مئوية (%)</option><option value="fixed">مبلغ ثابت (جنيه)</option></select>
+<label for="couponValue">قيمة الخصم</label><input id="couponValue" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="قيمة الخصم">
+<label for="couponMinOrder">الحد الأدنى لقيمة المنتجات</label><input id="couponMinOrder" type="number" min="0" step="0.01" value="0">
+<label for="couponStartsAt">يبدأ في (اختياري)</label><input id="couponStartsAt" type="datetime-local">
+<label for="couponExpiresAt">ينتهي في (اختياري)</label><input id="couponExpiresAt" type="datetime-local">
+<label for="couponMaxUses">الحد الأقصى للاستخدام الكلي (اتركه فارغًا بلا حد)</label><input id="couponMaxUses" type="number" min="1" step="1" placeholder="عدد الاستخدامات">
+<label><input id="couponActive" type="checkbox" checked> الكوبون فعال</label>
+<button type="button" id="saveCouponButton" onclick="saveCoupon()">حفظ الكوبون</button>
+<button type="button" class="secondary" id="cancelCouponEditButton" onclick="resetCouponForm()" hidden>إلغاء التعديل</button>
+<p id="couponAdminMsg" class="status-text" aria-live="polite"></p>
+<hr><h3>الأكواد المسجلة</h3><input id="couponSearch" type="search" placeholder="ابحث بكود الخصم..."><div id="couponsList">جاري تحميل الكوبونات...</div>
+<p class="status-text">لا يتم حذف الكوبون الذي استُخدم في طلبات سابقة؛ يمكن إيقافه للحفاظ على سجل الاستخدامات.</p>
+</section>
+<section id="customersSection" class="overviewSection">
+<h2>إدارة العملاء</h2>
+<p class="status-text">قائمة مجمعة تلقائيًا من الطلبات المسجلة، دون إنشاء نسخة إضافية من بيانات العملاء. هذه البيانات تظهر للمسؤولين فقط.</p>
+<div class="statsGrid reportStats"><article class="statCard"><span>عدد العملاء</span><strong id="customersCount">—</strong></article><article class="statCard"><span>عملاء متكررون</span><strong id="repeatCustomersCount">—</strong></article></div>
+<input id="customerSearch" type="search" placeholder="ابحث باسم العميل أو الهاتف أو البريد أو المحافظة..."><div id="customersList">جاري تحميل العملاء...</div>
 </section>
 <section id="addProductSection">
 <h2>إضافة منتج جديد</h2>
@@ -301,6 +325,9 @@ const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let adminReady=false;
 let reportOrders=[];
 let reportExpenses=[];
+let reportCustomers=[];
+let reportCoupons=[];
+let couponRedemptions=[];
 let ordersChannel=null;
 let logoUrl="";
 let coverUrl="";
@@ -393,6 +420,7 @@ document.getElementById("dashboard").hidden=false;
 await loadProducts();
 await loadOrders();
 await loadExpenses();
+await loadCoupons();
 await loadSettings();
 startOrderNotifications();
 
@@ -1292,6 +1320,131 @@ document.getElementById("expenseMsg").textContent="تم حذف المصروف.";
 await loadExpenses();
 }
 
+
+function normalizeCustomerPhone(phone){return String(phone||"").replace(/[^0-9]/g,"");}
+function renderCustomers(orders){
+  const grouped=new Map();
+  (orders||[]).forEach(order=>{
+    const phone=normalizeCustomerPhone(order.phone);
+    if(!phone)return;
+    if(!grouped.has(phone))grouped.set(phone,{phone,name:order.customer_name||"عميل",email:order.customer_email||"",orders:[],governorates:new Set(),addresses:new Set(),completedTotal:0,lastOrder:null});
+    const customer=grouped.get(phone);
+    customer.orders.push(order);
+    if(order.customer_name)customer.name=order.customer_name;
+    if(order.customer_email)customer.email=order.customer_email;
+    if(order.governorate)customer.governorates.add(order.governorate);
+    if(order.address)customer.addresses.add(order.address);
+    if(order.status==="مكتمل")customer.completedTotal+=Number(order.total||0);
+    if(!customer.lastOrder||new Date(order.created_at||0)>new Date(customer.lastOrder.created_at||0))customer.lastOrder=order;
+  });
+  reportCustomers=[...grouped.values()].sort((a,b)=>b.orders.length-a.orders.length);
+  document.getElementById("customersCount").textContent=String(reportCustomers.length);
+  document.getElementById("repeatCustomersCount").textContent=String(reportCustomers.filter(c=>c.orders.length>1).length);
+  const box=document.getElementById("customersList");box.replaceChildren();
+  if(!reportCustomers.length){box.textContent="لا توجد بيانات عملاء حتى الآن.";return;}
+  reportCustomers.forEach(customer=>{
+    const card=document.createElement("article");card.className="orderAdminCard customerAdminCard";
+    card.dataset.search=[customer.name,customer.phone,customer.email,...customer.governorates].join(" ").toLocaleLowerCase("ar");
+    const title=document.createElement("strong");title.textContent=customer.name;
+    const contact=document.createElement("p");contact.className="orderMeta";contact.textContent="الهاتف: "+customer.phone+(customer.email?" • "+customer.email:"");
+    const meta=document.createElement("p");meta.textContent="عدد الطلبات: "+customer.orders.length+" • الطلبات المكتملة: "+customer.completedTotal.toLocaleString("ar-EG")+" جنيه";
+    const areas=document.createElement("p");areas.textContent="المحافظات: "+([...customer.governorates].join("، ")||"غير محدد");
+    const last=document.createElement("p");last.textContent="آخر طلب: #"+(customer.lastOrder?.id||"—")+" • "+(customer.lastOrder?.created_at?new Date(customer.lastOrder.created_at).toLocaleDateString("ar-EG"):"غير متاح");
+    const history=document.createElement("details");const summary=document.createElement("summary");summary.textContent="عرض سجل الطلبات والعناوين";history.append(summary);
+    customer.orders.sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)).forEach(order=>{
+      const line=document.createElement("p");line.textContent="#"+order.id+" — "+(order.status||"") +" — "+Number(order.total||0).toLocaleString("ar-EG")+" جنيه — "+(order.address||"");history.append(line);
+    });
+    card.append(title,contact,meta,areas,last,history);box.append(card);
+  });
+  filterCustomers();
+}
+function filterCustomers(){
+ const q=(document.getElementById("customerSearch")?.value||"").trim().toLocaleLowerCase("ar");
+ document.querySelectorAll(".customerAdminCard").forEach(card=>card.hidden=!!q&&!String(card.dataset.search||"").includes(q));
+}
+function couponMoney(value){return Number(value||0).toLocaleString("ar-EG",{maximumFractionDigits:2})+" جنيه";}
+function localDateTimeValue(value){
+ if(!value)return "";
+ const d=new Date(value);if(Number.isNaN(d.getTime()))return "";
+ const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);return local.toISOString().slice(0,16);
+}
+async function loadCoupons(){
+ if(!adminReady)return;
+ const box=document.getElementById("couponsList");if(box)box.textContent="جاري تحميل الكوبونات...";
+ const [couponsResult,redemptionsResult]=await Promise.all([
+   client.from("store_coupons").select("*").order("created_at",{ascending:false}),
+   client.from("coupon_redemptions").select("id,coupon_id,customer_phone,discount_amount,created_at")
+ ]);
+ if(couponsResult.error||redemptionsResult.error){
+   const error=couponsResult.error||redemptionsResult.error;
+   if(box)box.textContent="تعذر تحميل الكوبونات: "+error.message;
+   document.getElementById("couponAdminMsg").textContent="تعذر تحميل الكوبونات: "+error.message;return;
+ }
+ reportCoupons=couponsResult.data||[];couponRedemptions=redemptionsResult.data||[];renderCoupons();
+}
+function renderCoupons(){
+ const box=document.getElementById("couponsList");if(!box)return;box.replaceChildren();
+ if(!reportCoupons.length){box.textContent="لا توجد كوبونات حتى الآن.";return;}
+ reportCoupons.forEach(coupon=>{
+   const card=document.createElement("article");card.className="orderAdminCard couponAdminCard";
+   card.dataset.search=String(coupon.code||"").toLocaleLowerCase("ar");
+   const uses=couponRedemptions.filter(r=>r.coupon_id===coupon.id).length;
+   const title=document.createElement("strong");title.textContent=coupon.code;
+   const type=document.createElement("p");type.textContent="الخصم: "+(coupon.discount_type==="percent"?Number(coupon.discount_value)+"%":couponMoney(coupon.discount_value))+" • الحد الأدنى: "+couponMoney(coupon.min_order_amount);
+   const validity=document.createElement("p");validity.textContent="الاستخدامات: "+uses+(coupon.max_uses===null?" / بلا حد":" / "+coupon.max_uses)+" • "+(coupon.is_active?"فعال":"متوقف");
+   const dates=document.createElement("p");dates.textContent="البداية: "+(coupon.starts_at?new Date(coupon.starts_at).toLocaleString("ar-EG"):"فوري") +" • النهاية: "+(coupon.expires_at?new Date(coupon.expires_at).toLocaleString("ar-EG"):"بلا موعد");
+   const actions=document.createElement("div");actions.className="orderActions";
+   const edit=document.createElement("button");edit.type="button";edit.className="secondary";edit.textContent="تعديل";edit.addEventListener("click",()=>editCoupon(coupon.id));
+   const toggle=document.createElement("button");toggle.type="button";toggle.className=coupon.is_active?"danger":"secondary";toggle.textContent=coupon.is_active?"إيقاف الكوبون":"تفعيل الكوبون";toggle.addEventListener("click",()=>toggleCoupon(coupon.id,!coupon.is_active));
+   actions.append(edit,toggle);card.append(title,type,validity,dates,actions);box.append(card);
+ });
+ filterCoupons();
+}
+function filterCoupons(){
+ const q=(document.getElementById("couponSearch")?.value||"").trim().toLocaleLowerCase("ar");
+ document.querySelectorAll(".couponAdminCard").forEach(card=>card.hidden=!!q&&!String(card.dataset.search||"").includes(q));
+}
+function resetCouponForm(){
+ document.getElementById("couponId").value="";document.getElementById("couponCodeAdmin").value="";
+ document.getElementById("couponType").value="percent";document.getElementById("couponValue").value="";
+ document.getElementById("couponMinOrder").value="0";document.getElementById("couponStartsAt").value="";
+ document.getElementById("couponExpiresAt").value="";document.getElementById("couponMaxUses").value="";
+ document.getElementById("couponActive").checked=true;document.getElementById("saveCouponButton").textContent="حفظ الكوبون";
+ document.getElementById("cancelCouponEditButton").hidden=true;document.getElementById("couponCodeAdmin").disabled=false;
+}
+function editCoupon(id){
+ const c=reportCoupons.find(x=>String(x.id)===String(id));if(!c)return;
+ document.getElementById("couponId").value=String(c.id);document.getElementById("couponCodeAdmin").value=c.code;
+ document.getElementById("couponCodeAdmin").disabled=true;document.getElementById("couponType").value=c.discount_type;
+ document.getElementById("couponValue").value=String(c.discount_value);document.getElementById("couponMinOrder").value=String(c.min_order_amount);
+ document.getElementById("couponStartsAt").value=localDateTimeValue(c.starts_at);document.getElementById("couponExpiresAt").value=localDateTimeValue(c.expires_at);
+ document.getElementById("couponMaxUses").value=c.max_uses===null?"":String(c.max_uses);document.getElementById("couponActive").checked=!!c.is_active;
+ document.getElementById("saveCouponButton").textContent="حفظ التعديلات";document.getElementById("cancelCouponEditButton").hidden=false;
+ document.getElementById("couponAdminMsg").textContent="تعديل الكوبون "+c.code;
+ document.getElementById("couponsSection").scrollIntoView({behavior:"smooth"});
+}
+async function saveCoupon(){
+ if(!adminReady)return;
+ const msg=document.getElementById("couponAdminMsg");const id=document.getElementById("couponId").value;
+ const code=document.getElementById("couponCodeAdmin").value.trim().toUpperCase();
+ const type=document.getElementById("couponType").value;const value=Number(document.getElementById("couponValue").value);
+ const min=Number(document.getElementById("couponMinOrder").value||0);const maxRaw=document.getElementById("couponMaxUses").value.trim();
+ const max=maxRaw===""?null:Number(maxRaw);const starts=document.getElementById("couponStartsAt").value;const expires=document.getElementById("couponExpiresAt").value;
+ if(!/^[A-Z0-9_-]{3,40}$/.test(code)||!Number.isFinite(value)||value<=0||(type==="percent"&&value>100)||!Number.isFinite(min)||min<0||(max!==null&&(!Number.isInteger(max)||max<1))||(starts&&expires&&new Date(expires)<=new Date(starts))){
+   msg.textContent="راجع الكود والقيمة والحد الأدنى وعدد الاستخدامات وتواريخ الصلاحية.";return;
+ }
+ const payload={code,discount_type:type,discount_value:value,min_order_amount:min,max_uses:max,is_active:document.getElementById("couponActive").checked,starts_at:starts?new Date(starts).toISOString():null,expires_at:expires?new Date(expires).toISOString():null};
+ msg.textContent="جاري حفظ الكوبون...";
+ const result=id?await client.from("store_coupons").update(payload).eq("id",Number(id)):await client.from("store_coupons").insert(payload);
+ if(result.error){msg.textContent="تعذر حفظ الكوبون: "+result.error.message;return;}
+ msg.textContent="تم حفظ الكوبون.";resetCouponForm();await loadCoupons();
+}
+async function toggleCoupon(id,active){
+ const {error}=await client.from("store_coupons").update({is_active:active}).eq("id",Number(id));
+ if(error){document.getElementById("couponAdminMsg").textContent="تعذر تغيير حالة الكوبون: "+error.message;return;}
+ document.getElementById("couponAdminMsg").textContent=active?"تم تفعيل الكوبون.":"تم إيقاف الكوبون.";await loadCoupons();
+}
+
 async function loadOrders(){
 if(!adminReady)return;
 
@@ -1310,6 +1463,7 @@ document.getElementById("statOrders").textContent=String(data?.length||0);
 document.getElementById("statPendingOrders").textContent=String((data||[]).filter(o=>!["مكتمل","ملغي"].includes(o.status)).length);
 document.getElementById("statCancelledOrders").textContent=String((data||[]).filter(o=>o.status==="ملغي").length);
 renderSalesReports(data||[]);
+renderCustomers(data||[]);
 
 if(!data||data.length===0){
 box.textContent="لا توجد طلبات حتى الآن.";
@@ -1342,6 +1496,7 @@ shipping.textContent="الشحن: "+Number(o.shipping_fee||0).toLocaleString("ar
 
 const total=document.createElement("p");
 total.textContent="الإجمالي شامل الشحن: "+Number(o.total||0).toLocaleString("ar-EG")+" جنيه";
+if(Number(o.discount_amount||0)>0){const discount=document.createElement("p");discount.textContent="كوبون "+(o.coupon_code||"")+" — الخصم: "+Number(o.discount_amount).toLocaleString("ar-EG")+" جنيه";div.append(discount);}
 
 const items=document.createElement("div");
 items.textContent="المنتجات: "+(o.order_items||[]).map(item=>item.product_name+" × "+item.quantity).join("، ");
@@ -1633,12 +1788,19 @@ const control=document.getElementById(id);
 if(control)control.addEventListener(id==="adminOrderSearch"?"input":"change",filterOrders);
 });
 
+document.getElementById("customerSearch")?.addEventListener("input",filterCustomers);
+document.getElementById("couponSearch")?.addEventListener("input",filterCoupons);
 window.login=login;
 window.addProduct=addProduct;
 window.loadOrders=loadOrders;
 window.renderSalesReports=renderSalesReports;
 window.saveExpense=saveExpense;
 window.loadExpenses=loadExpenses;
+window.saveCoupon=saveCoupon;
+window.loadCoupons=loadCoupons;
+window.editCoupon=editCoupon;
+window.toggleCoupon=toggleCoupon;
+window.resetCouponForm=resetCouponForm;
 window.editExpense=editExpense;
 window.deleteExpense=deleteExpense;
 window.resetExpenseForm=resetExpenseForm;

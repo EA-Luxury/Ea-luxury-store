@@ -92,7 +92,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 <div id="dashboard" hidden>
 
-<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#salesReportsSection">تقارير المبيعات</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#settingsSection">إعدادات المتجر</a><a href="#ordersSection">الطلبات</a></nav>
+<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#salesReportsSection">تقارير المبيعات</a><a href="#expensesSection">المصروفات</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#settingsSection">إعدادات المتجر</a><a href="#ordersSection">الطلبات</a></nav>
 <section id="overviewSection" class="overviewSection"><h2>ملخص المتجر</h2><div class="statsGrid"><article class="statCard"><span>إجمالي المنتجات</span><strong id="statProducts">—</strong></article><article class="statCard"><span>منتجات منخفضة المخزون</span><strong id="statLowStock">—</strong></article><article class="statCard"><span>إجمالي الطلبات</span><strong id="statOrders">—</strong></article><article class="statCard"><span>طلبات تحتاج متابعة</span><strong id="statPendingOrders">—</strong></article><article class="statCard"><span>الطلبات الملغاة</span><strong id="statCancelledOrders">—</strong></article></div><p class="status-text">الأرقام تتحدث عند تحميل المنتجات والطلبات.</p></section>
 <section id="salesReportsSection" class="overviewSection">
 <h2>تقارير المبيعات والأداء</h2>
@@ -106,12 +106,44 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <article class="statCard"><span>قيمة الطلبات غير الملغاة وغير المكتملة</span><strong id="reportPendingValue">—</strong><small>قيمة قيد التنفيذ وليست مبيعات محققة</small></article>
 <article class="statCard"><span>مجمل ربح المنتجات المسجل</span><strong id="reportGrossProfit">—</strong><small>قبل المصروفات والشحن والمرتجعات</small></article>
 <article class="statCard"><span>طلبات مكتملة تحتاج تسجيل تكلفة</span><strong id="reportMissingCosts">—</strong><small>لا تدخل في حساب الربح حتى تسجيل التكلفة</small></article>
+<article class="statCard"><span>المصروفات المسجلة خلال الفترة</span><strong id="reportExpensesTotal">—</strong><small>حسب تاريخ المصروف</small></article>
+<article class="statCard"><span>صافي تشغيلي تقديري</span><strong id="reportNetProfit">—</strong><small>مجمل الربح المسجل ناقص المصروفات المسجلة</small></article>
 </div>
 <div class="reportNotice"><strong>تنبيه محاسبي:</strong> مجمل الربح المعروض محسوب فقط لبنود الطلبات التي سُجلت لها تكلفة شراء وقت الطلب. لا يشمل مصاريف التشغيل أو تكلفة الشحن الفعلية أو الضرائب، ولا يمثل صافي الربح. الطلبات القديمة التي لا تحتوي على تكلفة ستظهر كبيانات ناقصة دون تخمين.</div>
 <h3>مبيعات آخر 7 أيام</h3><div id="salesTrend" class="salesTrend" aria-live="polite">جاري تجهيز التقرير...</div>
 <h3>أفضل المنتجات مبيعًا</h3><div id="topProductsReport" class="reportTableWrap">لا توجد بيانات كافية.</div>
 <h3>توزيع الطلبات حسب الحالة</h3><div id="orderStatusReport" class="statusReportGrid"></div>
 <p class="status-text">التقرير يعتمد على الطلبات المسجلة في المتجر. المبيعات المكتملة تشمل الطلبات التي حالتها «مكتمل» فقط، والطلبات الملغاة مستبعدة.</p>
+</section>
+<section id="expensesSection" class="overviewSection">
+<h2>إدارة المصروفات</h2>
+<p class="status-text">سجل مصروفات المتجر مثل الإعلانات والتغليف والشحن التشغيلي والعمولات. ستُخصم المصروفات المسجلة من مجمل ربح المنتجات في التقرير حسب تاريخ المصروف.</p>
+<div class="statsGrid reportStats">
+<article class="statCard"><span>إجمالي المصروفات المسجلة</span><strong id="expensesAllTimeTotal">—</strong></article>
+<article class="statCard"><span>عدد المصروفات</span><strong id="expensesCount">—</strong></article>
+</div>
+<h3 id="expenseFormTitle">إضافة مصروف جديد</h3>
+<input id="expenseId" type="hidden">
+<label for="expenseCategory">نوع المصروف</label>
+<select id="expenseCategory"><option value="إعلانات وتسويق">إعلانات وتسويق</option><option value="تغليف وتجهيز">تغليف وتجهيز</option><option value="شحن وتوصيل">شحن وتوصيل</option><option value="مصاريف تشغيل">مصاريف تشغيل</option><option value="أدوات ومستلزمات">أدوات ومستلزمات</option><option value="عمولات ورسوم">عمولات ورسوم</option><option value="أخرى">أخرى</option></select>
+<label for="expenseDescription">بيان المصروف</label>
+<input id="expenseDescription" maxlength="240" placeholder="مثال: حملة إعلانات فيسبوك لمدة أسبوع">
+<label for="expenseAmount">المبلغ بالجنيه</label>
+<input id="expenseAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="المبلغ">
+<label for="expenseDate">تاريخ المصروف</label>
+<input id="expenseDate" type="date">
+<label for="expensePaymentMethod">طريقة الدفع</label>
+<select id="expensePaymentMethod"><option value="">غير محدد</option><option value="نقدي">نقدي</option><option value="تحويل بنكي">تحويل بنكي</option><option value="محفظة إلكترونية">محفظة إلكترونية</option><option value="بطاقة">بطاقة</option><option value="أخرى">أخرى</option></select>
+<label for="expenseNotes">ملاحظات (اختياري)</label>
+<textarea id="expenseNotes" rows="2" maxlength="1000" placeholder="تفاصيل إضافية أو رقم إيصال..."></textarea>
+<button type="button" id="saveExpenseButton" onclick="saveExpense()">حفظ المصروف</button>
+<button type="button" class="secondary" id="cancelExpenseEditButton" onclick="resetExpenseForm()" hidden>إلغاء التعديل</button>
+<p id="expenseMsg" class="status-text" aria-live="polite"></p>
+<hr>
+<h3>سجل المصروفات</h3>
+<input id="expenseSearch" type="search" placeholder="ابحث في المصروفات..." aria-label="البحث في المصروفات">
+<div id="expensesList">جاري تحميل المصروفات...</div>
+<div class="reportNotice"><strong>ملاحظة محاسبية:</strong> صافي الربح هنا تقديري، ويعتمد على تكاليف شراء المنتجات المسجلة والمصروفات التي تدخلها فقط. لا يشمل أي مصروف لم يتم تسجيله، ولا الضرائب أو تكلفة الشحن الفعلية غير المسجلة.</div>
 </section>
 <section id="addProductSection">
 <h2>إضافة منتج جديد</h2>
@@ -268,6 +300,7 @@ const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let adminReady=false;
 let reportOrders=[];
+let reportExpenses=[];
 let ordersChannel=null;
 let logoUrl="";
 let coverUrl="";
@@ -359,6 +392,7 @@ document.getElementById("dashboard").hidden=false;
 
 await loadProducts();
 await loadOrders();
+await loadExpenses();
 await loadSettings();
 startOrderNotifications();
 
@@ -1046,6 +1080,13 @@ put("reportAverageOrder",money(completed.length?completedRevenue/completed.lengt
 put("reportPendingValue",money(pendingValue));
 put("reportGrossProfit",money(grossProfit));
 put("reportMissingCosts",String(ordersMissingCosts));
+const expenseFiltered=reportExpenses.filter(expense=>{
+const date=expense.expense_date?new Date(expense.expense_date+"T00:00:00"):null;
+return date&&(period==="all"||date>=start);
+});
+const expenseTotal=sum(expenseFiltered.map(expense=>expense.amount));
+put("reportExpensesTotal",money(expenseTotal));
+put("reportNetProfit",money(grossProfit-expenseTotal));
 
 const productMap=new Map();
 completed.forEach(order=>(order.order_items||[]).forEach(item=>{
@@ -1106,6 +1147,149 @@ const label=document.createElement("small");label.textContent=day.date.toLocaleD
 col.append(wrap,value,label);trend.append(col);
 });
 }
+}
+
+function expenseMoney(value){
+return Number(value||0).toLocaleString("ar-EG",{maximumFractionDigits:2})+" ج.م";
+}
+
+async function loadExpenses(){
+if(!adminReady)return;
+const box=document.getElementById("expensesList");
+if(box)box.textContent="جاري تحميل المصروفات...";
+const {data,error}=await client.from("store_expenses").select("*").order("expense_date",{ascending:false}).order("id",{ascending:false});
+if(error){
+if(box)box.textContent="تعذر تحميل المصروفات: "+error.message;
+document.getElementById("expenseMsg").textContent="تعذر تحميل المصروفات: "+error.message;
+return;
+}
+reportExpenses=Array.isArray(data)?data:[];
+const total=reportExpenses.reduce((sum,item)=>sum+Number(item.amount||0),0);
+document.getElementById("expensesAllTimeTotal").textContent=expenseMoney(total);
+document.getElementById("expensesCount").textContent=String(reportExpenses.length);
+renderExpensesList();
+renderSalesReports(reportOrders);
+}
+
+function renderExpensesList(){
+const box=document.getElementById("expensesList");
+if(!box)return;
+box.replaceChildren();
+if(!reportExpenses.length){box.textContent="لا توجد مصروفات مسجلة حتى الآن.";return;}
+reportExpenses.forEach(expense=>{
+const card=document.createElement("article");
+card.className="orderAdminCard expenseAdminCard";
+card.dataset.search=[expense.category,expense.description,expense.payment_method,expense.notes].filter(Boolean).join(" ").toLocaleLowerCase("ar");
+const title=document.createElement("strong");
+title.textContent=expense.description;
+const meta=document.createElement("p");
+meta.className="orderMeta";
+meta.textContent=expense.category+" • "+(expense.expense_date||"بدون تاريخ")+(expense.payment_method?" • "+expense.payment_method:"");
+const amount=document.createElement("p");
+amount.textContent="المبلغ: "+expenseMoney(expense.amount);
+card.append(title,meta,amount);
+if(expense.notes){
+const notes=document.createElement("p");
+notes.textContent="ملاحظات: "+expense.notes;
+card.append(notes);
+}
+const actions=document.createElement("div");
+actions.className="orderActions";
+const edit=document.createElement("button");
+edit.type="button";edit.className="secondary";edit.textContent="تعديل";
+edit.addEventListener("click",()=>editExpense(expense.id));
+const remove=document.createElement("button");
+remove.type="button";remove.className="danger";remove.textContent="حذف";
+remove.addEventListener("click",()=>deleteExpense(expense.id));
+actions.append(edit,remove);card.append(actions);box.append(card);
+});
+filterExpenses();
+}
+
+function filterExpenses(){
+const query=(document.getElementById("expenseSearch")?.value||"").trim().toLocaleLowerCase("ar");
+document.querySelectorAll(".expenseAdminCard").forEach(card=>{
+card.hidden=query!==""&&!String(card.dataset.search||"").includes(query);
+});
+}
+
+function resetExpenseForm(){
+document.getElementById("expenseId").value="";
+document.getElementById("expenseCategory").value="إعلانات وتسويق";
+document.getElementById("expenseDescription").value="";
+document.getElementById("expenseAmount").value="";
+document.getElementById("expensePaymentMethod").value="";
+document.getElementById("expenseNotes").value="";
+const today=new Date();today.setMinutes(today.getMinutes()-today.getTimezoneOffset());
+document.getElementById("expenseDate").value=today.toISOString().slice(0,10);
+document.getElementById("expenseFormTitle").textContent="إضافة مصروف جديد";
+document.getElementById("saveExpenseButton").textContent="حفظ المصروف";
+document.getElementById("cancelExpenseEditButton").hidden=true;
+}
+
+function editExpense(id){
+const expense=reportExpenses.find(item=>String(item.id)===String(id));
+if(!expense)return;
+document.getElementById("expenseId").value=String(expense.id);
+document.getElementById("expenseCategory").value=expense.category||"أخرى";
+document.getElementById("expenseDescription").value=expense.description||"";
+document.getElementById("expenseAmount").value=String(expense.amount||"");
+document.getElementById("expenseDate").value=expense.expense_date||"";
+document.getElementById("expensePaymentMethod").value=expense.payment_method||"";
+document.getElementById("expenseNotes").value=expense.notes||"";
+document.getElementById("expenseFormTitle").textContent="تعديل المصروف";
+document.getElementById("saveExpenseButton").textContent="حفظ التعديلات";
+document.getElementById("cancelExpenseEditButton").hidden=false;
+document.getElementById("expenseMsg").textContent="تقدر تعدل البيانات ثم تحفظ.";
+document.getElementById("expensesSection").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+async function saveExpense(){
+if(!adminReady)return;
+const msg=document.getElementById("expenseMsg");
+const button=document.getElementById("saveExpenseButton");
+const id=document.getElementById("expenseId").value.trim();
+const category=document.getElementById("expenseCategory").value;
+const description=document.getElementById("expenseDescription").value.trim();
+const amountRaw=document.getElementById("expenseAmount").value.trim();
+const amount=Number(amountRaw);
+const expenseDate=document.getElementById("expenseDate").value;
+const paymentMethod=document.getElementById("expensePaymentMethod").value||null;
+const notes=document.getElementById("expenseNotes").value.trim()||null;
+if(!category||!description||description.length>240||amountRaw===""||!Number.isFinite(amount)||amount<=0||!expenseDate){
+msg.textContent="اكتب نوع المصروف والبيان والمبلغ الصحيح والتاريخ.";
+return;
+}
+const payload={category,description,amount,expense_date:expenseDate,payment_method:paymentMethod,notes};
+button.disabled=true;
+msg.textContent=id?"جاري تحديث المصروف...":"جاري حفظ المصروف...";
+try{
+const result=id
+?await client.from("store_expenses").update(payload).eq("id",Number(id))
+:await client.from("store_expenses").insert(payload);
+if(result.error)throw result.error;
+msg.textContent=id?"تم تحديث المصروف بنجاح.":"تم تسجيل المصروف بنجاح.";
+resetExpenseForm();
+await loadExpenses();
+}catch(error){
+console.error(error);
+msg.textContent="تعذر حفظ المصروف: "+error.message;
+}finally{
+button.disabled=false;
+}
+}
+
+async function deleteExpense(id){
+const expense=reportExpenses.find(item=>String(item.id)===String(id));
+if(!expense)return;
+if(!window.confirm("هل أنت متأكد من حذف المصروف «"+expense.description+"» بقيمة "+expenseMoney(expense.amount)+"؟"))return;
+const {error}=await client.from("store_expenses").delete().eq("id",Number(id));
+if(error){
+document.getElementById("expenseMsg").textContent="تعذر حذف المصروف: "+error.message;
+return;
+}
+document.getElementById("expenseMsg").textContent="تم حذف المصروف.";
+await loadExpenses();
 }
 
 async function loadOrders(){
@@ -1441,6 +1625,9 @@ input.addEventListener("input",()=>{const q=input.value.trim().toLocaleLowerCase
 }
 filterAdminCards("adminProductSearch",".productAdminCard");
 document.getElementById("salesReportPeriod")?.addEventListener("change",()=>renderSalesReports(reportOrders));
+document.getElementById("expenseSearch")?.addEventListener("input",filterExpenses);
+const expenseDateInput=document.getElementById("expenseDate");
+if(expenseDateInput){const today=new Date();today.setMinutes(today.getMinutes()-today.getTimezoneOffset());expenseDateInput.value=today.toISOString().slice(0,10);}
 ["adminOrderSearch","adminOrderStatusFilter","adminOrderGovernorateFilter"].forEach(id=>{
 const control=document.getElementById(id);
 if(control)control.addEventListener(id==="adminOrderSearch"?"input":"change",filterOrders);
@@ -1450,6 +1637,11 @@ window.login=login;
 window.addProduct=addProduct;
 window.loadOrders=loadOrders;
 window.renderSalesReports=renderSalesReports;
+window.saveExpense=saveExpense;
+window.loadExpenses=loadExpenses;
+window.editExpense=editExpense;
+window.deleteExpense=deleteExpense;
+window.resetExpenseForm=resetExpenseForm;
 window.enableOrderNotifications=enableOrderNotifications;
 window.saveSettings=saveSettings;
 window.loadVariants=loadVariants;

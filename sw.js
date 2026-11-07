@@ -1,12 +1,12 @@
-const CACHE_NAME = "ea-luxury-shell-v20";
+const CACHE_NAME = "ea-luxury-shell-v21";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./product.html",
   "./cart.html",
-  "./styles.css?v=29",
+  "./styles.css?v=30",
   "./app.js?v=42",
-  "./product-detail.js?v=11",
+  "./product-detail.js?v=12",
   "./ea-icon.svg",
   "./manifest.webmanifest"
 ];

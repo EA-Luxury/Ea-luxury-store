@@ -2055,3 +2055,23 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
   .favorites-page-actions { grid-template-columns:1fr; }
   .favorites-page-actions button { min-height:37px; }
 }
+
+
+/* Currency switcher */
+.currencyToggleButton {
+  border: 1px solid #b99a55;
+  background: #111;
+  color: #d9bd78;
+  border-radius: 999px;
+  padding: 9px 13px;
+  min-height: 38px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.currencyToggleButton:hover { background: #252016; }
+@media (max-width: 700px) {
+  .currencyToggleButton { padding: 8px 10px; font-size: 11px; }
+}

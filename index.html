@@ -201,7 +201,10 @@
     <div id="cartItems"></div>
 
     <div class="cartSummary">
-      <h3>الإجمالي: <span id="cartTotal">0</span> جنيه</h3>
+      <h3>إجمالي المنتجات: <span id="cartTotal">0</span> جنيه</h3>
+      <p class="cartSummaryNote">الشحن: <strong id="cartShippingFee">يُحدد بعد اختيار المحافظة</strong></p>
+      <h3>الإجمالي شامل الشحن: <span id="cartGrandTotal">0</span> جنيه</h3>
+      <p id="shippingQuote" class="cartSummaryNote">اختار المحافظة لمعرفة تكلفة الشحن.</p>
     </div>
 
     <div id="cartActions" class="cartActions">
@@ -220,7 +223,36 @@
         <input name="customer_name" placeholder="الاسم بالكامل" autocomplete="name" required>
         <input name="phone" type="tel" placeholder="رقم الموبايل" autocomplete="tel" required>
         <input name="customer_email" type="email" placeholder="البريد الإلكتروني لاستلام تأكيد الطلب" autocomplete="email" required>
-        <input name="governorate" placeholder="المحافظة" autocomplete="address-level1" required>
+        <select name="governorate" autocomplete="address-level1" required>
+          <option value="">اختر المحافظة</option>
+          <option value="القاهرة">القاهرة</option>
+          <option value="الجيزة">الجيزة</option>
+          <option value="الإسكندرية">الإسكندرية</option>
+          <option value="الدقهلية">الدقهلية</option>
+          <option value="دمياط">دمياط</option>
+          <option value="الشرقية">الشرقية</option>
+          <option value="القليوبية">القليوبية</option>
+          <option value="كفر الشيخ">كفر الشيخ</option>
+          <option value="الغربية">الغربية</option>
+          <option value="المنوفية">المنوفية</option>
+          <option value="البحيرة">البحيرة</option>
+          <option value="بورسعيد">بورسعيد</option>
+          <option value="الإسماعيلية">الإسماعيلية</option>
+          <option value="السويس">السويس</option>
+          <option value="بني سويف">بني سويف</option>
+          <option value="الفيوم">الفيوم</option>
+          <option value="المنيا">المنيا</option>
+          <option value="أسيوط">أسيوط</option>
+          <option value="سوهاج">سوهاج</option>
+          <option value="قنا">قنا</option>
+          <option value="الأقصر">الأقصر</option>
+          <option value="أسوان">أسوان</option>
+          <option value="البحر الأحمر">البحر الأحمر</option>
+          <option value="مطروح">مطروح</option>
+          <option value="الوادي الجديد">الوادي الجديد</option>
+          <option value="شمال سيناء">شمال سيناء</option>
+          <option value="جنوب سيناء">جنوب سيناء</option>
+        </select>
         <textarea name="address" placeholder="العنوان بالتفصيل" autocomplete="street-address" required></textarea>
         <button type="submit">تأكيد الطلب - الدفع عند الاستلام</button>
       </form>

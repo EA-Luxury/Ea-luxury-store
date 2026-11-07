@@ -757,8 +757,6 @@ function renderHomeCollections() {
   const picksGrid = document.getElementById("editorsPicksGrid");
   const offersSection = document.getElementById("bestOffersSection");
   const offersGrid = document.getElementById("bestOffersGrid");
-  const recentSection = document.getElementById("recentlyViewedSection");
-  const recentGrid = document.getElementById("recentlyViewedGrid");
   if (!newestGrid || !picksGrid || !Array.isArray(products)) return;
 
   const getImage = product => getProductImages(product)[0] || "";
@@ -830,25 +828,6 @@ function renderHomeCollections() {
   if (offersSection && offersGrid) {
     offersSection.hidden = offers.length === 0;
     offersGrid.innerHTML = offers.map(item => makeTile(item, true)).join("");
-  }
-  if (recentSection && recentGrid) {
-    let history = [];
-    try {
-      const saved = JSON.parse(localStorage.getItem("eaLuxuryRecentlyViewed") || "[]");
-      history = Array.isArray(saved) ? saved : [];
-    } catch (_) {}
-    const seen = new Set();
-    const recentProducts = history
-      .sort((a, b) => Number(b?.viewedAt || 0) - Number(a?.viewedAt || 0))
-      .map(item => products.find(product => String(product.id) === String(item?.id)))
-      .filter(product => {
-        if (!product || seen.has(String(product.id))) return false;
-        seen.add(String(product.id));
-        return true;
-      })
-      .slice(0, 8);
-    recentSection.hidden = recentProducts.length === 0;
-    renderGroupedCollection(recentGrid, recentProducts, "recent");
   }
   renderCategoryShowcase();
   renderBrandShowcase();

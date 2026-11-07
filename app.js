@@ -122,6 +122,17 @@ function populateGovernorateSelect() {
 }
 let productSearchTerm = "";
 let productSortMode = "default";
+let favoriteProductIds = (() => { try { const v = JSON.parse(localStorage.getItem("eaLuxuryFavorites") || "[]"); return Array.isArray(v) ? v.map(String) : []; } catch (_) { return []; } })();
+function saveFavoriteProducts() { try { localStorage.setItem("eaLuxuryFavorites", JSON.stringify(favoriteProductIds)); } catch (_) {} const c = document.getElementById("favoritesCount"); if (c) c.textContent = favoriteProductIds.length; }
+function toggleFavoriteProduct(id) { const key = String(id); favoriteProductIds = favoriteProductIds.includes(key) ? favoriteProductIds.filter(x => x !== key) : [...favoriteProductIds, key]; saveFavoriteProducts(); showProducts(); renderFavoritesSection(); }
+window.toggleFavoriteProduct = toggleFavoriteProduct;
+function renderFavoritesSection() {
+ const target = document.getElementById("favoritesGrid"), section = document.getElementById("favoritesSection");
+ if (!target || !section) return;
+ const saved = favoriteProductIds.map(id => products.find(p => String(p.id) === id)).filter(Boolean);
+ section.hidden = !saved.length;
+ target.innerHTML = saved.map(p => { const image = getProductImages(p)[0] || ""; const href = "product.html?id=" + encodeURIComponent(String(p.id)); return '<article class="favorite-product-card"><a href="' + href + '" class="favorite-product-image">' + (image ? '<img src="' + escapeHTML(image) + '" alt="' + escapeHTML(p.name) + '" loading="lazy">' : "EA LUXURY") + '</a><div class="favorite-product-info"><strong>' + escapeHTML(p.name) + '</strong>' + renderProductPrice(p) + '<div class="favorite-product-actions"><a href="' + href + '">عرض المنتج</a><button type="button" data-favorite-remove="' + escapeHTML(p.id) + '">إزالة ♥</button></div></div></article>'; }).join("");
+}
 
 const grid = document.getElementById("productGrid");
 const cartCount = document.getElementById("cartCount");
@@ -397,6 +408,7 @@ async function loadProducts() {
   }
 
   products = data || [];
+  saveFavoriteProducts();
 
   // تحديث أسعار السلة المحفوظة عند فتح المتجر حتى لا يظهر سعر قديم بعد بدء/انتهاء عرض.
   cart = cart.map(item => {
@@ -585,6 +597,7 @@ function showProducts() {
 
     return `
       <article class="product">
+        <button type="button" class="product-favorite-button" data-favorite-id="${escapeHTML(p.id)}" aria-label="${favoriteProductIds.includes(String(p.id)) ? "إزالة من المفضلة" : "أضف للمفضلة"}" aria-pressed="${favoriteProductIds.includes(String(p.id))}">${favoriteProductIds.includes(String(p.id)) ? "♥" : "♡"}</button>
 
         <a class="product-detail-link product-image-link"
           href="product.html?id=${encodeURIComponent(String(p.id))}"
@@ -627,6 +640,7 @@ function showProducts() {
     `;
   }).join("");
   renderHomeCollections();
+  renderFavoritesSection();
 }
 
 // مجموعات الصفحة الرئيسية: الأحدث والترشيحات والعروض الفعالة.
@@ -686,6 +700,8 @@ function renderHomeCollections() {
 
 // الضغط على الصور الصغيرة أو الكبيرة
 grid.addEventListener("click", event => {
+  const favoriteButton = event.target.closest("[data-favorite-id]");
+  if (favoriteButton) { toggleFavoriteProduct(favoriteButton.dataset.favoriteId); return; }
   const thumbnail = event.target.closest(".product-thumb");
 
   if (thumbnail) {
@@ -897,6 +913,8 @@ function removeFromCart(cartKey) {
 
 window.addToCart = addToCart;
 window.removeFromCart = removeFromCart;
+
+document.getElementById("favoritesGrid")?.addEventListener("click", event => { const button = event.target.closest("[data-favorite-remove]"); if (button) toggleFavoriteProduct(button.dataset.favoriteRemove); });
 
 // تصنيف المنتجات: event delegation حتى تعمل الأزرار التي تُنشأ من إعدادات الإدارة.
 const mobileMenuButton = document.getElementById("mobileMenuButton");

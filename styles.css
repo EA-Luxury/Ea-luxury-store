@@ -2112,3 +2112,10 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
     padding: 13px;
   }
 }
+
+
+/* Blend light studio-photo backgrounds into the product surface */
+.product img.product-main-image,
+.product-detail-main-image {
+  mix-blend-mode: multiply;
+}

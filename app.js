@@ -1103,6 +1103,15 @@ if(productSearchInput) productSearchInput.addEventListener("input",event=>{produ
 const checkoutPanel = document.getElementById("checkoutPanel");
 const cartActions = document.getElementById("cartActions");
 
+function setCartCheckoutStep(step) {
+  document.querySelectorAll(".cartCheckoutStep").forEach((item,index) => {
+    item.classList.toggle("is-active", index + 1 === step);
+    item.classList.toggle("is-complete", index + 1 < step);
+    const marker = item.querySelector("span");
+    if (marker) marker.textContent = index + 1 < step ? "✓" : String(index + 1);
+  });
+}
+
 document.getElementById("cartButton").addEventListener("click", () => {
   window.location.href = "cart.html#cartSection";
 });
@@ -1118,6 +1127,7 @@ document.getElementById("proceedCheckoutButton").addEventListener("click", () =>
   }
   cartActions.hidden = true;
   checkoutPanel.hidden = false;
+  setCartCheckoutStep(2);
   checkoutPanel.scrollIntoView({ behavior: "smooth" });
   checkoutPanel.querySelector('input[name="customer_name"]').focus({ preventScroll: true });
 });
@@ -1125,6 +1135,7 @@ document.getElementById("proceedCheckoutButton").addEventListener("click", () =>
 document.getElementById("backToCartButton").addEventListener("click", () => {
   checkoutPanel.hidden = true;
   cartActions.hidden = false;
+  setCartCheckoutStep(1);
 });
 
 // تطبيق كود الخصم بعد إدخال رقم الهاتف.
@@ -1214,6 +1225,7 @@ document.getElementById("checkoutForm")
       const discountAmount = Number(appliedCoupon?.discount_amount || 0);
       const orderTotal = Math.max(0,productsTotal + shippingFee - discountAmount);
 
+      setCartCheckoutStep(3);
       message.textContent =
         "تم استلام طلبك بنجاح! رقم طلبك: #" + data +
         ". احتفظ بالرقم لمتابعة طلبك، وسنتواصل معك لتأكيده.";

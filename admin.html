@@ -560,17 +560,26 @@ savePurchaseCostButton.type="button";
 savePurchaseCostButton.textContent="حفظ تكلفة الشراء";
 savePurchaseCostButton.onclick=()=>updateProductPurchaseCost(p.id,purchaseCostInput.value);
 
+const regularPriceInput=document.createElement("input");
+regularPriceInput.type="number";
+regularPriceInput.min="0.01";
+regularPriceInput.step="0.01";
+regularPriceInput.inputMode="decimal";
+regularPriceInput.placeholder="السعر الأساسي بالجنيه";
+regularPriceInput.value=String(p.price??"");
+
 const salePriceInput=document.createElement("input");
 salePriceInput.type="number";
 salePriceInput.min="0.01";
 salePriceInput.step="0.01";
-salePriceInput.placeholder="سعر العرض بعد الخصم (اتركه فارغًا لإلغاء العرض)";
+salePriceInput.inputMode="decimal";
+salePriceInput.placeholder="سعر العرض بعد الخصم (اختياري)";
 salePriceInput.value=p.sale_price??"";
 
-const saveSalePriceButton=document.createElement("button");
-saveSalePriceButton.type="button";
-saveSalePriceButton.textContent="حفظ سعر العرض";
-saveSalePriceButton.onclick=()=>updateProductSalePrice(p.id,p.price,salePriceInput.value);
+const savePricesButton=document.createElement("button");
+savePricesButton.type="button";
+savePricesButton.textContent="حفظ الأسعار";
+savePricesButton.onclick=()=>updateProductPrices(p.id,regularPriceInput.value,salePriceInput.value);
 
 const activeButton=document.createElement("button");
 activeButton.type="button";
@@ -592,7 +601,7 @@ loadVariants();
 document.getElementById("variantsSection").scrollIntoView({behavior:"smooth"});
 };
 
-div.append(title,detail,quantityLabel,imageCount,purchaseCostInput,savePurchaseCostButton,descriptionInput,saveDescriptionButton,stockInput,saveButton,salePriceInput,saveSalePriceButton,activeButton,variantsButton,deleteButton);
+div.append(title,detail,quantityLabel,imageCount,regularPriceInput,salePriceInput,savePricesButton,purchaseCostInput,savePurchaseCostButton,descriptionInput,saveDescriptionButton,stockInput,saveButton,activeButton,variantsButton,deleteButton);
 box.append(div);
 });
 
@@ -636,16 +645,21 @@ alert("تم حفظ تكلفة الشراء. ستُستخدم في الطلبات
 await loadProducts();
 }
 
-async function updateProductSalePrice(id,regularPrice,value){
+async function updateProductPrices(id,regularValue,saleValue){
 if(!adminReady)return;
-const salePrice=String(value??"").trim()===""?null:Number(value);
-if(salePrice!==null&&(!Number.isFinite(salePrice)||salePrice<=0||salePrice>=Number(regularPrice))){
-alert("سعر العرض لازم يكون أكبر من صفر وأقل من السعر الأصلي. اتركه فارغًا لإلغاء الخصم.");
+const regularPrice=String(regularValue??"").trim()===""?NaN:Number(regularValue);
+const salePrice=String(saleValue??"").trim()===""?null:Number(saleValue);
+if(!Number.isFinite(regularPrice)||regularPrice<=0){
+alert("اكتب السعر الأساسي بشكل صحيح، ويجب أن يكون أكبر من صفر.");
 return;
 }
-const {error}=await client.from("products").update({sale_price:salePrice}).eq("id",id);
-if(error){alert("تعذر حفظ سعر العرض: "+error.message);return;}
-alert(salePrice===null?"تم إلغاء العرض لهذا المنتج.":"تم حفظ سعر العرض بنجاح.");
+if(salePrice!==null&&(!Number.isFinite(salePrice)||salePrice<=0||salePrice>=regularPrice)){
+alert("سعر العرض يجب أن يكون أكبر من صفر وأقل من السعر الأساسي. اتركه فارغًا إذا لم يوجد عرض.");
+return;
+}
+const {error}=await client.from("products").update({price:regularPrice,sale_price:salePrice}).eq("id",id);
+if(error){alert("تعذر حفظ أسعار المنتج: "+error.message);return;}
+alert("تم حفظ السعر الأساسي"+(salePrice===null?" وإلغاء الخصم.":" وسعر العرض بنجاح."));
 await loadProducts();
 }
 

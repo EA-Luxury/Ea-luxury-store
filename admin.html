@@ -1314,6 +1314,7 @@ return;
 msg.textContent="تم حفظ التركيبة بنجاح.";
 resetVariantForm();
 await loadVariants();
+await loadProducts();
 }
 
 async function toggleVariant(id,active){
@@ -1329,6 +1330,7 @@ return;
 }
 
 await loadVariants();
+await loadProducts();
 }
 
 async function deleteVariant(id){
@@ -1347,6 +1349,7 @@ return;
 
 alert("تم حذف التركيبة.");
 await loadVariants();
+await loadProducts();
 }
 
 // ================================
@@ -1381,6 +1384,15 @@ tag:"ea-order-"+order.id
 }catch(error){console.warn("Browser notification unavailable:",error);}
 }
 loadOrders();
+loadProducts();
+})
+.on("postgres_changes",{
+event:"UPDATE",
+schema:"public",
+table:"orders"
+},()=>{
+loadOrders();
+loadProducts();
 })
 .subscribe(status=>{
 const statusBox=document.getElementById("notificationStatus");

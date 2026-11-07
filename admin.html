@@ -700,17 +700,30 @@ if(!images.length||images.length>5)throw new Error("يجب توفير صورة �
 const sale=item.sale_price===""?null:Number(item.sale_price);
 const start=item.sale_starts_at?new Date(item.sale_starts_at).toISOString():null;
 const end=item.sale_ends_at?new Date(item.sale_ends_at).toISOString():null;
+const variants=item.variants_json?JSON.parse(item.variants_json):[];
+const activeValue=item.active===""?true:!["false","0","draft","no"].includes(String(item.active).trim().toLowerCase());
 const {data:created,error}=await client.from("products").insert({
 name:item.name,category:item.category,price:Number(item.price),currency:(item.currency||"EGP").toUpperCase(),sale_price:sale,
 sale_starts_at:start,sale_ends_at:end,stock:Number(item.stock),description:item.description||"",
 sizes:(item.sizes||"").split("|").map(v=>v.trim()).filter(Boolean),
 colors:(item.colors||"").split("|").map(v=>v.trim()).filter(Boolean),
-image_url:images[0],image_urls:images,active:true
+image_url:images[0],image_urls:images,active:activeValue
 }).select("id").single();
 if(error)throw error;
 productCreated=true;
-const {error:costError}=await client.from("product_costs").upsert({product_id:created.id,purchase_cost:Number(item.purchase_cost),updated_at:new Date().toISOString()},{onConflict:"product_id"});
-if(costError){costFailed++;details.push("تمت إضافة "+item.name+" لكن لم تُحفظ تكلفة الشراء: "+costError.message);}
+if(variants.length){
+ const variantRows=variants.map(v=>({product_id:created.id,size:v.size||null,color:v.color||null,stock:Number(v.stock)||0,sku:v.sku||null,is_active:v.active===false?false:true}));
+ const {error:variantError}=await client.from("product_variants").insert(variantRows);
+ if(variantError){
+  await client.from("products").delete().eq("id",created.id);
+  productCreated=false;
+  throw new Error("تعذر حفظ المقاسات والمخزون: "+variantError.message);
+ }
+}
+if(item.purchase_cost!==""){
+ const {error:costError}=await client.from("product_costs").upsert({product_id:created.id,purchase_cost:Number(item.purchase_cost),updated_at:new Date().toISOString()},{onConflict:"product_id"});
+ if(costError){costFailed++;details.push("تمت إضافة "+item.name+" لكن لم تُحفظ تكلفة الشراء: "+costError.message);}
+}
 existingNames.add(key);added++;
 }catch(error){
 if(!productCreated&&uploadedPaths.length){

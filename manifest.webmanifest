@@ -1,0 +1,22 @@
+{
+  "id": "./",
+  "name": "EA Luxury",
+  "short_name": "EA Luxury",
+  "description": "تسوق الأزياء الحريمي والرجالي من EA Luxury",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "icons": [
+    {
+      "src": "./ea-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

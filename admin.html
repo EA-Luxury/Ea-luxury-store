@@ -1311,25 +1311,37 @@ button.disabled=false;
 }
 
 async function applyBulkShoePrices(){
-if(!adminReady||!bulkShoePricePreview.length)return;
-const button=document.getElementById("applyBulkShoePricesButton");
-const msg=document.getElementById("bulkShoePricingMsg");
-if(!confirm("تأكيد تعديل أسعار "+bulkShoePricePreview.length+" حذاء؟ لا يمكن التراجع تلقائيًا بعد الحفظ."))return;
-button.disabled=true;let updated=0;const failures=[];
-for(const item of bulkShoePricePreview){
-const changes={};
-const target=document.getElementById("bulkShoeTarget").value;
-if(target==="regular"||target==="both")changes.price=item.newPrice;
-if((target==="sale"||target==="both")&&item.oldSale!==null)changes.sale_price=item.newSale;
-const {error}=await client.from("products").update(changes).eq("id",item.id).eq("category","أحذية");
-if(error)failures.push(item.name+": "+error.message);else updated++;
+ if(!adminReady||!bulkShoePricePreview.length)return;
+ const button=document.getElementById("applyBulkShoePricesButton");
+ const msg=document.getElementById("bulkShoePricingMsg");
+ const pending=[...bulkShoePricePreview];
+ if(!confirm("تأكيد تحديث أسعار "+pending.length+" حذاء؟"+(pending.some(p=>p.retryOnly)?" هذه محاولة لإعادة تحديث المنتجات التي لم يكتمل تحديثها فقط.":" لا يمكن التراجع تلقائيًا بعد الحفظ.")))return;
+ button.disabled=true;msg.textContent="جاري تحديث الأسعار والتحقق من كل منتج...";
+ let updated=0;const failures=[];
+ const target=document.getElementById("bulkShoeTarget").value;
+ for(const item of pending){
+ const changes={};
+ if(target==="regular"||target==="both")changes.price=item.newPrice;
+ if((target==="sale"||target==="both")&&item.oldSale!==null)changes.sale_price=item.newSale;
+ try{
+ const {data,error}=await client.from("products").update(changes).eq("id",item.id).eq("category","أحذية").select("id");
+ if(error)failures.push({...item,error:error.message,retryOnly:true});
+ else if(!data||data.length===0)failures.push({...item,error:"لم يؤكد النظام تحديث هذا المنتج (قد تكون صلاحيات التحديث أو شرط التصنيف).",retryOnly:true});
+ else updated++;
+ }catch(e){
+ failures.push({...item,error:e&&e.message?e.message:String(e),retryOnly:true});
+ }
+ }
+ bulkShoePricePreview=failures;
+ document.getElementById("bulkShoePreview").textContent=failures.length
+ ? "تم تحديث "+updated+" منتج بنجاح. يتبقى "+failures.length+" منتج لم يكتمل تحديثه؛ اضغط زر الحفظ مرة أخرى لإعادة محاولة المتبقي فقط. أول مشكلة: "+failures[0].name+" — "+failures[0].error
+ : "اكتمل التحديث والتحقق: تم تحديث "+updated+" منتج بنجاح.";
+ msg.textContent=failures.length
+ ? "تم تحديث "+updated+"، والمتبقي "+failures.length+". لم يتم إعادة تطبيق التعديل على المنتجات الناجحة."
+ : "تم تحديث جميع المنتجات المحددة والتحقق من حفظها بنجاح.";
+ button.disabled=!failures.length;
+ await loadProducts();await loadBulkShoeBrandOptions();
 }
-bulkShoePricePreview=[];
-document.getElementById("bulkShoePreview").textContent="انتهت العملية. تم تحديث "+updated+" منتج.";
-msg.textContent=failures.length?"تم تحديث "+updated+" منتج، وتعذر تحديث "+failures.length+". أول خطأ: "+failures[0]:"تم تحديث أسعار "+updated+" حذاء بنجاح.";
-await loadProducts();await loadBulkShoeBrandOptions();
-}
-
 async function updateProductDescription(id,value){
 if(!adminReady)return;
 

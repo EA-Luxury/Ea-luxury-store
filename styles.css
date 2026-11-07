@@ -2148,3 +2148,7 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
   .homeCollectionBrandPanelHeading h3 { font-size: 17px; }
   .homeCollectionBackButton { padding: 8px 10px; font-size: 12px; }
 }
+
+
+/* Ensure hidden storefront sections stay hidden even when component styles define display. */
+[hidden] { display: none !important; }

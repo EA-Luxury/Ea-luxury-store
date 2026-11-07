@@ -649,28 +649,9 @@ function showProducts() {
     const unavailable = hasVariants
       ? availableVariants.length === 0
       : stock <= 0;
-    const firstAvailableVariant = availableVariants[0];
     const variantOptions = hasVariants
-      ? `
-        <label style="display:block;margin:10px 0 5px;font-weight:bold">اختار المقاس واللون:</label>
-        <select class="product-variant-select"
-          data-product-id="${escapeHTML(p.id)}"
-          style="width:100%;padding:10px;border:1px solid #ccc;border-radius:7px">
-          ${variants.map(v => {
-            const label = [
-              v.size || "بدون مقاس",
-              v.color || "بدون لون",
-              "المتاح: " + Number(v.stock)
-            ].join(" - ");
-            return `<option value="${escapeHTML(v.id)}"
-              ${Number(v.stock) <= 0 ? "disabled" : ""}
-              ${firstAvailableVariant && String(v.id) === String(firstAvailableVariant.id) ? "selected" : ""}>
-              ${escapeHTML(label)}
-            </option>`;
-          }).join("")}
-        </select>
-      `
-      : "";
+      ? '<p class="product-card-variant-note">اختار المقاس واللون من صفحة تفاصيل المنتج.</p>'
+      : ""; 
     const images = getProductImages(p);
     const mainImage = images[0] || "";
 
@@ -751,8 +732,8 @@ function showProducts() {
 
         <button type="button"
           ${unavailable ? "disabled" : ""}
-          onclick="addToCart('${escapeHTML(p.id)}')">
-          ${unavailable ? "غير متوفر" : "أضف إلى السلة"}
+          onclick="window.location.href='product.html?id=${encodeURIComponent(String(p.id))}'">
+          ${unavailable ? "غير متوفر" : (hasVariants ? "اختيار المقاس واللون" : "عرض التفاصيل والإضافة للسلة")}
         </button>
 
       </article>

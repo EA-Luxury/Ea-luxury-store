@@ -179,6 +179,15 @@
           <option value="available">المتاح فقط</option>
         </select>
       </label>
+      <label class="store-filter">
+        <span>المقاس</span>
+        <select id="productSizeFilter"><option value="">كل المقاسات</option></select>
+      </label>
+      <label class="store-filter">
+        <span>اللون</span>
+        <select id="productColorFilter"><option value="">كل الألوان</option></select>
+      </label>
+      <button type="button" id="resetProductFilters" class="reset-product-filters">مسح كل الفلاتر</button>
       <p id="productResultsCount" class="product-results-count" aria-live="polite"></p>
     </div>
     <div id="productGrid" class="productGrid">
@@ -329,7 +338,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@5/dist/email.min.js"></script>
-  <script src="app.js?v=36"></script>
+  <script src="app.js?v=37"></script>
 
 </body>
 </html>

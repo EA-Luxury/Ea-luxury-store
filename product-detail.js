@@ -52,10 +52,25 @@ function detailShowImage(index) {
 
 let detailSelectedVariantId = null;
 
+let detailQuantity = 1;
+
+function detailUpdateQuantity(nextValue) {
+  const selected = detailVariants.find(v => String(v.id) === String(detailSelectedVariantId));
+  const max = selected ? Number(selected.stock) : Number(detailProduct?.stock ?? 0);
+  detailQuantity = Math.max(1, Math.min(max || 1, Number(nextValue) || 1));
+  const input = document.getElementById("detailQuantityValue");
+  if (input) input.value = detailQuantity;
+  const minus = document.getElementById("detailQuantityMinus");
+  const plus = document.getElementById("detailQuantityPlus");
+  if (minus) minus.disabled = detailQuantity <= 1;
+  if (plus) plus.disabled = detailQuantity >= max;
+}
+
 function detailSelectVariant(id) {
   const variant = detailVariants.find(v => String(v.id) === String(id));
   if (!variant || Number(variant.stock) <= 0) return;
   detailSelectedVariantId = variant.id;
+  detailUpdateQuantity(1);
   document.querySelectorAll("[data-detail-variant]").forEach(button => {
     const selected = String(button.dataset.detailVariant) === String(id);
     button.classList.toggle("selected", selected);
@@ -356,11 +371,20 @@ function detailRender() {
           <span>المتاح: ${totalStock} قطعة</span>
         </div>
         ${variantControl}
-        <div class="product-detail-actions">
+        <div class="product-detail-purchase-panel">
+          <div class="product-detail-quantity-row">
+            <label for="detailQuantityValue">الكمية</label>
+            <div class="product-detail-quantity-control">
+              <button id="detailQuantityMinus" type="button" aria-label="تقليل الكمية" disabled>−</button>
+              <input id="detailQuantityValue" type="number" min="1" max="${totalStock}" value="1" inputmode="numeric" aria-label="الكمية المطلوبة">
+              <button id="detailQuantityPlus" type="button" aria-label="زيادة الكمية" ${totalStock <= 1 ? "disabled" : ""}>+</button>
+            </div>
+            <span class="product-detail-stock">${totalStock > 0 ? "متاح " + totalStock + " قطعة" : "نفد المخزون"}</span>
+          </div>
           <button id="detailAddToCart" class="product-detail-add" type="button" ${totalStock <= 0 ? "disabled" : ""}>
             ${totalStock <= 0 ? "غير متوفر حاليًا" : "أضف إلى السلة"}
           </button>
-          <button id="detailBuyNow" class="product-detail-buy-now" type="button" ${totalStock <= 0 ? "disabled" : ""}>اشتري الآن</button>
+          <p class="product-detail-cart-note">يمكنك مراجعة اختياراتك وتأكيد الطلب من سلة التسوق.</p>
         </div>
         <p id="detailMessage" class="product-detail-message" role="status" aria-live="polite"></p>
         <a class="product-detail-back" href="index.html#products">← الرجوع إلى المنتجات</a>
@@ -384,12 +408,16 @@ function detailRender() {
   }
   document.getElementById("detailPrevImage")?.addEventListener("click", () => detailShowImage((detailSelectedImage - 1 + detailImages.length) % detailImages.length));
   document.getElementById("detailNextImage")?.addEventListener("click", () => detailShowImage((detailSelectedImage + 1) % detailImages.length));
-  document.getElementById("detailAddToCart").addEventListener("click", () => detailAddToCart(false));
-  document.getElementById("detailBuyNow").addEventListener("click", () => detailAddToCart(true));
+  document.getElementById("detailAddToCart").addEventListener("click", () => detailAddToCart());
+  document.getElementById("detailQuantityMinus").addEventListener("click", () => detailUpdateQuantity(detailQuantity - 1));
+  document.getElementById("detailQuantityPlus").addEventListener("click", () => detailUpdateQuantity(detailQuantity + 1));
+  document.getElementById("detailQuantityValue").addEventListener("change", event => detailUpdateQuantity(event.target.value));
+  if (firstAvailableVariant) detailSelectVariant(firstAvailableVariant.id);
+  else detailUpdateQuantity(1);
   detailRenderLightbox();
 }
 
-function detailAddToCart(buyNow = false) {
+function detailAddToCart() {
   const p = detailProduct;
   const hasVariants = detailVariants.length > 0;
   let selectedVariant = null;
@@ -403,6 +431,7 @@ function detailAddToCart(buyNow = false) {
   }
 
   const availableStock = selectedVariant ? Number(selectedVariant.stock) : Number(p.stock ?? 0);
+  const requestedQuantity = Math.max(1, Number(detailQuantity) || 1);
   const cartKey = String(p.id) + "_" + (selectedVariant ? String(selectedVariant.id) : "base");
   let saved = [];
   try {
@@ -411,18 +440,20 @@ function detailAddToCart(buyNow = false) {
   } catch (_) {}
 
   const item = saved.find(row => row.cartKey === cartKey);
+  const existingQuantity = item ? Math.max(0, Number(item.quantity) || 0) : 0;
+  if (existingQuantity + requestedQuantity > availableStock) {
+    document.getElementById("detailMessage").textContent = "الكمية المطلوبة تتجاوز المتاح. المتاح لك إضافته: " + Math.max(0, availableStock - existingQuantity) + " قطعة.";
+    return;
+  }
   if (item) {
     item.price = detailEffectivePrice(p);
-    if (Number(item.quantity) >= availableStock) {
-      document.getElementById("detailMessage").textContent = "وصلت للكمية المتاحة من هذا الاختيار.";
-      return;
-    }
-    item.quantity = Number(item.quantity) + 1;
+    item.quantity = existingQuantity + requestedQuantity;
+    item.availableStock = availableStock;
   } else {
     saved.push({
       ...p,
       price: detailEffectivePrice(p),
-      quantity: 1,
+      quantity: requestedQuantity,
       cartKey,
       variant_id: selectedVariant ? selectedVariant.id : null,
       selected_size: selectedVariant?.size || null,
@@ -433,11 +464,7 @@ function detailAddToCart(buyNow = false) {
 
   localStorage.setItem("eaLuxuryCart", JSON.stringify(saved));
   detailUpdateCartCount();
-  if (buyNow) {
-    window.location.href = "cart.html#cartSection";
-    return;
-  }
-  document.getElementById("detailMessage").textContent = "تمت إضافة المنتج إلى السلة.";
+  document.getElementById("detailMessage").textContent = "تمت إضافة " + requestedQuantity + " قطعة إلى السلة بنجاح.";
 }
 
 async function detailLoadProduct() {

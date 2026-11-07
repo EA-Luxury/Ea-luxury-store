@@ -122,27 +122,64 @@ function populateGovernorateSelect() {
 }
 let productSearchTerm = "";
 let productSortMode = "default";
-let selectedProductSize = "";
-let selectedProductColor = "";
+let selectedProductSizes = [];
+let selectedProductColors = [];
+let selectedProductCategories = [];
+let filterMinPrice = "";
+let filterMaxPrice = "";
+let filterAvailableOnly = false;
+let filterOffersOnly = false;
 
 function populateProductVariantFilters() {
-  const sizeSelect = document.getElementById("productSizeFilter");
-  const colorSelect = document.getElementById("productColorFilter");
-  if (!sizeSelect || !colorSelect) return;
-  const currentSize = selectedProductSize;
-  const currentColor = selectedProductColor;
   const sizes = [...new Set(productVariants.map(v => String(v.size || "").trim()).filter(Boolean))]
     .sort((a,b) => a.localeCompare(b, "ar", { numeric: true }));
   const colors = [...new Set(productVariants.map(v => String(v.color || "").trim()).filter(Boolean))]
     .sort((a,b) => a.localeCompare(b, "ar"));
-  sizeSelect.innerHTML = '<option value="">كل المقاسات</option>' +
-    sizes.map(value => '<option value="' + escapeHTML(value) + '">' + escapeHTML(value) + '</option>').join("");
-  colorSelect.innerHTML = '<option value="">كل الألوان</option>' +
-    colors.map(value => '<option value="' + escapeHTML(value) + '">' + escapeHTML(value) + '</option>').join("");
-  if (sizes.includes(currentSize)) sizeSelect.value = currentSize;
-  else selectedProductSize = "";
-  if (colors.includes(currentColor)) colorSelect.value = currentColor;
-  else selectedProductColor = "";
+  const sizeHost = document.getElementById("filterSizeOptions");
+  const colorHost = document.getElementById("filterColorOptions");
+  const categoryHost = document.getElementById("filterCategoryOptions");
+  if (sizeHost) sizeHost.innerHTML = sizes.length ? sizes.map(value =>
+    '<label class="filter-check"><input type="checkbox" data-filter-size value="' + escapeHTML(value) + '"><span>' + escapeHTML(value) + '</span><small>' + productVariants.filter(v => String(v.size || "").trim() === value).length + '</small></label>'
+  ).join("") : '<p class="filter-muted">المقاسات غير محددة</p>';
+  if (colorHost) colorHost.innerHTML = colors.length ? colors.map(value =>
+    '<label class="filter-check"><input type="checkbox" data-filter-color value="' + escapeHTML(value) + '"><span>' + escapeHTML(value) + '</span><small>' + productVariants.filter(v => String(v.color || "").trim() === value).length + '</small></label>'
+  ).join("") : '<p class="filter-muted">الألوان غير محددة</p>';
+  const categories = [...new Set(products.map(p => String(p.category || "").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
+  if (categoryHost) categoryHost.innerHTML = ['الكل',...categories].map(value =>
+    '<label class="filter-check"><input type="checkbox" data-filter-category value="' + escapeHTML(value) + '"><span>' + escapeHTML(value) + '</span><small>' + (value === "الكل" ? products.length : products.filter(p => p.category === value).length) + '</small></label>'
+  ).join("");
+  syncAdvancedFilterControls();
+}
+function syncAdvancedFilterControls() {
+  document.querySelectorAll("[data-filter-size]").forEach(el => el.checked = selectedProductSizes.includes(el.value));
+  document.querySelectorAll("[data-filter-color]").forEach(el => el.checked = selectedProductColors.includes(el.value));
+  document.querySelectorAll("[data-filter-category]").forEach(el => el.checked = selectedProductCategories.includes(el.value) || (selectedProductCategories.length === 0 && el.value === "الكل"));
+  const min = document.getElementById("filterMinPrice"), max = document.getElementById("filterMaxPrice");
+  if (min) min.value = filterMinPrice;
+  if (max) max.value = filterMaxPrice;
+  const available = document.getElementById("filterAvailableOnly"), offers = document.getElementById("filterOffersOnly");
+  if (available) available.checked = filterAvailableOnly;
+  if (offers) offers.checked = filterOffersOnly;
+  const activeCount = selectedProductSizes.length + selectedProductColors.length + selectedProductCategories.length + (filterMinPrice !== "" ? 1 : 0) + (filterMaxPrice !== "" ? 1 : 0) + Number(filterAvailableOnly) + Number(filterOffersOnly);
+  const count = document.getElementById("activeFilterCount");
+  if (count) { count.textContent = activeCount; count.hidden = activeCount === 0; }
+  const chips = document.getElementById("activeFilterChips");
+  if (chips) {
+    const values = [...selectedProductSizes.map(v=>"المقاس: "+v),...selectedProductColors.map(v=>"اللون: "+v),...selectedProductCategories.map(v=>"القسم: "+v)];
+    if(filterMinPrice!==""||filterMaxPrice!=="") values.push("السعر: "+(filterMinPrice||"0")+" - "+(filterMaxPrice||"∞")+" جنيه");
+    if(filterAvailableOnly) values.push("المتاح فقط");
+    if(filterOffersOnly) values.push("العروض فقط");
+    chips.innerHTML = values.map(v=>'<span class="filter-chip">'+escapeHTML(v)+'</span>').join("");
+  }
+}
+function setAdvancedFiltersFromPanel() {
+  selectedProductSizes = [...document.querySelectorAll("[data-filter-size]:checked")].map(el=>el.value);
+  selectedProductColors = [...document.querySelectorAll("[data-filter-color]:checked")].map(el=>el.value);
+  selectedProductCategories = [...document.querySelectorAll("[data-filter-category]:checked")].map(el=>el.value).filter(v=>v!=="الكل");
+  filterMinPrice = document.getElementById("filterMinPrice")?.value || "";
+  filterMaxPrice = document.getElementById("filterMaxPrice")?.value || "";
+  filterAvailableOnly = !!document.getElementById("filterAvailableOnly")?.checked;
+  filterOffersOnly = !!document.getElementById("filterOffersOnly")?.checked;
 }
 let favoriteProductIds = (() => { try { const v = JSON.parse(localStorage.getItem("eaLuxuryFavorites") || "[]"); return Array.isArray(v) ? v.map(String) : []; } catch (_) { return []; } })();
 function saveFavoriteProducts() { try { localStorage.setItem("eaLuxuryFavorites", JSON.stringify(favoriteProductIds)); } catch (_) {} const c = document.getElementById("favoritesCount"); if (c) c.textContent = favoriteProductIds.length; }
@@ -503,36 +540,32 @@ function renderProductPrice(product) {
 
 // عرض المنتجات ومعرض الصور
 function showProducts() {
-  let filtered = selectedCategory === "الكل"
-    ? [...products]
-    : products.filter(p => p.category === selectedCategory);
-
+  let filtered = selectedCategory === "الكل" ? [...products] : products.filter(p => p.category === selectedCategory);
+  if (selectedProductCategories.length) filtered = filtered.filter(p => selectedProductCategories.includes(p.category));
   if (productSearchTerm) {
     const term = productSearchTerm.toLocaleLowerCase("ar");
-    filtered = filtered.filter(p =>
-      [p.name, p.description, p.category].some(value =>
-        String(value || "").toLocaleLowerCase("ar").includes(term)
-      )
-    );
+    filtered = filtered.filter(p => [p.name,p.description,p.category].some(value => String(value||"").toLocaleLowerCase("ar").includes(term)));
   }
-
-  if (selectedProductSize) {
+  if (selectedProductSizes.length || selectedProductColors.length) {
     filtered = filtered.filter(p => {
       const variants = productVariants.filter(v => String(v.product_id) === String(p.id));
-      return variants.length
-        ? variants.some(v => String(v.size || "") === selectedProductSize && (!selectedProductColor || String(v.color || "") === selectedProductColor))
-        : (Array.isArray(p.sizes) ? p.sizes : [p.size]).some(value => String(value || "") === selectedProductSize);
+      if (variants.length) return variants.some(v =>
+        (!selectedProductSizes.length || selectedProductSizes.includes(String(v.size||""))) &&
+        (!selectedProductColors.length || selectedProductColors.includes(String(v.color||"")))
+      );
+      const sizes = Array.isArray(p.sizes) ? p.sizes.map(String) : [String(p.size||"")];
+      const colors = Array.isArray(p.colors) ? p.colors.map(String) : [String(p.color||"")];
+      return (!selectedProductSizes.length || selectedProductSizes.some(v=>sizes.includes(v))) &&
+        (!selectedProductColors.length || selectedProductColors.some(v=>colors.includes(v)));
     });
   }
-  if (selectedProductColor) {
-    filtered = filtered.filter(p => {
-      const variants = productVariants.filter(v => String(v.product_id) === String(p.id));
-      return variants.length
-        ? variants.some(v => String(v.color || "") === selectedProductColor && (!selectedProductSize || String(v.size || "") === selectedProductSize))
-        : (Array.isArray(p.colors) ? p.colors : [p.color]).some(value => String(value || "") === selectedProductColor);
-    });
-  }
-
+  if (filterMinPrice !== "") filtered = filtered.filter(p => getEffectiveProductPrice(p) >= Number(filterMinPrice));
+  if (filterMaxPrice !== "") filtered = filtered.filter(p => getEffectiveProductPrice(p) <= Number(filterMaxPrice));
+  if (filterOffersOnly) filtered = filtered.filter(p => getEffectiveProductPrice(p) < Number(p.price||0));
+  if (filterAvailableOnly || productSortMode === "available") filtered = filtered.filter(p => {
+    const variants = productVariants.filter(v => String(v.product_id) === String(p.id));
+    return variants.length ? variants.some(v=>Number(v.stock)>0) : Number(p.stock||0)>0;
+  });
   if (productSortMode === "offers") {
     filtered = filtered.filter(p => getEffectiveProductPrice(p) < Number(p.price || 0));
   } else if (productSortMode === "available") {
@@ -551,7 +584,9 @@ function showProducts() {
   }
 
   const count = document.getElementById("productResultsCount");
-  if (count) count.textContent = "عدد المنتجات: " + filtered.length;
+  if (count) count.textContent = "عرض " + filtered.length + " منتج";
+  const drawerCount = document.getElementById("filterResultsCount");
+  if (drawerCount) drawerCount.textContent = "عرض " + filtered.length + " منتج";
 
   if (!filtered.length) {
     grid.innerHTML = '<div class="store-empty-state"><strong>ملقيناش منتجات مطابقة</strong><span>جرّب تغيّر كلمة البحث أو اختيار الترتيب.</span></div>';
@@ -563,8 +598,8 @@ function showProducts() {
       v => String(v.product_id) === String(p.id)
     );
     const variants = allProductVariants.filter(v =>
-      (!selectedProductSize || String(v.size || "") === selectedProductSize) &&
-      (!selectedProductColor || String(v.color || "") === selectedProductColor)
+      (!selectedProductSizes.length || selectedProductSizes.includes(String(v.size || ""))) &&
+      (!selectedProductColors.length || selectedProductColors.includes(String(v.color || "")))
     );
     const hasVariants = allProductVariants.length > 0;
     const availableVariants = variants.filter(v => Number(v.stock) > 0);
@@ -1006,39 +1041,26 @@ if (productSortSelect) {
     showProducts();
   });
 }
-const productSizeFilter = document.getElementById("productSizeFilter");
-if (productSizeFilter) {
-  productSizeFilter.addEventListener("change", event => {
-    selectedProductSize = event.target.value || "";
-    showProducts();
-  });
-}
-const productColorFilter = document.getElementById("productColorFilter");
-if (productColorFilter) {
-  productColorFilter.addEventListener("change", event => {
-    selectedProductColor = event.target.value || "";
-    showProducts();
-  });
-}
-const resetProductFilters = document.getElementById("resetProductFilters");
-if (resetProductFilters) {
-  resetProductFilters.addEventListener("click", () => {
-    selectedCategory = "الكل";
-    productSearchTerm = "";
-    productSortMode = "default";
-    selectedProductSize = "";
-    selectedProductColor = "";
-    if (productSearchInput) productSearchInput.value = "";
-    if (productSortSelect) productSortSelect.value = "default";
-    if (productSizeFilter) productSizeFilter.value = "";
-    if (productColorFilter) productColorFilter.value = "";
-    if (categoryNavigation) categoryNavigation.querySelectorAll(".category").forEach(item =>
-      item.classList.toggle("active", item.dataset.category === "الكل")
-    );
-    showProducts();
-  });
-}
-
+const filterDrawer = document.getElementById("filterDrawer");
+const openFilterButton = document.getElementById("openFilterDrawer");
+function openAdvancedFilters() { if(filterDrawer){filterDrawer.hidden=false;document.body.classList.add("filter-drawer-open");} }
+function closeAdvancedFilters() { if(filterDrawer){filterDrawer.hidden=true;document.body.classList.remove("filter-drawer-open");} }
+if(openFilterButton) openFilterButton.addEventListener("click",openAdvancedFilters);
+document.querySelectorAll("[data-close-filter]").forEach(el=>el.addEventListener("click",closeAdvancedFilters));
+document.addEventListener("keydown",event=>{if(event.key==="Escape")closeAdvancedFilters();});
+const applyFiltersButton=document.getElementById("applyAdvancedFilters");
+if(applyFiltersButton) applyFiltersButton.addEventListener("click",()=>{setAdvancedFiltersFromPanel();showProducts();syncAdvancedFilterControls();closeAdvancedFilters();});
+const clearFiltersButton=document.getElementById("clearAdvancedFilters");
+if(clearFiltersButton) clearFiltersButton.addEventListener("click",()=>{
+  selectedProductSizes=[];selectedProductColors=[];selectedProductCategories=[];
+  filterMinPrice="";filterMaxPrice="";filterAvailableOnly=false;filterOffersOnly=false;
+  selectedCategory="الكل";
+  if(categoryNavigation) categoryNavigation.querySelectorAll(".category").forEach(item=>item.classList.toggle("active",item.dataset.category==="الكل"));
+  syncAdvancedFilterControls();showProducts();
+});
+const sortSelect=document.getElementById("productSort");
+if(sortSelect) sortSelect.addEventListener("change",event=>{productSortMode=event.target.value||"default";showProducts();});
+if(productSearchInput) productSearchInput.addEventListener("input",event=>{productSearchTerm=event.target.value.trim();showProducts();});
 // التنقل بين السلة وخطوة إتمام الطلب
 const checkoutPanel = document.getElementById("checkoutPanel");
 const cartActions = document.getElementById("cartActions");

@@ -813,7 +813,7 @@ document.getElementById("categoryShowcaseGrid")?.addEventListener("click", event
   const target = document.querySelector('#categoryNavigation [data-category="' + CSS.escape(card.dataset.showcaseCategory) + '"]');
   target?.click();
   document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
+});
 
 // الضغط على الصور الصغيرة أو الكبيرة
 grid.addEventListener("click", event => {

@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=25">
+  <link rel="stylesheet" href="styles.css?v=27">
 </head>
 
 <body>
@@ -51,10 +51,14 @@
   <section class="hero">
     <div class="heroOverlay"></div>
     <div class="heroContent">
-      <span class="heroEyebrow">WELCOME TO EA LUXURY</span>
-      <h1>أناقتك تبدأ من هنا</h1>
-      <p>اكتشف أحدث صيحات الموضة الحريمي والرجالي</p>
-      <a href="#products" class="shopButton">اكتشف مجموعتنا</a>
+      <span class="heroEyebrow">THE EA LUXURY EDIT</span>
+      <h1>أناقة تختارها<br><em>على طريقتك</em></h1>
+      <p>اكتشف تشكيلات مختارة بعناية، وتفاصيل تكمل إطلالتك كل يوم.</p>
+      <div class="heroActions">
+        <a href="#products" class="shopButton">تسوق المجموعة <span aria-hidden="true">←</span></a>
+        <a href="#categories" class="heroSecondaryLink">اكتشف الأقسام</a>
+      </div>
+      <div class="heroTrustLine"><span>✦</span> اختيارات متجددة <i></i> توصيل لجميع المحافظات <i></i> الدفع عند الاستلام</div>
     </div>
     <div class="heroBottom">
       <span>FASHION</span>
@@ -154,6 +158,7 @@
       <button class="category" data-category="حريمي">حريمي</button>
       <button class="category" data-category="رجالي">رجالي</button>
     </nav>
+    <div id="categoryShowcaseGrid" class="category-showcase-grid" aria-label="تصفح الأقسام"></div>
   </section>
 
   <main id="products" class="productsSection">
@@ -347,7 +352,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@5/dist/email.min.js"></script>
-  <script src="app.js?v=38"></script>
+  <script src="app.js?v=39"></script>
 
 </body>
 </html>

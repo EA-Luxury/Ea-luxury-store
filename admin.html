@@ -183,6 +183,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <p class="status-text">جهّز ملف CSV من Excel يحتوي على المنتجات كلها، ثم ارفعه هنا. راجع المعاينة والأخطاء قبل بدء الاستيراد. لن يتم تعديل أو حذف أي منتج موجود.</p>
 <div class="reportNotice"><strong>طريقة الاستخدام:</strong> نزّل النموذج، وافتحه في Excel، وأدخل كل منتج في صف مستقل. ضع روابط الصور المباشرة مفصولة بعلامة | بحد أقصى 5 صور. احفظ الملف بصيغة CSV UTF-8 ثم ارفعه.</div>
 <button type="button" class="secondary" onclick="downloadBulkProductsTemplate()">تنزيل نموذج Excel (CSV)</button>
+<p class="status-text">أسماء الأعمدة في النموذج: name للاسم، category للقسم، price للسعر، purchase_cost للتكلفة، stock للكمية، description للوصف، sizes وcolors مفصولة بعلامة |، image_urls لروابط الصور، وsale_price مع sale_starts_at وsale_ends_at للعرض الاختياري. صيغة التاريخ: YYYY-MM-DD أو YYYY-MM-DDTHH:MM.</p>
 <label for="bulkProductsFile">اختيار ملف المنتجات</label>
 <input id="bulkProductsFile" type="file" accept=".csv,text/csv">
 <p id="bulkImportFileName" class="status-text">لم يتم اختيار ملف بعد.</p>
@@ -468,7 +469,7 @@ let bulkImportFileName="";
 
 function downloadBulkProductsTemplate(){
 const headers=["name","category","price","purchase_cost","stock","description","sizes","colors","image_urls","sale_price","sale_starts_at","sale_ends_at"];
-const csv="\\uFEFF"+headers.join(",")+"\\r\\n";
+const csv="\uFEFF"+headers.join(",")+"\r\n";
 const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
 const url=URL.createObjectURL(blob);
 const link=document.createElement("a");
@@ -481,7 +482,7 @@ URL.revokeObjectURL(url);
 }
 
 function parseBulkCSV(text){
-const input=String(text||"").replace(/^\\uFEFF/,"");
+const input=String(text||"").replace(/^\uFEFF/,"");
 const rows=[];
 let row=[],field="",quoted=false;
 for(let i=0;i<input.length;i++){
@@ -492,10 +493,10 @@ else if(ch==='"')quoted=false;
 else field+=ch;
 }else if(ch==='"'&&field==="")quoted=true;
 else if(ch===","){row.push(field);field="";}
-else if(ch==="\\n"){row.push(field.replace(/\\r$/,""));if(row.some(v=>v.trim()))rows.push(row);row=[];field="";}
+else if(ch==="\n"){row.push(field.replace(/\r$/,""));if(row.some(v=>v.trim()))rows.push(row);row=[];field="";}
 else field+=ch;
 }
-row.push(field.replace(/\\r$/,""));
+row.push(field.replace(/\r$/,""));
 if(row.some(v=>v.trim()))rows.push(row);
 if(quoted)throw new Error("يوجد حقل نصي مفتوح بعلامة اقتباس ولم يتم إغلاقه.");
 if(!rows.length)throw new Error("الملف فارغ.");
@@ -575,7 +576,7 @@ try{
 bulkImportRows=parseBulkCSV(reader.result).map(item=>({...item,_errors:validateBulkProductRow(item)}));
 const seen=new Set();
 bulkImportRows.forEach(item=>{
-const key=String(item.name||"").normalize("NFKC").toLocaleLowerCase("ar").replace(/\\s+/g," ").trim();
+const key=String(item.name||"").normalize("NFKC").toLocaleLowerCase("ar").replace(/\s+/g," ").trim();
 if(key&&seen.has(key))item._errors.push("اسم مكرر داخل الملف");
 if(key)seen.add(key);
 });
@@ -601,10 +602,10 @@ try{
 msg.textContent="جاري فحص المنتجات الموجودة...";
 const {data:existing,error:existingError}=await client.from("products").select("name");
 if(existingError)throw existingError;
-const existingNames=new Set((existing||[]).map(p=>String(p.name||"").normalize("NFKC").toLocaleLowerCase("ar").replace(/\\s+/g," ").trim()));
+const existingNames=new Set((existing||[]).map(p=>String(p.name||"").normalize("NFKC").toLocaleLowerCase("ar").replace(/\s+/g," ").trim()));
 for(let i=0;i<valid.length;i++){
 const item=valid[i];
-const key=String(item.name).normalize("NFKC").toLocaleLowerCase("ar").replace(/\\s+/g," ").trim();
+const key=String(item.name).normalize("NFKC").toLocaleLowerCase("ar").replace(/\s+/g," ").trim();
 if(existingNames.has(key)){skipped++;details.push("تم تخطي الصف "+item._row+" ("+item.name+"): المنتج موجود بالفعل.");continue;}
 try{
 const images=item.image_urls.split("|").map(v=>v.trim()).filter(Boolean);
@@ -626,7 +627,7 @@ existingNames.add(key);added++;
 msg.textContent="تمت معالجة "+(i+1)+" من "+valid.length+" منتج...";
 }
 await loadProducts();
-document.getElementById("bulkImportResults").textContent=details.length?details.join("\\n"):"اكتمل الاستيراد دون أخطاء.";
+document.getElementById("bulkImportResults").textContent=details.length?details.join("\n"):"اكتمل الاستيراد دون أخطاء.";
 msg.textContent="انتهى الاستيراد: تمت إضافة "+added+"، تم تخطي الموجود "+skipped+"، فشل "+failed+"، تعذر حفظ التكلفة لـ "+costFailed+".";
 if(added===valid.length){bulkImportRows=[];document.getElementById("bulkProductsFile").value="";document.getElementById("bulkImportPreview").textContent="اكتمل الاستيراد. يمكنك رفع ملف آخر.";}
 }catch(error){msg.textContent="تعذر بدء الاستيراد: "+error.message;}

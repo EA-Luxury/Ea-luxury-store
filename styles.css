@@ -1994,3 +1994,52 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 @media(max-width:650px) {
   .detail-favorite-button { min-height:44px; }
 }
+
+/* EA LUXURY — dedicated favorites page */
+.favorites-page { background:#faf8f3; }
+.favorites-page-main { width:min(1180px,calc(100% - 36px)); margin:0 auto; min-height:58vh; padding:42px 0 70px; }
+.favorites-page-heading { margin:0 auto 28px; text-align:center; }
+.favorites-page-heading > span { color:#a4864e; font-size:11px; font-weight:900; letter-spacing:3px; }
+.favorites-page-heading h1 { margin:8px 0; color:#1b1a17; font-size:clamp(25px,4vw,38px); font-weight:900; }
+.favorites-page-heading h1 em { color:#b18c4c; font-style:normal; }
+.favorites-page-heading p { margin:0; color:#81796d; font-size:14px; }
+.favorites-page-status { padding:30px 12px; color:#8a7a5c; text-align:center; }
+.favorites-page-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:18px; }
+.favorites-page-card { min-width:0; overflow:hidden; border:1px solid #e9e0d1; border-radius:10px; background:#fff; box-shadow:0 7px 22px rgba(30,24,15,.045); }
+.favorites-page-image { display:grid; place-items:center; height:250px; overflow:hidden; background:#f3efe7; color:#a4864e; font-weight:900; text-decoration:none; }
+.favorites-page-image img { width:100%; height:100%; object-fit:cover; transition:transform .35s ease; }
+.favorites-page-card:hover .favorites-page-image img { transform:scale(1.035); }
+.favorites-page-card-body { display:grid; gap:9px; padding:14px; }
+.favorites-page-category { color:#a4864e; font-size:10px; font-weight:800; }
+.favorites-page-card-body h2 { margin:0; color:#24211c; font-size:15px; line-height:1.6; }
+.favorites-page-card-body h2 a { color:inherit; text-decoration:none; }
+.favorites-page-price { display:flex; flex-wrap:wrap; align-items:center; gap:9px; }
+.favorites-page-price strong { color:#9a793f; font-size:16px; }
+.favorites-page-price del { color:#a7a095; font-size:12px; }
+.favorites-variant-label { color:#6e665a; font-size:12px; font-weight:700; }
+.favorites-variant-select { width:100%; min-height:40px; padding:7px 9px; border:1px solid #e3d8c5; border-radius:6px; background:#fff; color:#29251f; font:inherit; font-size:12px; }
+.favorites-out-of-stock { margin:0; color:#a04d43; font-size:12px; }
+.favorites-page-actions { display:grid; grid-template-columns:1fr auto; gap:8px; margin-top:3px; }
+.favorites-page-actions button { min-height:39px; padding:7px 10px; border:1px solid #b99550; border-radius:6px; font:inherit; font-size:12px; font-weight:800; cursor:pointer; }
+.favorites-add-button { background:#171717; color:#d6b36a; }
+.favorites-add-button:hover:not(:disabled) { background:#b99550; color:#171717; }
+.favorites-add-button:disabled { opacity:.45; cursor:not-allowed; }
+.favorites-remove-button { background:#fff; color:#8d713f; }
+.favorites-page-empty { margin:20px auto; padding:48px 18px; border:1px solid #e8decb; border-radius:12px; background:#fff; text-align:center; }
+.favorites-page-empty[hidden],.favorites-page-grid[hidden] { display:none; }
+.favorites-empty-heart { color:#b99550; font-size:54px; }
+.favorites-page-empty h2 { margin:8px 0; color:#29251f; font-size:22px; }
+.favorites-page-empty p { color:#81796d; font-size:13px; }
+.favorites-continue-link { display:inline-flex; margin-top:12px; padding:11px 20px; border-radius:6px; background:#171717; color:#d6b36a; font-size:13px; font-weight:800; text-decoration:none; }
+.favorites-cart-link { text-decoration:none; }
+@media(max-width:900px) { .favorites-page-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } .favorites-page-image { height:220px; } }
+@media(max-width:650px) {
+  .favorites-page-main { width:calc(100% - 22px); padding:28px 0 48px; }
+  .favorites-page-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .favorites-page-image { height:175px; }
+  .favorites-page-card-body { gap:7px; padding:10px; }
+  .favorites-page-card-body h2 { font-size:13px; }
+  .favorites-page-price strong { font-size:14px; }
+  .favorites-page-actions { grid-template-columns:1fr; }
+  .favorites-page-actions button { min-height:37px; }
+}

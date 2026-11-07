@@ -1475,8 +1475,10 @@ footer small {
 }
 
 .product { position:relative; }
-.product-favorite-button { position:absolute; z-index:4; top:12px; left:12px; width:40px; height:40px; display:grid; place-items:center; border:1px solid #d7c39b; border-radius:50%; background:#fff; color:#9b793e; font-size:25px; cursor:pointer; box-shadow:0 3px 12px #00000018; }
-.product-favorite-button[aria-pressed="true"] { background:#171717; color:#d6b36a; border-color:#d6b36a; }
+.product-favorite-button { position:absolute; z-index:4; top:12px; left:12px; width:38px; height:38px; display:grid; place-items:center; padding:0; border:0; border-radius:0; background:transparent; color:#b99550; font-family:Arial,sans-serif; font-size:29px; line-height:1; cursor:pointer; box-shadow:none; text-shadow:0 1px 2px #00000035; transition:transform .2s ease,color .2s ease; }
+.product-favorite-button:hover { transform:scale(1.16); color:#d0a84f; }
+.product-favorite-button[aria-pressed="true"] { background:transparent; color:#c69b45; }
+.product-favorite-button:focus-visible { outline:2px solid #b99550; outline-offset:2px; border-radius:4px; }
 .favorites-nav-link { display:inline-flex; align-items:center; gap:6px; }
 .favorites-count { min-width:20px; height:20px; display:inline-grid; place-items:center; padding:0 5px; border-radius:20px; background:#b99550; color:#171717; font-size:11px; font-weight:900; }
 .favoritesSection { max-width:1180px; margin:30px auto; padding:30px 18px; border:1px solid #e9dfca; border-radius:14px; background:#fbf9f4; }
@@ -1980,20 +1982,16 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 
 /* EA LUXURY — product detail favorites */
 .detail-favorite-button {
-  display:inline-flex; align-items:center; justify-content:center; gap:9px;
-  min-height:42px; margin:10px 0 14px; padding:8px 14px;
-  border:1px solid #c5a66b; border-radius:7px; background:#fff;
-  color:#8d713f; font:inherit; font-size:13px; font-weight:800; cursor:pointer;
-  transition:background .2s ease,color .2s ease,border-color .2s ease;
+  display:inline-grid; place-items:center;
+  width:44px; height:44px; min-height:44px; margin:8px 0 12px; padding:0;
+  border:0; border-radius:0; background:transparent;
+  color:#b99550; font-family:Arial,sans-serif; font-size:31px; line-height:1;
+  font-weight:400; cursor:pointer; box-shadow:none; text-shadow:0 1px 2px #00000018;
+  transition:transform .2s ease,color .2s ease;
 }
-.detail-favorite-button::first-letter { font-size:21px; }
-.detail-favorite-button[aria-pressed="true"] {
-  background:#171717; border-color:#c5a66b; color:#d9b96f;
-}
-.detail-favorite-button:focus-visible { outline:2px solid #b99550; outline-offset:3px; }
-@media(max-width:650px) {
-  .detail-favorite-button { min-height:44px; }
-}
+.detail-favorite-button:hover { transform:scale(1.14); color:#d0a84f; }
+.detail-favorite-button[aria-pressed="true"] { background:transparent; color:#c69b45; }
+.detail-favorite-button:focus-visible { outline:2px solid #b99550; outline-offset:2px; border-radius:4px; }
 
 /* EA LUXURY — dedicated favorites page */
 .favorites-page { background:#faf8f3; }

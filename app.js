@@ -628,6 +628,9 @@ function showProducts() {
     filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
   }
 
+  const productsSection = document.getElementById("products");
+  if (productsSection) productsSection.hidden = selectedCategory === "أحذية" && selectedBrand === "الكل";
+
   const count = document.getElementById("productResultsCount");
   if (count) count.textContent = "عرض " + filtered.length + " منتج" + (productSearchTerm ? " مطابق لبحثك" : "");
   const drawerCount = document.getElementById("filterResultsCount");
@@ -838,7 +841,8 @@ function renderBrandShowcase() {
     if (brand) counts.set(brand, (counts.get(brand) || 0) + 1);
   });
   const brands = [...counts.entries()].sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], "ar"));
-  section.hidden = brands.length === 0;
+  // تظهر قائمة الماركات فقط عند دخول قسم الأحذية، وتختفي بعد اختيار ماركة.
+  section.hidden = selectedCategory !== "أحذية" || selectedBrand !== "الكل" || brands.length === 0;
   host.innerHTML = brands.map(([brand, count]) => {
     const product = shoeProducts.find(item => String(item.brand || "").trim() === brand && getProductImages(item).length);
     const image = product ? getProductImages(product)[0] : "";
@@ -893,7 +897,8 @@ document.getElementById("categoryShowcaseGrid")?.addEventListener("click", event
   if (!card) return;
   const target = document.querySelector('#categoryNavigation [data-category="' + CSS.escape(card.dataset.showcaseCategory) + '"]');
   target?.click();
-  document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const destination = card.dataset.showcaseCategory === "أحذية" ? document.getElementById("brandsSection") : document.getElementById("products");
+  destination?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 // الضغط على الصور الصغيرة أو الكبيرة

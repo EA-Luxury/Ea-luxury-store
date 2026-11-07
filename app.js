@@ -230,7 +230,7 @@ function renderStoreCategories(names) {
   if (!nav) return;
   const cleanNames = [...new Set((Array.isArray(names) ? names : [])
     .map(name => String(name || "").trim()).filter(Boolean))];
-  if (!cleanNames.length) cleanNames.push("حريمي", "رجالي");
+  if (!cleanNames.length) cleanNames.push("أحذية", "ملابس حريمي");
   if (selectedCategory !== "الكل" && !cleanNames.includes(selectedCategory)) {
     selectedCategory = "الكل";
   }
@@ -830,16 +830,20 @@ function renderBrandShowcase() {
   const host = document.getElementById("brandShowcaseGrid");
   const section = document.getElementById("brandsSection");
   if (!host || !section || !Array.isArray(products)) return;
+  // الماركات المعروضة تخص الأحذية فقط، ولا تظهر ماركات الملابس هنا.
+  const shoeProducts = products.filter(product => String(product.category || "").trim() === "أحذية");
   const counts = new Map();
-  products.forEach(product => { const brand = String(product.brand || "").trim(); if (brand) counts.set(brand, (counts.get(brand) || 0) + 1); });
+  shoeProducts.forEach(product => {
+    const brand = String(product.brand || "").trim();
+    if (brand) counts.set(brand, (counts.get(brand) || 0) + 1);
+  });
   const brands = [...counts.entries()].sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], "ar"));
   section.hidden = brands.length === 0;
-  host.innerHTML = brands.map(entry => {
-    const brand = entry[0], count = entry[1];
-    const product = products.find(item => String(item.brand || "").trim() === brand && getProductImages(item).length);
+  host.innerHTML = brands.map(([brand, count]) => {
+    const product = shoeProducts.find(item => String(item.brand || "").trim() === brand && getProductImages(item).length);
     const image = product ? getProductImages(product)[0] : "";
     const imageMarkup = image ? '<img src="' + escapeHTML(image) + '" alt="" loading="lazy">' : '<span>EA</span>';
-    return '<button type="button" class="brand-showcase-card' + (selectedBrand === brand ? " active" : "") + '" data-showcase-brand="' + escapeHTML(brand) + '" aria-pressed="' + (selectedBrand === brand) + '"><span class="brand-showcase-image">' + imageMarkup + '</span><span class="brand-showcase-copy"><strong>' + escapeHTML(brand) + '</strong><small>' + count.toLocaleString("ar-EG") + ' منتج</small><span>تسوق الماركة ←</span></span></button>';
+    return '<button type="button" class="brand-showcase-card' + (selectedCategory === "أحذية" && selectedBrand === brand ? " active" : "") + '" data-showcase-brand="' + escapeHTML(brand) + '" aria-pressed="' + (selectedCategory === "أحذية" && selectedBrand === brand) + '"><span class="brand-showcase-image">' + imageMarkup + '</span><span class="brand-showcase-copy"><strong>' + escapeHTML(brand) + '</strong><small>' + count.toLocaleString("ar-EG") + ' منتج</small><span>تسوق الماركة ←</span></span></button>';
   }).join("");
 }
 
@@ -876,9 +880,9 @@ document.getElementById("brandShowcaseGrid")?.addEventListener("click", event =>
   const card = event.target.closest("[data-showcase-brand]");
   if (!card) return;
   selectedBrand = card.dataset.showcaseBrand || "الكل";
-  selectedCategory = "الكل";
+  selectedCategory = "أحذية";
   const categoryNav = document.getElementById("categoryNavigation");
-  categoryNav?.querySelectorAll("[data-category]").forEach(item => item.classList.toggle("active", item.dataset.category === "الكل"));
+  categoryNav?.querySelectorAll("[data-category]").forEach(item => item.classList.toggle("active", item.dataset.category === "أحذية"));
   document.querySelectorAll("[data-showcase-brand]").forEach(item => { const active = item.dataset.showcaseBrand === selectedBrand; item.classList.toggle("active", active); item.setAttribute("aria-pressed", String(active)); });
   showProducts();
   document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });

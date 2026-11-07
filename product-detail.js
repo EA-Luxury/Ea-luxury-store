@@ -8,6 +8,32 @@ let detailProduct = null;
 let detailVariants = [];
 let detailImages = [];
 let detailSelectedImage = 0;
+let detailFavoriteIds = (() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem("eaLuxuryFavorites") || "[]");
+    return Array.isArray(saved) ? saved.map(String) : [];
+  } catch (_) { return []; }
+})();
+function detailIsFavorite() {
+  return !!detailProduct && detailFavoriteIds.includes(String(detailProduct.id));
+}
+function detailToggleFavorite() {
+  if (!detailProduct) return;
+  const id = String(detailProduct.id);
+  detailFavoriteIds = detailIsFavorite()
+    ? detailFavoriteIds.filter(value => value !== id)
+    : [...detailFavoriteIds, id];
+  try { localStorage.setItem("eaLuxuryFavorites", JSON.stringify(detailFavoriteIds)); } catch (_) {}
+  detailUpdateFavoriteButton();
+}
+function detailUpdateFavoriteButton() {
+  const button = document.getElementById("detailFavoriteButton");
+  if (!button) return;
+  const active = detailIsFavorite();
+  button.setAttribute("aria-pressed", String(active));
+  button.setAttribute("aria-label", active ? "إزالة من المفضلة" : "أضف للمفضلة");
+  button.innerHTML = (active ? "♥" : "♡") + '<span>' + (active ? "محفوظ في المفضلة" : "أضف إلى المفضلة") + '</span>';
+}
 
 function detailEscape(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -362,6 +388,7 @@ function detailRender() {
       <div class="product-detail-info">
         <span class="product-detail-category">${detailEscape(p.category || "EA LUXURY")}</span>
         <h1>${detailEscape(p.name)}</h1>
+        <button type="button" id="detailFavoriteButton" class="detail-favorite-button" aria-pressed="false" aria-label="أضف للمفضلة">♡<span>أضف إلى المفضلة</span></button>
         <div class="product-detail-price">${detailPriceMarkup(p)}</div>
         <p class="product-detail-description">${detailEscape(description)}</p>
         <div class="product-detail-meta">
@@ -408,6 +435,8 @@ function detailRender() {
   }
   document.getElementById("detailPrevImage")?.addEventListener("click", () => detailShowImage((detailSelectedImage - 1 + detailImages.length) % detailImages.length));
   document.getElementById("detailNextImage")?.addEventListener("click", () => detailShowImage((detailSelectedImage + 1) % detailImages.length));
+  document.getElementById("detailFavoriteButton")?.addEventListener("click", detailToggleFavorite);
+  detailUpdateFavoriteButton();
   document.getElementById("detailAddToCart").addEventListener("click", () => detailAddToCart());
   document.getElementById("detailQuantityMinus").addEventListener("click", () => detailUpdateQuantity(detailQuantity - 1));
   document.getElementById("detailQuantityPlus").addEventListener("click", () => detailUpdateQuantity(detailQuantity + 1));

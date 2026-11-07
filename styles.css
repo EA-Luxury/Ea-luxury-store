@@ -1503,6 +1503,11 @@ footer small {
 /* Premium storefront filter drawer */
 .store-tools-pro{display:grid;grid-template-columns:minmax(220px,1fr) minmax(170px,.55fr) auto;align-items:end;gap:14px;padding:18px;margin:18px 0 14px;border:1px solid #e8e0d1;border-radius:14px;background:#fff;box-shadow:0 8px 28px #241b0d0a}
 .store-tools-pro .store-search,.store-tools-pro .store-sort{display:grid;gap:7px}
+.store-search-field{position:relative;display:flex;align-items:center}
+.store-search-field input{padding-inline-end:48px}
+.clear-product-search{position:absolute;inset-inline-end:9px;width:30px;height:30px;border:0;border-radius:50%;background:#eee8dc;color:#51452f;font-size:22px;line-height:1;cursor:pointer}
+.clear-product-search[hidden]{display:none}
+.clear-product-search:focus-visible{outline:2px solid #b89550;outline-offset:2px}
 .store-tools-pro .store-search span,.store-tools-pro .store-sort span{font-size:12px;font-weight:800;color:#76613c}
 .store-tools-pro input,.store-tools-pro select{width:100%;min-height:48px;padding:11px 14px;border:1px solid #e4dfd5;border-radius:8px;background:#fcfbf8;font:inherit;color:#222}
 .open-filter-drawer{display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:10px 18px;border:1px solid #b89550;border-radius:8px;background:#171717;color:#e0c17e;font:inherit;font-weight:800;cursor:pointer;white-space:nowrap}

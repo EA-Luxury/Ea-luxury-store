@@ -656,6 +656,8 @@ function detailAddToCart() {
     item.currency = p.currency || "EGP";
     item.quantity = existingQuantity + requestedQuantity;
     item.availableStock = availableStock;
+    item.selected_size = detailCleanOptionValue(selectedVariant?.size) || null;
+    item.selected_color = detailCleanOptionValue(selectedVariant?.color) || null;
   } else {
     saved.push({
       ...p,

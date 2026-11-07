@@ -797,10 +797,8 @@ function renderHomeCollections() {
   const newest = [...products].sort((a,b) =>
     new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
   ).slice(0,4);
-  const picks = [...products].sort((a,b) => {
-    const score = p => Number(p.sales_count ?? p.sold_count ?? p.order_count ?? p.is_featured ?? p.featured ?? 0);
-    return score(b) - score(a);
-  }).slice(0,4);
+  const picks = [...products].filter(product => product.is_featured === true)
+    .sort((a,b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)).slice(0,8);
   const offers = products
     .filter(product => getEffectiveProductPrice(product) < Number(product.price || 0))
     .sort((a,b) => (1 - getEffectiveProductPrice(b) / Number(b.price || 1)) -
@@ -812,7 +810,9 @@ function renderHomeCollections() {
       : '<p class="homeCollectionEmpty">سيتم عرض المنتجات هنا قريبًا.</p>';
   };
   render(newestGrid, newest);
-  render(picksGrid, picks);
+  picksGrid.innerHTML = picks.length
+    ? picks.map(item => makeTile(item)).join("")
+    : '<p class="homeCollectionEmpty">ترشيحاتنا هتظهر هنا بعد اختيار المنتجات المميزة من لوحة الإدارة.</p>';
   if (offersSection && offersGrid) {
     offersSection.hidden = offers.length === 0;
     offersGrid.innerHTML = offers.map(item => makeTile(item, true)).join("");

@@ -512,6 +512,17 @@ async function detailLoadProduct() {
   }
 
   detailProduct = data;
+  try {
+    const key = "eaLuxuryRecentlyViewed";
+    const saved = JSON.parse(localStorage.getItem(key) || "[]");
+    const history = Array.isArray(saved) ? saved : [];
+    const next = [{ id: String(data.id), viewedAt: Date.now() },
+      ...history.filter(item => String(item?.id) !== String(data.id))]
+      .slice(0, 8);
+    localStorage.setItem(key, JSON.stringify(next));
+  } catch (storageError) {
+    console.warn("تعذر حفظ سجل المشاهدة:", storageError);
+  }
   detailImages = detailGetImages(data);
 
   const { data: variants, error: variantsError } = await detailDb.from("product_variants")

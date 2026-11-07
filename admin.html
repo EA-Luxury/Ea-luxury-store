@@ -529,8 +529,11 @@ if(start&&!Number.isFinite(start.getTime()))errors.push("تاريخ بداية �
 if(end&&!Number.isFinite(end.getTime()))errors.push("تاريخ نهاية العرض غير صحيح");
 if(start&&end&&end<=start)errors.push("نهاية العرض يجب أن تكون بعد بدايته");
 const images=(item.image_urls||"").split("|").map(v=>v.trim()).filter(Boolean);
-if(!images.length)errors.push("رابط صورة واحد على الأقل مطلوب");
-if(images.length>5)errors.push("الحد الأقصى 5 صور");
+const selectedFiles=Array.isArray(item._imageFiles)?item._imageFiles:[];
+if(!images.length&&!selectedFiles.length)errors.push("أضف رابط صورة أو اختر صورة من جهازك");
+if(images.length+selectedFiles.length>5)errors.push("الحد الأقصى 5 صور إجمالًا");
+const invalidFile=selectedFiles.map(validateImageFile).find(Boolean);
+if(invalidFile)errors.push(invalidFile);
 if(images.some(url=>{try{return !["http:","https:"].includes(new URL(url).protocol);}catch(_){return true;}}))errors.push("راجع روابط الصور؛ يجب أن تكون روابط http أو https صحيحة");
 return errors;
 }

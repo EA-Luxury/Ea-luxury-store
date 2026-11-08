@@ -754,6 +754,8 @@ function showProducts() {
 // مجموعات الصفحة الرئيسية: الأحدث والترشيحات والعروض الفعالة.
 function renderHomeCollections() {
   const newestGrid = document.getElementById("newArrivalsGrid");
+  const recentlyViewedSection = document.getElementById("recentlyViewedSection");
+  const recentlyViewedGrid = document.getElementById("recentlyViewedGrid");
   const picksGrid = document.getElementById("editorsPicksGrid");
   const offersSection = document.getElementById("bestOffersSection");
   const offersGrid = document.getElementById("bestOffersGrid");
@@ -822,6 +824,17 @@ function renderHomeCollections() {
       '<div class="homeCollectionBrandProducts" data-brand-products="' + escapeHTML(collectionKey) + '" hidden>' + panels + '</div>';
   };
   renderGroupedCollection(newestGrid, newest, "new");
+  let recentlyViewed = [];
+  try {
+    const history = JSON.parse(localStorage.getItem("eaLuxuryRecentlyViewed") || "[]");
+    const viewedIds = Array.isArray(history) ? history.map(item => String(item?.id ?? "")).filter(Boolean) : [];
+    const byId = new Map(products.map(product => [String(product.id), product]));
+    recentlyViewed = viewedIds.map(id => byId.get(id)).filter(product => product && product.active !== false).slice(0, 8);
+  } catch (error) {
+    console.warn("تعذر تحميل سجل المشاهدة:", error);
+  }
+  if (recentlyViewedSection) recentlyViewedSection.hidden = recentlyViewed.length === 0;
+  if (recentlyViewedGrid) renderGroupedCollection(recentlyViewedGrid, recentlyViewed, "recent");
   picksGrid.innerHTML = picks.length
     ? picks.map(item => makeTile(item)).join("")
     : '<p class="homeCollectionEmpty">ترشيحاتنا هتظهر هنا بعد اختيار المنتجات المميزة من لوحة الإدارة.</p>';

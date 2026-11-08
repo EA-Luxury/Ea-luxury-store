@@ -49,6 +49,7 @@ main{max-width:1180px}
 .orderDateFilter{display:grid;gap:5px;color:#74664e;font-size:13px;font-weight:700}.orderDateFilter input{width:100%;min-width:0;margin:0}
 .orderQuickSummary{margin:12px 0 18px;max-width:760px}.orderQuickSummary .statCard{min-height:105px}.orderQuickSummary .statCard strong{font-variant-numeric:tabular-nums}
 .orderQuickCard{cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}.orderQuickCard:hover,.orderQuickCard:focus-visible{transform:translateY(-2px);border-color:#c5a15b;box-shadow:0 5px 16px rgba(75,55,20,.09)}.orderQuickCard:focus-visible{outline:3px solid #d6b36a;outline-offset:2px}
+.orderAdminCard.orderOverdue{border-right:4px solid #b45b45;background:#fffaf8}.orderAge{display:inline-block;margin:5px 0;padding:5px 9px;border-radius:6px;background:#f5f0e7;color:#6c5733;font-size:12px;font-weight:700}.orderAge.overdue{background:#fbe9e5;color:#963f30}
 .orderMeta{color:#766b58;font-size:13px}
 .orderActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .orderActions button{width:auto;min-width:130px;margin:0}
@@ -383,6 +384,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <div class="statsGrid orderQuickSummary" aria-label="ملخص متابعة الطلبات">
 <article class="statCard orderQuickCard" role="button" tabindex="0" aria-label="عرض الطلبات الجديدة" onclick="applyQuickOrderFilter('new')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();applyQuickOrderFilter('new')}"><span>طلبات جديدة</span><strong id="quickNewOrders">—</strong><small>اضغط لعرض الطلبات الجديدة</small></article>
 <article class="statCard orderQuickCard" role="button" tabindex="0" aria-label="عرض الطلبات التي تحتاج متابعة" onclick="applyQuickOrderFilter('followup')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();applyQuickOrderFilter('followup')}"><span>طلبات تحتاج متابعة</span><strong id="quickFollowUpOrders">—</strong><small>اضغط لعرض الجديد وقيد التجهيز</small></article>
+<article class="statCard orderQuickCard" role="button" tabindex="0" aria-label="عرض الطلبات المتأخرة أكثر من 24 ساعة" onclick="applyQuickOrderFilter('overdue')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();applyQuickOrderFilter('overdue')}"><span>طلبات متأخرة +24 ساعة</span><strong id="quickOverdueOrders">—</strong><small>تحتاج تدخلًا سريعًا</small></article>
 </div>
 <input id="adminOrderSearch" type="search" placeholder="ابحث برقم الطلب أو اسم العميل أو الهاتف..." aria-label="البحث في الطلبات" oninput="filterOrders()">
 <div class="orderFilters">
@@ -1747,7 +1749,7 @@ statusBox.textContent="تعذر تفعيل إشعارات الجهاز في هذ
 function applyQuickOrderFilter(type){
 const section=document.getElementById("ordersSection");
 if(!section)return;
-section.dataset.quickFilter=type==="new"?"new":type==="followup"?"followup":"";
+section.dataset.quickFilter=["new","followup","overdue"].includes(type)?type:"";
 document.getElementById("adminOrderStatusFilter").value="";
 filterOrders();
 section.scrollIntoView({behavior:"smooth",block:"start"});
@@ -1769,7 +1771,9 @@ cards.forEach(card=>{
 const matchesText=!query||String(card.dataset.search||"").includes(query);
 const matchesStatus=!status||card.dataset.status===status;
 const quickFilter=document.getElementById("ordersSection")?.dataset.quickFilter||"";
-const matchesQuick=!quickFilter||(quickFilter==="new"?card.dataset.status==="جديد":["جديد","قيد التجهيز"].includes(card.dataset.status));
+const pendingStatus=["جديد","قيد التجهيز"].includes(card.dataset.status);
+const ageHours=card.dataset.createdAt?((Date.now()-new Date(card.dataset.createdAt).getTime())/3600000):0;
+const matchesQuick=!quickFilter||(quickFilter==="new"?card.dataset.status==="جديد":quickFilter==="overdue"?pendingStatus&&ageHours>=24:pendingStatus);
 const matchesGovernorate=!governorate||card.dataset.governorate===governorate;
 const orderDate=String(card.dataset.orderDate||"");
 const matchesFrom=!dateFrom||(orderDate&&orderDate>=dateFrom);
@@ -2330,6 +2334,7 @@ document.getElementById("statPendingOrders").textContent=String((data||[]).filte
 document.getElementById("statCancelledOrders").textContent=String((data||[]).filter(o=>o.status==="ملغي").length);
 document.getElementById("quickNewOrders").textContent=String((data||[]).filter(o=>o.status==="جديد").length);
 document.getElementById("quickFollowUpOrders").textContent=String((data||[]).filter(o=>["جديد","قيد التجهيز"].includes(o.status)).length);
+document.getElementById("quickOverdueOrders").textContent=String((data||[]).filter(o=>["جديد","قيد التجهيز"].includes(o.status)&&o.created_at&&(Date.now()-new Date(o.created_at).getTime())>=86400000).length);
 renderSalesReports(data||[]);
 renderCustomers(data||[]);
 
@@ -2346,6 +2351,7 @@ div.dataset.search=(String(o.id||"")+" "+String(o.customer_name||"")+" "+String(
 div.dataset.status=String(o.status||"");
 div.dataset.governorate=String(o.governorate||"");
 div.dataset.orderDate=o.created_at?new Date(o.created_at).toLocaleDateString("en-CA",{timeZone:"Africa/Cairo"}):"";
+div.dataset.createdAt=o.created_at||"";
 
 const title=document.createElement("b");
 title.textContent="طلب #"+o.id+" من: "+o.customer_name;
@@ -2353,6 +2359,14 @@ title.textContent="طلب #"+o.id+" من: "+o.customer_name;
 const date=document.createElement("p");
 date.className="orderMeta";
 date.textContent="تاريخ الطلب: "+(o.created_at?new Date(o.created_at).toLocaleString("ar-EG",{dateStyle:"medium",timeStyle:"short"}):"غير متاح");
+const age=document.createElement("span");
+age.className="orderAge";
+if(o.created_at){
+ const ageHours=Math.max(0,Math.floor((Date.now()-new Date(o.created_at).getTime())/3600000));
+ const ageLabel=ageHours<1?"أقل من ساعة":ageHours<24?"منذ "+ageHours+" ساعة":ageHours<48?"منذ يوم تقريبًا":"منذ "+Math.floor(ageHours/24)+" يوم";
+ age.textContent="عمر الطلب: "+ageLabel;
+ if(["جديد","قيد التجهيز"].includes(o.status)&&ageHours>=24){age.classList.add("overdue");div.classList.add("orderOverdue");}
+}else{age.textContent="عمر الطلب: غير متاح";}
 
 const details=document.createElement("p");
 details.textContent="الهاتف: "+o.phone+" | المحافظة: "+o.governorate;
@@ -2424,7 +2438,7 @@ const orderDetailsSummary=document.createElement("summary");
 orderDetailsSummary.textContent="عرض تفاصيل الطلب والمنتجات";
 orderDetails.append(orderDetailsSummary,address,shipping,payment,items);
 if(Number(o.discount_amount||0)>0)orderDetails.append(div.lastChild);
-div.append(title,date,details,total,status,cancellationReason,select,actions,orderDetails);
+div.append(title,date,age,details,total,status,cancellationReason,select,actions,orderDetails);
 box.append(div);
 });
 filterOrders();

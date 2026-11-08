@@ -2469,3 +2469,37 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 @media (max-width: 520px) {
   .back-to-top { left: 14px; bottom: 16px; width: 39px; height: 39px; }
 }
+
+
+/* تثبيت تنسيق صور الأحذية المستقل — آخر تنسيق معتمد */
+.product.product-shoes .product-image-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 250px;
+  background: #f0ede7;
+}
+.product.product-shoes img.product-main-image {
+  display: block;
+  width: 84%;
+  height: 250px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+  object-fit: contain;
+  object-position: center;
+  transform: none;
+}
+.product.product-shoes:hover img.product-main-image {
+  transform: none;
+}
+@media (max-width: 650px) {
+  .product.product-shoes .product-image-link,
+  .product.product-shoes img.product-main-image {
+    height: 158px;
+  }
+  .product.product-shoes img.product-main-image {
+    width: 86%;
+    padding: 13px;
+  }
+}

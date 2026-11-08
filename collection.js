@@ -1,6 +1,6 @@
 (() => {
   const SUPABASE_URL = "https://jezqohivdiziuzfmllvq.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_hrP0-e5_ou1HHeKZpCu8jw_ORY_-zdh";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplenFvaGl2ZGl6aXV6Zm1sbHZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4NDQxNDUsImV4cCI6MjEwOTQyMDE0NX0.kb-acCzpL5wREtcH5tMUojydfp68-mFjzPxKbgvHIJg";
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const params = new URLSearchParams(location.search);
   const category = params.get("category") || "أحذية";

@@ -1579,31 +1579,43 @@ if (trackingForm) {
         return;
       }
 
-      const statusLabels = {
+      const statusLabel = ({
         "جديد": "تم استلام طلبك",
         "قيد التجهيز": "طلبك قيد التجهيز",
         "تم الشحن": "طلبك تم شحنه",
         "مكتمل": "تم اكتمال الطلب",
         "ملغي": "تم إلغاء الطلب"
-      };
-      const statusLabel = statusLabels[order.status] || order.status || "الحالة غير محددة";
+      })[order.status] || order.status || "الحالة غير محددة";
       const dateText = order.created_at
         ? new Date(order.created_at).toLocaleString("ar-EG", { dateStyle: "medium", timeStyle: "short" })
         : "";
-      const progressSteps = [
-        { status: "جديد", label: "تم استلام الطلب" },
-        { status: "قيد التجهيز", label: "جاري التجهيز" },
-        { status: "تم الشحن", label: "خرج للتوصيل" },
-        { status: "مكتمل", label: "تم التسليم" }
-      ];
-      const currentStep = progressSteps.findIndex(step => step.status === order.status);
+      const statusLabels = {
+        "جديد": "تم استلام الطلب",
+        "قيد التجهيز": "بدأ تجهيز الطلب",
+        "تم الشحن": "تم تسليم الطلب للشحن",
+        "مكتمل": "تم تسليم الطلب",
+        "ملغي": "تم إلغاء الطلب"
+      };
+      let historyMarkup = "";
+      try {
+        const {data:history,error:historyError}=await db.rpc("customer_order_status_history",{
+          p_order_id:orderId,
+          p_phone:values.phone
+        });
+        if(historyError) throw historyError;
+        if(Array.isArray(history) && history.length){
+          historyMarkup='<div class="trackingHistory" aria-label="سجل تحديثات الطلب">'+history.map((entry,index)=>{
+            const label=statusLabels[entry.status]||entry.status||"تحديث حالة الطلب";
+            const time=entry.changed_at?new Date(entry.changed_at).toLocaleString("ar-EG",{dateStyle:"medium",timeStyle:"short"}):"";
+            return '<div class="trackingHistoryItem"><span class="trackingHistoryMarker">'+(index===history.length-1?'✓':String(index+1))+'</span><div class="trackingHistoryDetails"><strong>'+escapeHTML(label)+'</strong>'+(time?'<time>'+escapeHTML(time)+'</time>':"")+'</div></div>';
+          }).join("")+'</div>';
+        }
+      } catch(historyError) {
+        console.warn("تعذر تحميل سجل تحديثات الطلب:",historyError);
+      }
       const progressMarkup = order.status === "ملغي"
         ? '<div class="trackingCancelled">تم إلغاء هذا الطلب</div>'
-        : '<div class="trackingTimeline" aria-label="مراحل الطلب">' + progressSteps.map((step,index) => {
-            const stepState = currentStep >= index ? " completed" : "";
-            const current = currentStep === index ? " current" : "";
-            return '<div class="trackingStep' + stepState + current + '"><span class="trackingStepDot">' + (currentStep > index ? "✓" : String(index + 1)) + '</span><span class="trackingStepLabel">' + step.label + '</span></div>';
-          }).join("") + '</div>';
+        : (historyMarkup || '<div class="trackingHistory"><div class="trackingHistoryItem"><span class="trackingHistoryMarker">✓</span><div class="trackingHistoryDetails"><strong>'+escapeHTML(statusLabels[order.status]||order.status||"حالة الطلب")+'</strong><time>الحالة الحالية</time></div></div></div>');
 
       resultBox.classList.add("found");
       const canCancel = ["جديد", "قيد التجهيز"].includes(order.status);

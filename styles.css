@@ -2615,3 +2615,12 @@ body.size-guide-open{overflow:hidden}
 .detailReviewFormArea button:hover{background:#9b793e;color:#fff}
 .detailReviewFormArea [role=status]{color:#766b58;font-size:12px}
 @media(max-width:600px){.detailReviewsOverview{grid-template-columns:1fr;gap:12px}.detailReviewsScore{padding:4px}.detailReviewsHeading h2{font-size:20px}.detailReviewsSection{padding:17px 13px}.detailRatingPreview{gap:6px;font-size:11px}}
+
+
+/* عرض مباشر لمنتجات الملابس الحريمي وصورها كاملة دون قص */
+.collection-women-card .collection-product-image{height:clamp(250px,32vw,390px);padding:10px;background:#fff}
+.collection-women-card .collection-product-image img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;object-position:center center;padding:4px;mix-blend-mode:normal}
+.collection-image-fallback{display:grid;place-items:center;width:100%;height:100%;color:#b18a45;font:22px Georgia,serif;letter-spacing:2px}
+.collection-women-card .collection-product-info{min-height:94px;align-content:start}
+.collection-women-card .collection-product-info strong{font-size:13px;line-height:1.7}
+@media(max-width:600px){.collection-women-card .collection-product-image{height:clamp(205px,64vw,285px);padding:7px}.collection-women-card .collection-product-image img{padding:2px}.collection-women-card .collection-product-info{min-height:86px}}

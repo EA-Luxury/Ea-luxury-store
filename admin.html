@@ -144,6 +144,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <div class="reportNotice"><strong>تنبيه محاسبي:</strong> مجمل الربح المعروض محسوب فقط لبنود الطلبات التي سُجلت لها تكلفة شراء وقت الطلب. لا يشمل مصاريف التشغيل أو تكلفة الشحن الفعلية أو الضرائب، ولا يمثل صافي الربح. الطلبات القديمة التي لا تحتوي على تكلفة ستظهر كبيانات ناقصة دون تخمين.</div>
 <h3>مبيعات آخر 7 أيام</h3><div id="salesTrend" class="salesTrend" aria-live="polite">جاري تجهيز التقرير...</div>
 <h3>أفضل أيام الأسبوع في المبيعات</h3><div id="weekdaySalesReport" class="weekdaySalesReport" aria-live="polite">جاري تجهيز التقرير...</div>
+<h3>المبيعات حسب الماركة</h3><div id="salesByBrandReport" class="reportTableWrap">جاري تجهيز التقرير...</div>
+<h3>المبيعات حسب القسم</h3><div id="salesByCategoryReport" class="reportTableWrap">جاري تجهيز التقرير...</div>
 <h3>أفضل المنتجات مبيعًا</h3><div id="topProductsReport" class="reportTableWrap">لا توجد بيانات كافية.</div>
 <h3>توزيع الطلبات حسب الحالة</h3><div id="orderStatusReport" class="statusReportGrid"></div>
 <p class="status-text">التقرير يعتمد على الطلبات المسجلة في المتجر. المبيعات المكتملة تشمل الطلبات التي حالتها «مكتمل» فقط، والطلبات الملغاة مستبعدة.</p>
@@ -447,6 +449,7 @@ const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let adminReady=false;
 let reportOrders=[];
+let reportProductCatalog=[];
 let reportExpenses=[];
 let reportCustomers=[];
 let reportCoupons=[];
@@ -1022,6 +1025,7 @@ if(error){
 box.textContent="خطأ في تحميل المنتجات: "+error.message;
 return;
 }
+reportProductCatalog=Array.isArray(data)?data:[];
 
 const {data:costRows,error:costLoadError}=await client.from("product_costs").select("product_id,purchase_cost");
 if(costLoadError){
@@ -1969,6 +1973,46 @@ top.forEach(item=>{const tr=document.createElement("tr");[item.name,item.quantit
 table.append(tbody);topBox.append(table);
 }
 }
+
+
+const catalogById=new Map(reportProductCatalog.map(product=>[String(product.id),product]));
+const aggregateSalesBy=(field)=>{
+ const grouped=new Map();
+ completed.forEach(order=>(order.order_items||[]).forEach(item=>{
+  const product=catalogById.get(String(item.product_id||""));
+  const raw=product?.[field];
+  const label=String(raw||"غير محدد");
+  const key=label.trim()||"غير محدد";
+  const current=grouped.get(key)||{name:key,quantity:0,revenue:0,orders:0};
+  const quantity=Number(item.quantity||0);
+  const itemRevenue=Number(item.unit_price||0)*quantity;
+  const subtotal=productTotal(order);
+  const allocatedDiscount=subtotal>0?Number(order.discount_amount||0)*itemRevenue/subtotal:0;
+  current.quantity+=quantity;
+  current.revenue+=Math.max(0,itemRevenue-allocatedDiscount);
+  current.orders++;
+  grouped.set(key,current);
+ }));
+ return [...grouped.values()].sort((a,b)=>b.revenue-a.revenue||b.quantity-a.quantity);
+};
+const renderSalesGroupTable=(id,rows)=>{
+ const box=document.getElementById(id);if(!box)return;
+ box.replaceChildren();
+ if(!rows.length){box.textContent="لا توجد مبيعات مكتملة في الفترة المحددة.";return;}
+ const table=document.createElement("table");table.className="reportTable";
+ const head=document.createElement("thead"),headRow=document.createElement("tr");
+ ["الاسم","القطع المباعة","قيمة المبيعات","بنود الطلبات"].forEach(label=>{const th=document.createElement("th");th.textContent=label;headRow.append(th);});
+ head.append(headRow);table.append(head);
+ const body=document.createElement("tbody");
+ rows.forEach(row=>{
+  const tr=document.createElement("tr");
+  [row.name,row.quantity.toLocaleString("ar-EG"),money(row.revenue),row.orders.toLocaleString("ar-EG")].forEach(value=>{const td=document.createElement("td");td.textContent=String(value);tr.append(td);});
+  body.append(tr);
+ });
+ table.append(body);box.append(table);
+};
+renderSalesGroupTable("salesByBrandReport",aggregateSalesBy("brand"));
+renderSalesGroupTable("salesByCategoryReport",aggregateSalesBy("category"));
 
 const statuses=["جديد","قيد التجهيز","تم الشحن","مكتمل","ملغي"];
 const statusBox=document.getElementById("orderStatusReport");

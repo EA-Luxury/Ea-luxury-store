@@ -2809,6 +2809,9 @@ if(o.created_at){
 const details=document.createElement("p");
 details.textContent="الهاتف: "+o.phone+" | المحافظة: "+o.governorate;
 
+const email=document.createElement("p");
+email.textContent="البريد الإلكتروني: "+(o.customer_email||"غير مسجل");
+
 const address=document.createElement("p");
 address.textContent="العنوان: "+(o.address||"غير مسجل");
 
@@ -2876,7 +2879,7 @@ const orderDetailsSummary=document.createElement("summary");
 orderDetailsSummary.textContent="عرض تفاصيل الطلب والمنتجات";
 orderDetails.append(orderDetailsSummary,address,shipping,payment,items);
 if(Number(o.discount_amount||0)>0)orderDetails.append(div.lastChild);
-div.append(title,date,age,details,total,status,cancellationReason,select,actions,orderDetails);
+div.append(title,date,age,details,email,total,status,cancellationReason,select,actions,orderDetails);
 box.append(div);
 });
 filterOrders();

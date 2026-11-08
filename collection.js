@@ -13,10 +13,40 @@
   let categoryProducts = [];
   const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
   const imagesOf = product => {
-    const images = Array.isArray(product.image_urls) ? product.image_urls.filter(v => typeof v === "string" && v.trim()) : [];
-    if (!images.length && product.image_url) images.push(product.image_url);
+    let source = product.image_urls;
+    if (typeof source === "string") {
+      try { source = JSON.parse(source); } catch (_) { source = [source]; }
+    }
+    const images = Array.isArray(source)
+      ? source.filter(v => typeof v === "string" && v.trim())
+      : [];
+    if (product.image_url && typeof product.image_url === "string" && product.image_url.trim()) {
+      images.push(product.image_url.trim());
+    }
     return [...new Set(images)].slice(0,5);
   };
+  function renderProductCards(items, brandLabel) {
+    return items.map(product => {
+      const image = imagesOf(product)[0] || "";
+      const actualBrand = String(product.brand || "").trim();
+      const brand = brandLabel || actualBrand;
+      return '<a class="collection-product-card' + (category === "ملابس حريمي" ? ' collection-women-card' : '') + '" href="product.html?id=' + encodeURIComponent(product.id) + '">' +
+        '<span class="collection-product-image">' +
+        (image ? '<img src="' + escapeHTML(image) + '" alt="' + escapeHTML(product.name) + '" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false">' : '') +
+        '<span class="collection-image-fallback" ' + (image ? 'hidden' : '') + '>EA LUXURY</span>' +
+        '</span><span class="collection-product-info">' +
+        (brand ? '<small class="collection-product-brand">' + escapeHTML(brand) + '</small>' : '') +
+        '<strong>' + escapeHTML(product.name) + '</strong><span class="collection-product-price">' + money(product) + '</span></span></a>';
+    }).join("") || '<p class="collection-empty">لا توجد منتجات متاحة حاليًا.</p>';
+  }
+  function showAllProducts() {
+    brandGrid.hidden = true;
+    productGrid.hidden = false;
+    backButton.hidden = true;
+    title.textContent = "ملابس حريمي";
+    subtitle.textContent = categoryProducts.length.toLocaleString("ar-EG") + " منتج متاح — اختاري المنتج المناسب لك";
+    productGrid.innerHTML = renderProductCards(categoryProducts);
+  }
   const money = product => Number(product.sale_price > 0 && product.sale_price < product.price ? product.sale_price : product.price || 0).toLocaleString("ar-EG") + (product.currency === "AED" ? " درهم" : " جنيه");
   function showBrands() {
     brandGrid.hidden = false;
@@ -32,10 +62,7 @@
     backButton.hidden = false;
     title.textContent = brand;
     subtitle.textContent = "منتجات " + brand + " — " + items.length.toLocaleString("ar-EG") + " منتج";
-    productGrid.innerHTML = items.map(product => {
-      const image = imagesOf(product)[0] || "";
-      return '<a class="collection-product-card" href="product.html?id=' + encodeURIComponent(product.id) + '"><span class="collection-product-image">' + (image ? '<img src="' + escapeHTML(image) + '" alt="' + escapeHTML(product.name) + '" loading="lazy">' : '<span>EA</span>') + '</span><span class="collection-product-info"><small class="collection-product-brand">' + escapeHTML(brand) + '</small><strong>' + escapeHTML(product.name) + '</strong><span class="collection-product-price">' + money(product) + '</span></span></a>';
-    }).join("") || '<p class="collection-empty">لا توجد منتجات متاحة حاليًا.</p>';
+    productGrid.innerHTML = renderProductCards(items, brand);
     window.scrollTo({top:0,behavior:"smooth"});
   }
   backButton.addEventListener("click", showBrands);
@@ -57,6 +84,10 @@
       return;
     }
     categoryProducts = data || [];
+    if (category === "ملابس حريمي") {
+      showAllProducts();
+      return;
+    }
     const counts = new Map();
     categoryProducts.forEach(product => {
       const brand = String(product.brand || "").trim() || "ماركات أخرى";

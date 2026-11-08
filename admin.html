@@ -2054,6 +2054,37 @@ if(stagnantBox){
  summary.className="reportNotice";
  summary.textContent="عدد المنتجات التي لم تسجل مبيعات مكتملة: "+stagnantProducts.length.toLocaleString("ar-EG")+" — إجمالي القطع المتاحة بها: "+totalUnits.toLocaleString("ar-EG")+". الفترة: "+(period==="all"?"كل الفترات":"آخر "+period+" يومًا")+".";
  stagnantBox.append(summary);
+ const exportButton=document.createElement("button");
+ exportButton.type="button";
+ exportButton.textContent="تصدير تقرير المخزون الراكد إلى Excel";
+ exportButton.style.maxWidth="360px";
+ exportButton.addEventListener("click",()=>{
+  const csvCell=value=>'"'+String(value??"").replace(/"/g,'""')+'"';
+  const rows=[["المنتج","الماركة","القسم","المخزون المتاح","آخر بيع مكتمل","مدة عدم البيع"]];
+  stagnantProducts.forEach(entry=>{
+   const lastSale=lastSaleByProduct.get(String(entry.product.id));
+   const lastSaleKey=lastSale?cairoDay(lastSale):"";
+   const lastSaleLabel=lastSale?lastSale.toLocaleDateString("en-CA",{timeZone:"Africa/Cairo"}):"لم يسجل بيع مكتمل من قبل";
+   let ageLabel="لم يُبع من قبل";
+   if(lastSaleKey){
+    const lastDate=new Date(lastSaleKey+"T12:00:00Z");
+    const ageDays=Math.max(0,Math.floor((todayCairoDate-lastDate)/86400000));
+    ageLabel=ageDays.toLocaleString("ar-EG")+" يوم";
+   }
+   rows.push([entry.product.name||"",entry.product.brand||"غير محدد",entry.product.category||"غير محدد",entry.stock,lastSaleLabel,ageLabel]);
+  });
+  const csv="\\uFEFF"+rows.map(row=>row.map(csvCell).join(",")).join("\\r\\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement("a");
+  link.href=url;
+  link.download="EA-Luxury-stagnant-inventory.csv";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+ });
+ stagnantBox.append(exportButton);
  if(!stagnantProducts.length){
   const empty=document.createElement("p");empty.textContent="لا توجد منتجات متاحة بالمخزون بلا مبيعات مكتملة في الفترة المختارة.";stagnantBox.append(empty);
  }else{

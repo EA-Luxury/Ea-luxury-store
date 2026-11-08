@@ -11,6 +11,7 @@
   const productGrid = document.getElementById("collectionProductGrid");
   const backButton = document.getElementById("collectionBackButton");
   const filters = document.getElementById("collectionFilters");
+  const filtersToggle = document.getElementById("collectionFiltersToggle");
   const searchInput = document.getElementById("collectionSearch");
   const sortSelect = document.getElementById("collectionSort");
   const minPriceInput = document.getElementById("collectionMinPrice");
@@ -155,13 +156,19 @@
   }
   function showFilters(items) {
     visibleProducts = items.slice();
-    filters.hidden = false;
+    filters.hidden = true;
+    filtersToggle.hidden = false;
+    filtersToggle.setAttribute("aria-expanded", "false");
+    filtersToggle.querySelector("span").textContent = "بحث وتصفية المنتجات";
+    filtersToggle.querySelector(".collection-filters-toggle-icon").textContent = "⌄";
     updatePriceLabels(visibleProducts);
     refreshFilterOptions(visibleProducts);
     applyFilters();
   }
   function hideFilters() {
     filters.hidden = true;
+    filtersToggle.hidden = true;
+    filtersToggle.setAttribute("aria-expanded", "false");
     resetFilters();
   }
   function showAllProducts() {
@@ -191,6 +198,13 @@
     showFilters(items);
     window.scrollTo({top:0,behavior:"smooth"});
   }
+  filtersToggle.addEventListener("click", () => {
+    const opening = filters.hidden;
+    filters.hidden = !opening;
+    filtersToggle.setAttribute("aria-expanded", String(opening));
+    filtersToggle.querySelector("span").textContent = opening ? "إخفاء أدوات التصفية" : "بحث وتصفية المنتجات";
+    filtersToggle.querySelector(".collection-filters-toggle-icon").textContent = opening ? "⌃" : "⌄";
+  });
   backButton.addEventListener("click", showBrands);
   brandGrid.addEventListener("click", event => {
     const card = event.target.closest("[data-brand]");

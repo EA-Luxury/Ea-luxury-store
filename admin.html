@@ -2011,6 +2011,45 @@ const stagnantBox=document.getElementById("stagnantInventoryReport");
 if(stagnantBox){
  stagnantBox.replaceChildren();
  const summary=document.createElement("p");
+ const todayCairoDate=new Date(cairoDay(now)+"T12:00:00Z");
+ const ageBuckets=[
+  {key:"never",label:"لم يُبع من قبل",count:0,stock:0},
+  {key:"30",label:"من 30 إلى 59 يومًا",count:0,stock:0},
+  {key:"60",label:"من 60 إلى 89 يومًا",count:0,stock:0},
+  {key:"90",label:"90 يومًا فأكثر",count:0,stock:0}
+ ];
+ reportProductCatalog.forEach(product=>{
+  const variants=variantsByProduct.get(String(product.id))||[];
+  const hasVariants=variants.length>0;
+  const stock=hasVariants
+   ?variants.filter(variant=>variant.is_active).reduce((total,variant)=>total+Math.max(0,Number(variant.stock)||0),0)
+   :Math.max(0,Number(product.stock)||0);
+  if(stock<=0)return;
+  const lastSale=lastSaleByProduct.get(String(product.id));
+  let bucket;
+  if(!lastSale)bucket=ageBuckets[0];
+  else{
+   const lastSaleKey=cairoDay(lastSale);
+   const lastSaleDate=new Date(lastSaleKey+"T12:00:00Z");
+   const days=Math.floor((todayCairoDate-lastSaleDate)/86400000);
+   if(days>=90)bucket=ageBuckets[3];
+   else if(days>=60)bucket=ageBuckets[2];
+   else if(days>=30)bucket=ageBuckets[1];
+  }
+  if(bucket){bucket.count++;bucket.stock+=stock;}
+ });
+ const agePanel=document.createElement("div");
+ agePanel.className="statusReportGrid";
+ agePanel.setAttribute("aria-label","تنبيهات عمر ركود المنتجات");
+ ageBuckets.forEach(bucket=>{
+  const card=document.createElement("div");card.className="statusReportItem";
+  const label=document.createElement("span");label.textContent=bucket.label;
+  const value=document.createElement("strong");value.textContent=bucket.count.toLocaleString("ar-EG")+" منتج";
+  const detail=document.createElement("small");detail.textContent=bucket.stock.toLocaleString("ar-EG")+" قطعة بالمخزون";
+  card.append(label,value,detail);agePanel.append(card);
+ });
+ const ageTitle=document.createElement("h4");ageTitle.textContent="تنبيهات مدة عدم البيع — حسب آخر بيع مكتمل";
+ stagnantBox.append(ageTitle,agePanel);
  const totalUnits=stagnantProducts.reduce((total,entry)=>total+entry.stock,0);
  summary.className="reportNotice";
  summary.textContent="عدد المنتجات التي لم تسجل مبيعات مكتملة: "+stagnantProducts.length.toLocaleString("ar-EG")+" — إجمالي القطع المتاحة بها: "+totalUnits.toLocaleString("ar-EG")+". الفترة: "+(period==="all"?"كل الفترات":"آخر "+period+" يومًا")+".";

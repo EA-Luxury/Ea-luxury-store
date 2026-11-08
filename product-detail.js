@@ -609,6 +609,7 @@ function detailRender() {
           <span>المتاح: ${totalStock} قطعة</span>
         </div>
         ${variantControl}
+        <button type="button" id="detailOpenSizeGuide" class="sizeGuideOpenButton"><span>⌗</span> دليل المقاسات</button>
         <div class="product-detail-purchase-panel">
           <div class="product-detail-quantity-row">
             <label for="detailQuantityValue">الكمية</label>
@@ -629,7 +630,67 @@ function detailRender() {
       </div>
     </section>`;
 
+
+function detailRenderSizeGuide() {
+  const guide = document.createElement("div");
+  guide.className = "sizeGuideOverlay";
+  guide.id = "detailSizeGuide";
+  guide.hidden = true;
+  guide.innerHTML = `
+    <section class="sizeGuideDialog" role="dialog" aria-modal="true" aria-labelledby="sizeGuideTitle">
+      <button type="button" class="sizeGuideClose" aria-label="إغلاق دليل المقاسات">×</button>
+      <span class="sizeGuideEyebrow">EA LUXURY</span>
+      <h2 id="sizeGuideTitle">دليل المقاسات</h2>
+      <p class="sizeGuideIntro">اختار القسم المناسب لمعرفة المقاس الأقرب لك. المقاسات إرشادية وقد تختلف قليلًا حسب الماركة والموديل.</p>
+      <div class="sizeGuideTabs" role="tablist" aria-label="نوع المقاسات">
+        <button type="button" class="active" data-size-guide-tab="shoes" role="tab" aria-selected="true">الأحذية</button>
+        <button type="button" data-size-guide-tab="clothes" role="tab" aria-selected="false">الملابس الحريمي</button>
+      </div>
+      <div class="sizeGuidePanel" data-size-guide-panel="shoes">
+        <h3>مقاسات الأحذية</h3>
+        <p>قِس طول القدم من أطول إصبع حتى نهاية الكعب، ويفضل القياس أثناء الوقوف.</p>
+        <div class="sizeGuideTableWrap"><table class="sizeGuideTable"><thead><tr><th>المقاس الأوروبي</th><th>طول القدم التقريبي</th></tr></thead><tbody>
+          <tr><td>36</td><td>23 سم</td></tr><tr><td>37</td><td>23.5 سم</td></tr><tr><td>38</td><td>24 سم</td></tr><tr><td>39</td><td>24.5 سم</td></tr><tr><td>40</td><td>25 سم</td></tr><tr><td>41</td><td>25.5 سم</td></tr><tr><td>42</td><td>26 سم</td></tr><tr><td>43</td><td>26.5 سم</td></tr><tr><td>44</td><td>27 سم</td></tr><tr><td>45</td><td>27.5 سم</td></tr>
+        </tbody></table></div>
+      </div>
+      <div class="sizeGuidePanel" data-size-guide-panel="clothes" hidden>
+        <h3>مقاسات الملابس الحريمي</h3>
+        <p>القياسات بالسنتيمتر، وهي نطاقات تقريبية لمحيط الجسم وليست قياسات القطعة نفسها.</p>
+        <div class="sizeGuideTableWrap"><table class="sizeGuideTable"><thead><tr><th>المقاس</th><th>الصدر</th><th>الوسط</th><th>الأرداف</th></tr></thead><tbody>
+          <tr><td>XS</td><td>76–82</td><td>60–66</td><td>84–90</td></tr><tr><td>S</td><td>82–88</td><td>66–72</td><td>90–96</td></tr><tr><td>M</td><td>88–96</td><td>72–80</td><td>96–104</td></tr><tr><td>L</td><td>96–104</td><td>80–88</td><td>104–112</td></tr><tr><td>XL</td><td>104–112</td><td>88–96</td><td>112–120</td></tr><tr><td>XXL</td><td>112–120</td><td>96–104</td><td>120–128</td></tr>
+        </tbody></table></div>
+      </div>
+      <p class="sizeGuideFootnote">لو المقاس بين اختيارين، راجع وصف المنتج أو تواصل معنا قبل إتمام الطلب.</p>
+    </section>`;
+  detailRoot.appendChild(guide);
+  const close = () => { guide.hidden = true; document.body.classList.remove("size-guide-open"); };
+  guide.querySelector(".sizeGuideClose").addEventListener("click", close);
+  guide.addEventListener("click", event => { if (event.target === guide) close(); });
+  guide.querySelectorAll("[data-size-guide-tab]").forEach(tab => {
+    tab.addEventListener("click", () => {
+      const selected = tab.dataset.sizeGuideTab;
+      guide.querySelectorAll("[data-size-guide-tab]").forEach(button => {
+        const active = button === tab;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-selected", String(active));
+      });
+      guide.querySelectorAll("[data-size-guide-panel]").forEach(panel => {
+        panel.hidden = panel.dataset.sizeGuidePanel !== selected;
+      });
+    });
+  });
+  document.getElementById("detailOpenSizeGuide")?.addEventListener("click", () => {
+    guide.hidden = false;
+    document.body.classList.add("size-guide-open");
+    guide.querySelector(".sizeGuideClose").focus();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !guide.hidden) close();
+  });
+}
+
   detailRenderReviews();
+  detailRenderSizeGuide();
 
   detailRoot.querySelectorAll("[data-detail-image]").forEach(button => {
     button.addEventListener("click", () => detailShowImage(Number(button.dataset.detailImage)));

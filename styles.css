@@ -2152,3 +2152,69 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 
 /* Ensure hidden storefront sections stay hidden even when component styles define display. */
 [hidden] { display: none !important; }
+
+
+/* لمسات أنيقة لأزرار عارض الصور */
+.product-detail-lightbox-close {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #e2c27c;
+  font-family: Arial, sans-serif;
+  font-size: 35px;
+  font-weight: 300;
+  line-height: 1;
+  opacity: .88;
+  text-shadow: 0 2px 12px #000;
+  transition: color .2s ease, opacity .2s ease, transform .2s ease;
+}
+.product-detail-lightbox-close:hover {
+  color: #fff;
+  opacity: 1;
+  transform: rotate(90deg);
+}
+.product-detail-lightbox-nav {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 64px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #e2c27c;
+  font-family: Arial, sans-serif;
+  font-size: 48px;
+  font-weight: 300;
+  line-height: 1;
+  text-shadow: 0 2px 14px #000;
+  opacity: .82;
+  transition: color .2s ease, opacity .2s ease, transform .2s ease;
+}
+.product-detail-lightbox-nav:hover {
+  color: #fff;
+  opacity: 1;
+}
+.product-detail-lightbox-nav.prev:hover { transform: translateY(-50%) translateX(-3px); }
+.product-detail-lightbox-nav.next:hover { transform: translateY(-50%) translateX(3px); }
+@media(max-width:760px) {
+  .product-detail-lightbox-close {
+    top: 12px;
+    right: 12px;
+    width: 38px;
+    height: 38px;
+    font-size: 32px;
+  }
+  .product-detail-lightbox-nav {
+    width: 34px;
+    height: 54px;
+    font-size: 40px;
+  }
+  .product-detail-lightbox-nav.prev { right: 2px; }
+  .product-detail-lightbox-nav.next { left: 2px; }
+}

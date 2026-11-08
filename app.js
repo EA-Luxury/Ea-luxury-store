@@ -1458,8 +1458,8 @@ contactSection.className = "ea-contact-section";
 contactSection.innerHTML = `
   <div class="ea-contact-inner">
     <span class="ea-contact-eyebrow">EA LUXURY · CUSTOMER CARE</span>
-    <h2>تواصل معنا</h2>
-    <p class="ea-contact-subtitle">يسعدنا نكون دايمًا قريبين منك ونساعدك في أي استفسار</p>
+    <h2>نحن هنا لمساعدتك</h2>
+    <p class="ea-contact-subtitle">يسعدنا تواصلك معنا في أي وقت</p>
     <div class="ea-contact-links">
       <a class="ea-contact-link ea-contact-phone" id="storePhoneLink" href="tel:01065938516">
         <span class="ea-contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3.8h3.2l1.5 4-2 1.7a15 15 0 0 0 6.8 6.8l1.7-2 4 1.5V19a2 2 0 0 1-2.2 2A17.5 17.5 0 0 1 3 5.9 2 2 0 0 1 5 3.8Z"/></svg></span>
@@ -1474,7 +1474,7 @@ contactSection.innerHTML = `
         <span class="ea-contact-label">فيسبوك</span><span class="ea-contact-arrow" aria-hidden="true">↗</span>
       </a>
     </div>
-    <p class="ea-contact-note">فريق EA Luxury في خدمتك دائمًا</p>
+    <p class="ea-contact-note">خدمة عملاء EA LUXURY</p>
   </div>
 `;
 

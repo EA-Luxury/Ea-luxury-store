@@ -81,6 +81,7 @@ let detailZoomY = 0;
 let detailZoomDrag = null;
 let detailPinchStartDistance = 0;
 let detailPinchStartScale = 1;
+let detailTouchPan = null;
 
 function detailApplyZoom() {
   const image = document.getElementById("detailLightboxImage");
@@ -141,18 +142,48 @@ function detailBindZoomControls(overlay) {
   image.addEventListener("touchstart", event => {
     if (event.touches.length === 2) {
       event.preventDefault();
+      detailTouchPan = null;
       detailPinchStartDistance = detailZoomDistance(event.touches);
       detailPinchStartScale = detailZoomScale;
+    } else if (event.touches.length === 1 && detailZoomScale > 1) {
+      const touch = event.touches[0];
+      detailTouchPan = {
+        x: touch.clientX,
+        y: touch.clientY,
+        startX: detailZoomX,
+        startY: detailZoomY
+      };
     }
   }, { passive: false });
   image.addEventListener("touchmove", event => {
     if (event.touches.length === 2 && detailPinchStartDistance > 0) {
       event.preventDefault();
       detailSetZoom(detailPinchStartScale * detailZoomDistance(event.touches) / detailPinchStartDistance);
+    } else if (event.touches.length === 1 && detailTouchPan && detailZoomScale > 1) {
+      event.preventDefault();
+      const touch = event.touches[0];
+      detailZoomX = detailTouchPan.startX + touch.clientX - detailTouchPan.x;
+      detailZoomY = detailTouchPan.startY + touch.clientY - detailTouchPan.y;
+      detailApplyZoom();
     }
   }, { passive: false });
   image.addEventListener("touchend", event => {
     if (event.touches.length < 2) detailPinchStartDistance = 0;
+    if (event.touches.length === 1 && detailZoomScale > 1) {
+      const touch = event.touches[0];
+      detailTouchPan = {
+        x: touch.clientX,
+        y: touch.clientY,
+        startX: detailZoomX,
+        startY: detailZoomY
+      };
+    } else {
+      detailTouchPan = null;
+    }
+  });
+  image.addEventListener("touchcancel", () => {
+    detailTouchPan = null;
+    detailPinchStartDistance = 0;
   });
 }
 
@@ -265,7 +296,7 @@ function detailRenderLightbox() {
     <img id="detailLightboxImage" src="${detailEscape(detailImages[0])}" alt="صورة المنتج مكبرة">
     <button type="button" class="product-detail-lightbox-nav next" aria-label="الصورة التالية">›</button>
     <span class="product-detail-lightbox-count" id="detailLightboxCount">1 / ${detailImages.length}</span>
-    <span class="product-detail-zoom-hint">عجلة الماوس أو + و− للتكبير • بإصبعين على الهاتف</span>`;
+    <span class="product-detail-zoom-hint">كبّر بإصبعين، ثم اسحب بإصبع واحد لتحريك الصورة • استخدم + و− عند الحاجة</span>`;
   document.body.append(overlay);
   detailBindZoomControls(overlay);
   overlay.querySelector(".product-detail-lightbox-close").addEventListener("click", detailCloseLightbox);

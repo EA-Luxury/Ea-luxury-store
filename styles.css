@@ -2094,7 +2094,7 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 
 
 /* صور الأحذية داخل كروت المنتجات: حجم متوازن دون قصّ الصورة */
-.product img.product-main-image {
+.product.product-shoes img.product-main-image {
   width: 84%;
   height: 250px;
   margin: 0 auto;
@@ -2106,7 +2106,7 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 }
 
 @media (max-width: 650px) {
-  .product img.product-main-image {
+  .product.product-shoes img.product-main-image {
     width: 86%;
     height: 158px;
     padding: 13px;

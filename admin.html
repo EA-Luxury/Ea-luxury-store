@@ -1705,7 +1705,7 @@ statusBox.textContent="تعذر الاتصال بالتنبيهات المباش
 });
 }
 
-async function enableOrderNotifications(){
+async async function enableOrderNotifications(){
 const statusBox=document.getElementById("notificationStatus");
 if(!("Notification" in window)){
 statusBox.textContent="المتصفح لا يدعم إشعارات الجهاز هنا. سيظل التنبيه ظاهرًا داخل لوحة الإدارة.";

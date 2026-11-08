@@ -76,6 +76,7 @@ main{max-width:1180px}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #d6b36a;outline-offset:2px}
 @media(max-width:760px){main{margin:10px auto;padding:10px}section{padding:15px}.statsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.statCard{padding:13px}.statCard strong{font-size:23px}.adminNav{margin-inline:-10px}}
 .orderCancellationReason{padding:10px 12px;border-right:3px solid #c5a15b;border-radius:6px;background:#f8f3e8;color:#654d25;font-weight:600}
+.orderDetailsPanel{margin:10px 0;padding:10px 12px;border:1px solid #eee5d5;border-radius:8px;background:#fcfaf6}.orderDetailsPanel summary{cursor:pointer;color:#8a6b35;font-weight:700;padding:5px}.orderDetailsPanel[open] summary{margin-bottom:10px}.orderDetailsPanel p{line-height:1.7;margin:8px 0}.orderItemLine{padding:8px 0;border-bottom:1px dashed #e5dccb}.orderItemLine:last-child{border-bottom:0}
 .customerReturnPanel{margin:18px 0;padding:16px;border:1px solid #e7dcc7;border-radius:10px;background:#fcfaf6}
 .customerReturnPanel h3{margin:0 0 8px;color:#8a6b35}
 .customerReturnForm{display:grid;gap:11px;margin-top:12px}
@@ -2315,17 +2316,26 @@ const details=document.createElement("p");
 details.textContent="الهاتف: "+o.phone+" | المحافظة: "+o.governorate;
 
 const address=document.createElement("p");
-address.textContent="العنوان: "+o.address;
+address.textContent="العنوان: "+(o.address||"غير مسجل");
 
 const shipping=document.createElement("p");
 shipping.textContent="الشحن: "+Number(o.shipping_fee||0).toLocaleString("ar-EG")+" جنيه";
+
+const payment=document.createElement("p");
+payment.textContent="طريقة الدفع: "+(o.payment_method||"غير محددة");
 
 const total=document.createElement("p");
 total.textContent="الإجمالي شامل الشحن: "+Number(o.total||0).toLocaleString("ar-EG")+" جنيه";
 if(Number(o.discount_amount||0)>0){const discount=document.createElement("p");discount.textContent="كوبون "+(o.coupon_code||"")+" — الخصم: "+Number(o.discount_amount).toLocaleString("ar-EG")+" جنيه";div.append(discount);}
 
 const items=document.createElement("div");
-items.textContent="المنتجات: "+(o.order_items||[]).map(item=>item.product_name+" × "+item.quantity).join("، ");
+(o.order_items||[]).forEach(item=>{
+ const line=document.createElement("p");
+ line.className="orderItemLine";
+ const options=[item.selected_size?"المقاس: "+item.selected_size:"",item.selected_color?"اللون: "+item.selected_color:""].filter(Boolean).join(" | ");
+ line.textContent=(item.product_name||"منتج")+" × "+item.quantity+" — "+Number(item.unit_price||0).toLocaleString("ar-EG")+" جنيه للقطعة"+(options?" ("+options+")":"");
+ items.append(line);
+});
 
 const status=document.createElement("p");
 status.textContent="الحالة الحالية: "+o.status;
@@ -2366,7 +2376,13 @@ if(o.cancellation_reason){
 }else{
   cancellationReason.hidden=true;
 }
-div.append(title,date,details,address,shipping,total,items,status,cancellationReason,select,actions);
+const orderDetails=document.createElement("details");
+orderDetails.className="orderDetailsPanel";
+const orderDetailsSummary=document.createElement("summary");
+orderDetailsSummary.textContent="عرض تفاصيل الطلب والمنتجات";
+orderDetails.append(orderDetailsSummary,address,shipping,payment,items,cancellationReason);
+if(Number(o.discount_amount||0)>0)orderDetails.append(div.lastChild);
+div.append(title,date,details,total,status,select,actions,orderDetails);
 box.append(div);
 });
 filterOrders();

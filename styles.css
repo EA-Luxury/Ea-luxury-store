@@ -2660,3 +2660,13 @@ body.size-guide-open{overflow:hidden}
 .collection-filters-toggle[hidden]{display:none!important}
 .collection-filters-toggle-icon{font-size:18px;line-height:1}
 @media(max-width:600px){.collection-filters-toggle{max-width:none;margin-bottom:10px;min-height:42px}}
+
+
+/* EA Luxury product option chips */
+.detail-native-option-select { position:absolute !important; width:1px !important; height:1px !important; padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0,0,0,0) !important; white-space:nowrap !important; border:0 !important; }
+.detail-option-chip-group { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.detail-option-chip { min-width:48px; min-height:43px; padding:7px 12px; border:1px solid #d8d1c4; border-radius:7px; background:#fff; color:#222; font:inherit; font-size:13px; font-weight:800; cursor:pointer; transition:all .18s ease; }
+.detail-option-chip:hover:not(:disabled) { border-color:#9b783c; }
+.detail-option-chip.selected { background:#171717; border-color:#171717; color:#d6b36a; box-shadow:0 0 0 1px #171717; }
+.detail-option-chip.unavailable, .detail-option-chip:disabled { color:#aaa; background:#f6f5f2; border-color:#e7e4de; cursor:not-allowed; text-decoration:line-through; opacity:.85; }
+@media (max-width:760px) { .detail-option-chip { min-width:45px; min-height:41px; padding:7px 10px; } }

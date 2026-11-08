@@ -851,7 +851,8 @@ function renderBrandShowcase() {
     const product = shoeProducts.find(item => String(item.brand || "").trim() === brand && getProductImages(item).length);
     const image = product ? getProductImages(product)[0] : "";
     const imageMarkup = image ? '<img src="' + escapeHTML(image) + '" alt="" loading="lazy">' : '<span>EA</span>';
-    return '<button type="button" class="brand-showcase-card' + (selectedCategory === "أحذية" && selectedBrand === brand ? " active" : "") + '" data-showcase-brand="' + escapeHTML(brand) + '" aria-pressed="' + (selectedCategory === "أحذية" && selectedBrand === brand) + '"><span class="brand-showcase-image">' + imageMarkup + '</span><span class="brand-showcase-copy"><strong>' + escapeHTML(brand) + '</strong><small>' + count.toLocaleString("ar-EG") + ' منتج</small><span>تسوق الماركة ←</span></span></button>';
+    const displayBrand = brand === "On" ? "On Cloud" : brand;
+    return '<button type="button" class="brand-showcase-card' + (selectedCategory === "أحذية" && selectedBrand === brand ? " active" : "") + '" data-showcase-brand="' + escapeHTML(brand) + '" aria-pressed="' + (selectedCategory === "أحذية" && selectedBrand === brand) + '"><span class="brand-showcase-image">' + imageMarkup + '</span><span class="brand-showcase-copy"><strong>' + escapeHTML(displayBrand) + '</strong><small>' + count.toLocaleString("ar-EG") + ' منتج</small><span>تسوق الماركة ←</span></span></button>';
   }).join("");
 }
 

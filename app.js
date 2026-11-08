@@ -1453,82 +1453,31 @@ const contactSection = document.createElement("section");
 
 contactSection.id = "eaContact";
 
-contactSection.style.cssText = `
-  background:#111;
-  color:#d6b36a;
-  padding:30px 15px;
-  margin-top:35px;
-  text-align:center;
-  border-radius:12px;
-  direction:rtl;
-`;
+contactSection.className = "ea-contact-section";
 
 contactSection.innerHTML = `
-  <h2 style="color:#d6b36a;margin-bottom:10px">
-    تواصل معنا
-  </h2>
-
-  <p style="color:white;margin-bottom:22px">
-    EA Luxury - يسعدنا تواصلك معنا
-  </p>
-
-  <div style="
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:12px;
-  ">
-
-    <a id="storePhoneLink" href="tel:01065938516"
-      style="
-        background:#d6b36a;
-        color:#111;
-        padding:13px 20px;
-        border-radius:8px;
-        text-decoration:none;
-        font-weight:bold;
-      ">
-      📞 اتصل بنا
-    </a>
-
-    <a id="storeWhatsappLink" href="https://wa.me/201065938516"
-      target="_blank"
-      rel="noopener"
-      style="
-        background:#25D366;
-        color:white;
-        padding:13px 20px;
-        border-radius:8px;
-        text-decoration:none;
-        font-weight:bold;
-      ">
-      واتساب
-    </a>
-
-    <a id="storeFacebookLink" href="https://www.facebook.com/share/1F6UFaUhmj/?mibextid=wwXIfr"
-      target="_blank"
-      rel="noopener"
-      style="
-        background:#1877F2;
-        color:white;
-        padding:13px 20px;
-        border-radius:8px;
-        text-decoration:none;
-        font-weight:bold;
-      ">
-      Facebook
-    </a>
-
+  <div class="ea-contact-inner">
+    <span class="ea-contact-eyebrow">EA LUXURY · CUSTOMER CARE</span>
+    <h2>تواصل معنا</h2>
+    <p class="ea-contact-subtitle">يسعدنا نكون دايمًا قريبين منك ونساعدك في أي استفسار</p>
+    <div class="ea-contact-links">
+      <a class="ea-contact-link ea-contact-phone" id="storePhoneLink" href="tel:01065938516">
+        <span class="ea-contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3.8h3.2l1.5 4-2 1.7a15 15 0 0 0 6.8 6.8l1.7-2 4 1.5V19a2 2 0 0 1-2.2 2A17.5 17.5 0 0 1 3 5.9 2 2 0 0 1 5 3.8Z"/></svg></span>
+        <span class="ea-contact-label">اتصل بنا</span><span class="ea-contact-arrow" aria-hidden="true">↗</span>
+      </a>
+      <a class="ea-contact-link ea-contact-whatsapp" id="storeWhatsappLink" href="https://wa.me/201065938516" target="_blank" rel="noopener">
+        <span class="ea-contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20.2 11.7a8.2 8.2 0 0 1-12.1 7.2L4 20l1.1-4A8.2 8.2 0 1 1 20.2 11.7Z"/><path d="M8.4 8.1c.3-.5.6-.5.9-.5h.5c.2 0 .4.1.5.4l.7 1.7c.1.2.1.4-.1.6l-.6.7c-.2.2-.2.4 0 .6.5.8 1.2 1.4 2 1.9.2.1.4.1.6-.1l.7-.8c.2-.2.4-.2.7-.1l1.6.8c.3.1.4.3.4.5 0 .4-.2 1-.6 1.3-.4.4-1 .6-1.6.5-1-.1-2.3-.7-3.6-1.8-1.1-1-2-2.3-2.3-3.3-.3-.9-.1-1.8.2-2.4Z"/></svg></span>
+        <span class="ea-contact-label">واتساب</span><span class="ea-contact-arrow" aria-hidden="true">↗</span>
+      </a>
+      <a class="ea-contact-link ea-contact-facebook" id="storeFacebookLink" href="https://www.facebook.com/share/1F6UFaUhmj/?mibextid=wwXIfr" target="_blank" rel="noopener">
+        <span class="ea-contact-icon ea-contact-facebook-mark" aria-hidden="true">f</span>
+        <span class="ea-contact-label">فيسبوك</span><span class="ea-contact-arrow" aria-hidden="true">↗</span>
+      </a>
+    </div>
+    <p class="ea-contact-note">فريق EA Luxury في خدمتك دائمًا</p>
   </div>
-
-  <p style="
-    color:#aaa;
-    font-size:13px;
-    margin-top:25px;
-  ">
-    © EA Luxury - جميع الحقوق محفوظة
-  </p>
 `;
+
 
 function applyStoreContactSettings(settings = {}) {
   const phone = String(settings.storePhone || "").trim();
@@ -1570,8 +1519,10 @@ function applyStoreContactSettings(settings = {}) {
         tiktokLink.id = "storeTiktokLink";
         tiktokLink.target = "_blank";
         tiktokLink.rel = "noopener";
-        tiktokLink.textContent = "TikTok";
-        tiktokLink.style.cssText = "background:#292929;color:#fff;padding:13px 20px;border-radius:8px;text-decoration:none;font-weight:bold;";
+        tiktokLink.textContent = "تيك توك";
+        tiktokLink.className = "ea-contact-link ea-contact-tiktok";
+        tiktokLink.innerHTML = '<span class="ea-contact-icon ea-contact-tiktok-mark">♪</span><span class="ea-contact-label">تيك توك</span><span class="ea-contact-arrow" aria-hidden="true">↗</span>';
+        
         const links = contactSection.querySelector("div");
         if (links) links.appendChild(tiktokLink);
       }

@@ -2635,3 +2635,20 @@ body.size-guide-open{overflow:hidden}
 #checkoutForm .couponControls button:disabled{opacity:.6;cursor:wait}
 #checkoutForm #couponMessage{margin:8px 0 0;line-height:1.7}
 @media(max-width:600px){#checkoutForm .couponControls{grid-template-columns:1fr}#checkoutForm .couponControls button{width:100%}}
+
+
+/* أدوات البحث والتصفية داخل صفحات الأقسام */
+.collection-filters{background:#fff;border:1px solid #eee;border-radius:14px;padding:18px;margin:0 0 24px;box-shadow:0 8px 24px #00000008}
+.collection-filters[hidden]{display:none!important}
+.collection-filter-search,.collection-filter-row>label{display:flex;flex-direction:column;gap:6px;min-width:0}
+.collection-filter-search>span,.collection-filter-row label>span{font-size:12px;font-weight:700;color:#555}
+.collection-filter-search input,.collection-filter-row input[type=number],.collection-filter-row select{width:100%;min-height:42px;border:1px solid #ddd;border-radius:9px;background:#fff;padding:8px 11px;font:inherit;font-size:13px;color:#222;outline:none}
+.collection-filter-search input:focus,.collection-filter-row input:focus,.collection-filter-row select:focus{border-color:#b99550;box-shadow:0 0 0 3px #b995501c}
+.collection-filter-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px;align-items:end}
+.collection-variant-filters{grid-template-columns:repeat(4,minmax(0,1fr))}
+.collection-available-filter{display:flex!important;flex-direction:row!important;align-items:center;gap:8px!important;min-height:42px}
+.collection-available-filter input{accent-color:#b99550;width:17px;height:17px}
+.collection-available-filter span{font-size:13px!important}
+#collectionClearFilters{min-height:42px;border:1px solid #c8a65e;border-radius:9px;background:#fff;color:#755a27;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.collection-results-count{margin:12px 0 0;color:#777;font-size:12px}
+@media(max-width:640px){.collection-filters{padding:13px;border-radius:11px}.collection-filter-row,.collection-variant-filters{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.collection-filter-row>label{min-width:0}.collection-filter-search input,.collection-filter-row input[type=number],.collection-filter-row select{font-size:12px;min-height:40px}.collection-available-filter{grid-column:span 1}.collection-results-count{font-size:11px}}

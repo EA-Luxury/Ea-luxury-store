@@ -2547,3 +2547,29 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 .trackingHistoryDetails strong{font-size:14px;color:#28231b}
 .trackingHistoryDetails time{font-size:12px;color:#8a8174}
 @media(max-width:600px){.trackingHistoryItem{min-height:60px}.trackingHistoryDetails strong{font-size:13px}}
+
+
+/* دليل مقاسات EA Luxury */
+.sizeGuideOpenButton{display:inline-flex;align-items:center;gap:8px;margin:0 0 12px;padding:9px 15px;border:1px solid #d8c49a;border-radius:7px;background:#fbf8f1;color:#8a682c;font:700 13px inherit;cursor:pointer;transition:background .2s,border-color .2s}
+.sizeGuideOpenButton:hover{background:#f4eddf;border-color:#b99550}
+.sizeGuideOpenButton span{font-size:17px}
+.sizeGuideOverlay{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;padding:18px;background:#111a}
+.sizeGuideOverlay[hidden]{display:none!important}
+.sizeGuideDialog{position:relative;width:min(100%,620px);max-height:88vh;overflow:auto;padding:clamp(20px,4vw,32px);border:1px solid #e9dfcb;border-radius:14px;background:#fff;color:#222;box-shadow:0 20px 70px #0004}
+.sizeGuideClose{position:absolute;top:12px;left:14px;width:34px;height:34px;border:1px solid #e8dfd0;border-radius:50%;background:#fff;color:#333;font-size:24px;line-height:1;cursor:pointer}
+.sizeGuideEyebrow{color:#a8874d;font:700 10px Georgia,serif;letter-spacing:3px}
+.sizeGuideDialog h2{margin:7px 0;color:#171717;font-size:24px}
+.sizeGuideIntro,.sizeGuidePanel p,.sizeGuideFootnote{color:#777;font-size:12px;line-height:1.9}
+.sizeGuideTabs{display:flex;gap:8px;margin:18px 0 16px}
+.sizeGuideTabs button{flex:1;min-height:42px;border:1px solid #e4ddcf;border-radius:7px;background:#faf9f6;color:#555;font:700 13px inherit;cursor:pointer}
+.sizeGuideTabs button.active{border-color:#b99550;background:#f8f1e3;color:#795b2c}
+.sizeGuidePanel[hidden]{display:none}
+.sizeGuidePanel h3{margin:0 0 5px;font-size:16px}
+.sizeGuideTableWrap{overflow-x:auto;border:1px solid #eee8dc;border-radius:8px}
+.sizeGuideTable{width:100%;border-collapse:collapse;text-align:center;font-size:13px;white-space:nowrap}
+.sizeGuideTable th{background:#f7f3ea;color:#795b2c;font-weight:800}
+.sizeGuideTable th,.sizeGuideTable td{padding:10px 12px;border-bottom:1px solid #eee8dc}
+.sizeGuideTable tbody tr:last-child td{border-bottom:0}
+.sizeGuideFootnote{margin:14px 0 0;padding:10px 12px;border-right:3px solid #b99550;background:#fbf8f1}
+body.size-guide-open{overflow:hidden}
+@media(max-width:520px){.sizeGuideDialog{padding:22px 14px}.sizeGuideDialog h2{font-size:21px}.sizeGuideTable{font-size:12px}.sizeGuideTable th,.sizeGuideTable td{padding:9px 8px}}

@@ -225,8 +225,9 @@
     title.textContent = "جاري تحميل القسم...";
     const {data,error} = await db.from("products").select("*").eq("active",true).eq("category",category).order("created_at",{ascending:false});
     if (error) {
-      brandGrid.innerHTML = '<p class="collection-empty">تعذر تحميل المنتجات. حاول مرة أخرى.</p>';
-      console.error(error);
+      brandGrid.innerHTML = '<p class="collection-empty"><strong>تعذر تحميل المنتجات</strong><br><small>تفاصيل الخطأ: ' + escapeHTML(error?.message || String(error)) + '</small></p>';
+      title.textContent = "تعذر تحميل القسم";
+      console.error("خطأ تحميل منتجات القسم:", error);
       return;
     }
     categoryProducts = data || [];

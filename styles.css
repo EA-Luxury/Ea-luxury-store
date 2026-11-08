@@ -2253,3 +2253,122 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
   .product-detail-image-nav.prev { right: 3px; }
   .product-detail-image-nav.next { left: 3px; }
 }
+
+
+/* EA Luxury — refined contact section */
+.ea-contact-section {
+  direction: rtl;
+  margin: 34px auto 0;
+  padding: 38px 18px 30px;
+  color: #f6f1e7;
+  text-align: center;
+  background: radial-gradient(ellipse at 50% 0%, rgba(214,179,106,.13), transparent 58%), #101010;
+  border-top: 1px solid rgba(214,179,106,.28);
+  border-bottom: 1px solid rgba(214,179,106,.16);
+}
+.ea-contact-inner { width: min(100%, 920px); margin: 0 auto; }
+.ea-contact-eyebrow {
+  display: inline-block;
+  margin-bottom: 9px;
+  color: #c9a96b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+.ea-contact-inner h2 {
+  margin: 0 0 8px;
+  color: #e1c58f;
+  font-size: clamp(21px, 3vw, 27px);
+  font-weight: 600;
+  letter-spacing: .2px;
+}
+.ea-contact-subtitle {
+  margin: 0 auto 22px;
+  color: #bdb8ae;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.ea-contact-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.ea-contact-link {
+  min-width: 142px;
+  min-height: 44px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 9px 14px;
+  color: #e8dfce;
+  background: rgba(255,255,255,.035);
+  border: 1px solid rgba(214,179,106,.3);
+  border-radius: 7px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background .2s ease, border-color .2s ease, transform .2s ease, color .2s ease;
+}
+.ea-contact-link:hover {
+  color: #f1d49b;
+  background: rgba(214,179,106,.09);
+  border-color: rgba(214,179,106,.72);
+  transform: translateY(-2px);
+}
+.ea-contact-icon {
+  width: 19px;
+  height: 19px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 19px;
+  color: #d6b36a;
+}
+.ea-contact-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.55;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ea-contact-facebook-mark {
+  width: 18px;
+  height: 18px;
+  flex-basis: 18px;
+  border-radius: 50%;
+  color: #111;
+  background: #d6b36a;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 20px;
+  align-items: flex-end;
+}
+.ea-contact-arrow {
+  margin-right: 2px;
+  color: #8f7952;
+  font-size: 12px;
+  opacity: .8;
+}
+.ea-contact-note {
+  margin: 19px 0 0;
+  color: #8f8a80;
+  font-size: 11px;
+  letter-spacing: .2px;
+}
+.ea-contact-tiktok-mark { font-size: 19px; font-weight: 700; }
+@media (max-width: 520px) {
+  .ea-contact-section { padding: 30px 14px 24px; }
+  .ea-contact-subtitle { max-width: 300px; margin-bottom: 18px; font-size: 12px; }
+  .ea-contact-links { gap: 8px; }
+  .ea-contact-link { min-width: 0; flex: 1 1 29%; gap: 6px; padding: 9px 7px; font-size: 12px; }
+  .ea-contact-icon { width: 17px; height: 17px; flex-basis: 17px; }
+  .ea-contact-icon svg { width: 17px; height: 17px; }
+  .ea-contact-arrow { display: none; }
+}

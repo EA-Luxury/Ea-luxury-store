@@ -82,11 +82,17 @@ let detailZoomDrag = null;
 let detailPinchStartDistance = 0;
 let detailPinchStartScale = 1;
 let detailTouchPan = null;
+let detailZoomFrame = 0;
 
 function detailApplyZoom() {
-  const image = document.getElementById("detailLightboxImage");
   const level = document.getElementById("detailZoomLevel");
-  if (image) image.style.transform = `translate(${detailZoomX}px, ${detailZoomY}px) scale(${detailZoomScale})`;
+  if (!detailZoomFrame) {
+    detailZoomFrame = requestAnimationFrame(() => {
+      detailZoomFrame = 0;
+      const image = document.getElementById("detailLightboxImage");
+      if (image) image.style.transform = `translate3d(${detailZoomX}px, ${detailZoomY}px, 0) scale(${detailZoomScale})`;
+    });
+  }
   if (level) level.textContent = Math.round(detailZoomScale * 100) + "%";
   const reset = document.getElementById("detailZoomReset");
   if (reset) reset.disabled = detailZoomScale === 1 && detailZoomX === 0 && detailZoomY === 0;

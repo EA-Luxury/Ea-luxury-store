@@ -2444,9 +2444,9 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 }
 .product.product-womens-clothing img.product-main-image {
   width: 100%;
-  height: clamp(320px, 34vw, 430px);
+  height: clamp(250px, 27vw, 320px);
   margin: 0 auto;
-  padding: 8px;
+  padding: 3px;
   box-sizing: border-box;
   object-fit: contain;
   object-position: center;
@@ -2456,7 +2456,7 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 @media (max-width: 650px) {
   .product.product-womens-clothing img.product-main-image {
     width: 100%;
-    height: 270px;
-    padding: 5px;
+    height: 210px;
+    padding: 2px;
   }
 }

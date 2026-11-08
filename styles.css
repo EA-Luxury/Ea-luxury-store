@@ -2573,3 +2573,45 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 .sizeGuideFootnote{margin:14px 0 0;padding:10px 12px;border-right:3px solid #b99550;background:#fbf8f1}
 body.size-guide-open{overflow:hidden}
 @media(max-width:520px){.sizeGuideDialog{padding:22px 14px}.sizeGuideDialog h2{font-size:21px}.sizeGuideTable{font-size:12px}.sizeGuideTable th,.sizeGuideTable td{padding:9px 8px}}
+
+
+/* تقييمات العملاء المحسنة */
+.detailRatingPreview{display:flex;align-items:center;gap:9px;flex-wrap:wrap;width:fit-content;margin:3px 0 14px;color:#76603a;text-decoration:none;font-size:12px}
+.customerReviewStars{color:#b58b3d;letter-spacing:2px;white-space:nowrap;font-size:17px}
+.detailRatingPreviewText{color:#6f6759}
+.detailRatingPreviewLink{color:#9b793e;text-decoration:underline;text-underline-offset:3px;font-weight:800}
+.detailReviewsSection{margin:30px 0;padding:clamp(18px,3vw,30px);border:1px solid #e8dfce;border-radius:12px;background:#fff;direction:rtl;box-shadow:0 8px 26px #1f1a1208}
+.detailReviewsHeading{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-bottom:17px;border-bottom:1px solid #eee8dc}
+.detailReviewsEyebrow{color:#b18a45;font-size:10px;letter-spacing:3px;font-weight:800}
+.detailReviewsHeading h2{margin:5px 0;color:#171717;font-size:23px}
+.detailReviewsHeading p{margin:0;color:#898174;font-size:12px}
+#detailReviewsSummary{padding:8px 12px;border-radius:6px;background:#faf6ed;color:#8d6b32;font-size:12px}
+.detailReviewsOverview{display:grid;grid-template-columns:minmax(130px,.7fr) minmax(220px,1.3fr);gap:24px;align-items:center;padding:20px 0;border-bottom:1px solid #eee8dc}
+.detailReviewsScore{display:grid;justify-items:center;gap:5px;padding:8px}
+.detailReviewsScore strong{color:#171717;font-size:38px;line-height:1}
+.detailReviewsScore small{color:#898174;font-size:11px}
+.reviewBreakdown{display:grid;gap:7px}
+.reviewBreakdownRow{display:grid;grid-template-columns:52px minmax(70px,1fr) 25px;gap:9px;align-items:center;color:#766b58;font-size:11px}
+.reviewBreakdownRow b{font-weight:700;text-align:left}
+.reviewBreakdownTrack{height:7px;overflow:hidden;border-radius:10px;background:#f0ede7}
+.reviewBreakdownTrack i{display:block;height:100%;border-radius:10px;background:linear-gradient(90deg,#b99550,#d7bd83)}
+.detailReviewsList{display:grid;gap:0}
+.customerReviewCard{padding:16px 2px;border-bottom:1px solid #eee8dc}
+.customerReviewTop{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.customerReviewTop time{color:#978d7d;font-size:11px}
+.customerReviewCard p{margin:9px 0;color:#514b42;font-size:13px;line-height:1.9;white-space:pre-wrap}
+.customerReviewCard small{color:#7c765f;font-size:11px}
+.customerReviewCard small span{display:inline-grid;place-items:center;width:16px;height:16px;margin-left:4px;border-radius:50%;background:#eef4e9;color:#47753b;font-weight:900}
+.reviewEmptyState{display:grid;justify-items:center;gap:6px;padding:25px 12px;text-align:center;color:#81796d}
+.reviewEmptyState>span{color:#b99550;font-size:34px}
+.reviewEmptyState strong{color:#39342c;font-size:14px}
+.reviewEmptyState p{margin:0;font-size:12px;line-height:1.8}
+.detailReviewFormArea{margin-top:22px;padding-top:20px;border-top:1px solid #eee8dc}
+.detailReviewFormArea h3{margin:0 0 7px;color:#8d6b32;font-size:17px}
+.detailReviewFormArea>p{color:#81796d;font-size:12px;line-height:1.8}
+.detailReviewFormArea input,.detailReviewFormArea select,.detailReviewFormArea textarea{display:block;width:100%;margin:8px 0;padding:12px;border:1px solid #ded7ca;border-radius:7px;background:#fff;font:inherit;font-size:13px}
+.detailReviewFormArea label{display:block;margin-top:10px;color:#5c5345;font-size:12px;font-weight:800}
+.detailReviewFormArea button{margin-top:8px;padding:11px 18px;border:0;border-radius:6px;background:#171717;color:#d6b36a;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+.detailReviewFormArea button:hover{background:#9b793e;color:#fff}
+.detailReviewFormArea [role=status]{color:#766b58;font-size:12px}
+@media(max-width:600px){.detailReviewsOverview{grid-template-columns:1fr;gap:12px}.detailReviewsScore{padding:4px}.detailReviewsHeading h2{font-size:20px}.detailReviewsSection{padding:17px 13px}.detailRatingPreview{gap:6px;font-size:11px}}

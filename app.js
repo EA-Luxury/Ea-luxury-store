@@ -704,7 +704,7 @@ function showProducts() {
       : "";
 
     return `
-      <article class="product${String(p.category || "").trim() === "ملابس حريمي" ? " product-womens-clothing" : ""}">
+      <article class="product">
         <button type="button" class="product-favorite-button" data-favorite-id="${escapeHTML(p.id)}" aria-label="${favoriteProductIds.includes(String(p.id)) ? "إزالة من المفضلة" : "أضف للمفضلة"}" aria-pressed="${favoriteProductIds.includes(String(p.id))}">${favoriteProductIds.includes(String(p.id)) ? "♥" : "♡"}</button>
 
         <a class="product-detail-link product-image-link"

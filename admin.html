@@ -979,7 +979,7 @@ alert("تم حفظ حد التنبيه بنجاح. لم يتم تغيير كمي
 function renderLowStockAlerts(products,variants){
 const box=document.getElementById("lowStockAlerts");
 if(!box)return;
-box.innerHTML="";
+box.replaceChildren();
 const entries=[];
 (products||[]).forEach(product=>{
 const threshold=Number.isInteger(Number(product.low_stock_threshold))?Number(product.low_stock_threshold):3;
@@ -990,7 +990,7 @@ const quantity=Number(variant?variant.stock:product.stock);
 const isOut=quantity<=0;
 const isLow=!isOut&&quantity<=threshold;
 if(!isOut&&!isLow)return;
-entries.push({productName:product.name||"منتج بدون اسم",variant,quantity,threshold,isOut});
+entries.push({productName:product.name||"منتج بدون اسم",brand:product.brand||"غير محدد",category:product.category||"غير محدد",variant,quantity,threshold,isOut});
 });
 });
 document.getElementById("statLowStock").textContent=String(entries.filter(item=>!item.isOut).length);
@@ -1000,19 +1000,66 @@ box.textContent="لا توجد تنبيهات حاليًا. المخزون أع�
 return;
 }
 entries.sort((a,b)=>Number(b.isOut)-Number(a.isOut)||a.quantity-b.quantity||a.productName.localeCompare(b.productName,"ar"));
-entries.forEach(item=>{
-const row=document.createElement("div");
-row.className="productAdminCard";
+const controls=document.createElement("div");
+controls.style.display="flex";controls.style.flexWrap="wrap";controls.style.gap="10px";controls.style.alignItems="center";controls.style.margin="10px 0";
+const makeSelect=(labelText,values)=>{
+const label=document.createElement("label");label.style.display="grid";label.style.gap="5px";label.style.minWidth="150px";label.textContent=labelText;
+const select=document.createElement("select");select.style.padding="9px";select.style.borderRadius="8px";select.style.minWidth="150px";
+const all=document.createElement("option");all.value="";all.textContent="كل "+labelText;select.append(all);
+values.forEach(value=>{const option=document.createElement("option");option.value=value;option.textContent=value;select.append(option);});
+label.append(select);controls.append(label);return select;
+};
+const brands=[...new Set(entries.map(item=>String(item.brand).trim()||"غير محدد"))].sort((a,b)=>a.localeCompare(b,"ar"));
+const categories=[...new Set(entries.map(item=>String(item.category).trim()||"غير محدد"))].sort((a,b)=>a.localeCompare(b,"ar"));
+const brandFilter=makeSelect("الماركات",brands);
+const categoryFilter=makeSelect("الأقسام",categories);
+const statusFilter=makeSelect("الحالة",["مخزون منخفض","نافد"]);
+const searchLabel=document.createElement("label");searchLabel.style.display="grid";searchLabel.style.gap="5px";searchLabel.style.minWidth="190px";searchLabel.textContent="بحث عن منتج";
+const search=document.createElement("input");search.type="search";search.placeholder="اسم المنتج أو المقاس أو اللون";search.style.padding="9px";search.style.borderRadius="8px";searchLabel.append(search);controls.append(searchLabel);
+box.append(controls);
+const resultSummary=document.createElement("p");resultSummary.className="reportNotice";box.append(resultSummary);
+const list=document.createElement("div");box.append(list);
+const render=()=>{
+const term=search.value.trim().toLocaleLowerCase("ar");
+const filtered=entries.filter(item=>{
+const variantText=item.variant?[item.variant.size,item.variant.color].filter(Boolean).join(" "):"";
+const searchable=[item.productName,item.brand,item.category,variantText].join(" ").toLocaleLowerCase("ar");
+return (!brandFilter.value||item.brand===brandFilter.value)&&(!categoryFilter.value||item.category===categoryFilter.value)&&(!statusFilter.value||(statusFilter.value==="نافد"?item.isOut:!item.isOut))&&(!term||searchable.includes(term));
+});
+list.replaceChildren();
+if(!filtered.length){list.textContent="لا توجد تنبيهات مطابقة لخيارات البحث والتصفية.";}
+filtered.forEach(item=>{
+const row=document.createElement("div");row.className="productAdminCard";
 const title=document.createElement("strong");
 title.textContent=item.productName+(item.variant?" — المقاس: "+(item.variant.size||"غير محدد")+" | اللون: "+(item.variant.color||"غير محدد"):"");
-const status=document.createElement("p");
-status.className=item.isOut?"out":"stock";
+const meta=document.createElement("small");meta.textContent=item.brand+" | "+item.category;
+const status=document.createElement("p");status.className=item.isOut?"out":"stock";
 status.textContent=item.isOut?"نفد المخزون":"متبقي "+item.quantity+" قطعة — حد التنبيه: "+item.threshold;
-const hint=document.createElement("small");
-hint.textContent=item.variant?"تنبيه لتركيبة المقاس/اللون. الحد مأخوذ من إعداد المنتج.":"تنبيه للكمية الإجمالية للمنتج.";
-row.append(title,status,hint);
-box.append(row);
+const hint=document.createElement("small");hint.textContent=item.variant?"تنبيه لتركيبة المقاس/اللون. الحد مأخوذ من إعداد المنتج.":"تنبيه للكمية الإجمالية للمنتج.";
+row.append(title,meta,status,hint);list.append(row);
 });
+const lowCount=filtered.filter(item=>!item.isOut).length,outCount=filtered.filter(item=>item.isOut).length;
+resultSummary.textContent="نتائج التصفية: "+filtered.length.toLocaleString("ar-EG")+" تنبيه — مخزون منخفض: "+lowCount.toLocaleString("ar-EG")+" — نافد: "+outCount.toLocaleString("ar-EG")+".";
+};
+[brandFilter,categoryFilter,statusFilter].forEach(select=>select.addEventListener("change",render));
+search.addEventListener("input",render);
+const exportButton=document.createElement("button");exportButton.type="button";exportButton.textContent="تصدير تنبيهات المخزون إلى Excel";exportButton.style.maxWidth="360px";
+exportButton.addEventListener("click",()=>{
+const term=search.value.trim().toLocaleLowerCase("ar");
+const filtered=entries.filter(item=>{
+const variantText=item.variant?[item.variant.size,item.variant.color].filter(Boolean).join(" "):"";
+const searchable=[item.productName,item.brand,item.category,variantText].join(" ").toLocaleLowerCase("ar");
+return (!brandFilter.value||item.brand===brandFilter.value)&&(!categoryFilter.value||item.category===categoryFilter.value)&&(!statusFilter.value||(statusFilter.value==="نافد"?item.isOut:!item.isOut))&&(!term||searchable.includes(term));
+});
+const cell=value=>'"'+String(value??"").replace(/"/g,'""')+'"';
+const rows=[["المنتج","الماركة","القسم","المقاس","اللون","الكمية المتاحة","حد التنبيه","الحالة"]];
+filtered.forEach(item=>rows.push([item.productName,item.brand,item.category,item.variant?.size||"",item.variant?.color||"",item.quantity,item.threshold,item.isOut?"نافد":"مخزون منخفض"]));
+const csv="\\uFEFF"+rows.map(row=>row.map(cell).join(",")).join("\\r\\n");
+const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
+const link=document.createElement("a");link.href=url;link.download="EA-Luxury-low-stock-alerts.csv";document.body.append(link);link.click();link.remove();URL.revokeObjectURL(url);
+});
+box.insertBefore(exportButton,resultSummary);
+render();
 }
 
 async function loadProducts(){

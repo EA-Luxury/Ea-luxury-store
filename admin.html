@@ -76,6 +76,7 @@ main{max-width:1180px}
 @media(max-width:600px){.reportToolbar{grid-template-columns:1fr 1fr}.reportToolbar label{grid-column:1/-1}.reportToolbar button{grid-column:1/-1}.salesTrend{gap:4px;padding:8px}.salesTrendDay{height:145px}.salesTrendDay strong{font-size:9px}.salesTrendDay small{font-size:9px}}
 
 .reportTable td:last-child{white-space:nowrap}.reportTable{min-width:560px}
+.reportComparison{font-size:12px;color:#766b58;line-height:1.5}
 @media print{body{background:#fff}}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #d6b36a;outline-offset:2px}
 @media(max-width:760px){main{margin:10px auto;padding:10px}section{padding:15px}.statsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.statCard{padding:13px}.statCard strong{font-size:23px}.adminNav{margin-inline:-10px}}
@@ -112,9 +113,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <section id="salesReportsSection" class="overviewSection">
 <h2>تقارير المبيعات والأداء</h2>
 <div class="statsGrid reportStats" aria-label="ملخص المبيعات السريع">
-<article class="statCard"><span>مبيعات اليوم</span><strong id="quickSalesToday">—</strong><small id="quickSalesTodayCount">الطلبات المكتملة: —</small></article>
-<article class="statCard"><span>مبيعات آخر 7 أيام</span><strong id="quickSalesWeek">—</strong><small id="quickSalesWeekCount">الطلبات المكتملة: —</small></article>
-<article class="statCard"><span>مبيعات الشهر الحالي</span><strong id="quickSalesMonth">—</strong><small id="quickSalesMonthCount">الطلبات المكتملة: —</small></article>
+<article class="statCard"><span>مبيعات اليوم</span><strong id="quickSalesToday">—</strong><small id="quickSalesTodayCount">الطلبات المكتملة: —</small><small class="reportComparison" id="quickSalesTodayCompare">مقارنة بأمس: —</small></article>
+<article class="statCard"><span>مبيعات آخر 7 أيام</span><strong id="quickSalesWeek">—</strong><small id="quickSalesWeekCount">الطلبات المكتملة: —</small><small class="reportComparison" id="quickSalesWeekCompare">مقارنة بالـ7 أيام السابقة: —</small></article>
+<article class="statCard"><span>مبيعات الشهر الحالي</span><strong id="quickSalesMonth">—</strong><small id="quickSalesMonthCount">الطلبات المكتملة: —</small><small class="reportComparison" id="quickSalesMonthCompare">مقارنة بالفترة المماثلة من الشهر السابق: —</small></article>
 </div>
 <div class="reportToolbar"><label for="salesReportPeriod">الفترة الزمنية</label><select id="salesReportPeriod"><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يومًا</option><option value="90">آخر 90 يومًا</option><option value="all">كل الفترات</option></select><button type="button" class="secondary" onclick="loadOrders()">تحديث التقرير</button></div>
 <div class="statsGrid reportStats">
@@ -1855,20 +1856,44 @@ const completed=filtered.filter(order=>order.status==="مكتمل");
 const cairoDay=value=>new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Cairo",year:"numeric",month:"2-digit",day:"2-digit"}).format(value);
 const todayKey=cairoDay(now);
 const monthKey=todayKey.slice(0,7);
-const weekStartKey=cairoDay(new Date(now.getTime()-6*86400000));
+const shiftDayKey=(key,days)=>{const date=new Date(key+"T12:00:00Z");date.setUTCDate(date.getUTCDate()+days);return date.toISOString().slice(0,10);};
+const weekStartKey=shiftDayKey(todayKey,-6);
+const previousWeekStartKey=shiftDayKey(todayKey,-13);
+const previousWeekEndKey=shiftDayKey(todayKey,-7);
+const todayDate=new Date(todayKey+"T12:00:00Z");
+const dayOfMonth=todayDate.getUTCDate();
+const previousMonthStart=new Date(Date.UTC(todayDate.getUTCFullYear(),todayDate.getUTCMonth()-1,1));
+const previousMonthLastDay=new Date(Date.UTC(previousMonthStart.getUTCFullYear(),previousMonthStart.getUTCMonth()+1,0)).getUTCDate();
+const previousMonthEndDay=Math.min(dayOfMonth,previousMonthLastDay);
+const previousMonthStartKey=previousMonthStart.toISOString().slice(0,10);
+const previousMonthEndKey=previousMonthStart.getUTCFullYear()+"-"+String(previousMonthStart.getUTCMonth()+1).padStart(2,"0")+"-"+String(previousMonthEndDay).padStart(2,"0");
 const completedAll=reportOrders.filter(order=>order.status==="مكتمل"&&order.created_at);
 const sumRevenue=items=>items.reduce((total,order)=>total+Number(order.total||0),0);
-const todayCompleted=completedAll.filter(order=>cairoDay(new Date(order.created_at))===todayKey);
-const weekCompleted=completedAll.filter(order=>{const key=cairoDay(new Date(order.created_at));return key>=weekStartKey&&key<=todayKey;});
-const monthCompleted=completedAll.filter(order=>cairoDay(new Date(order.created_at)).slice(0,7)===monthKey);
+const keyOf=order=>cairoDay(new Date(order.created_at));
+const todayCompleted=completedAll.filter(order=>keyOf(order)===todayKey);
+const yesterdayKey=shiftDayKey(todayKey,-1);
+const yesterdayCompleted=completedAll.filter(order=>keyOf(order)===yesterdayKey);
+const weekCompleted=completedAll.filter(order=>{const key=keyOf(order);return key>=weekStartKey&&key<=todayKey;});
+const previousWeekCompleted=completedAll.filter(order=>{const key=keyOf(order);return key>=previousWeekStartKey&&key<=previousWeekEndKey;});
+const monthCompleted=completedAll.filter(order=>keyOf(order).slice(0,7)===monthKey);
+const previousMonthCompleted=completedAll.filter(order=>{const key=keyOf(order);return key>=previousMonthStartKey&&key<=previousMonthEndKey;});
 const quickMoney=value=>Number(value||0).toLocaleString("ar-EG",{maximumFractionDigits:2})+" ج.م";
 const quickPut=(id,value)=>{const node=document.getElementById(id);if(node)node.textContent=value;};
+const comparisonText=(current,previous)=>{
+ if(previous===0)return current===0?"لا تغيير عن الفترة السابقة":"زيادة عن فترة بلا مبيعات سابقة";
+ const change=((current-previous)/previous)*100;
+ const rounded=Math.abs(change).toLocaleString("ar-EG",{maximumFractionDigits:1});
+ return (change>0?"ارتفاع "+rounded+"%":change<0?"انخفاض "+rounded+"%":"لا تغيير")+" عن الفترة السابقة";
+};
 quickPut("quickSalesToday",quickMoney(sumRevenue(todayCompleted)));
 quickPut("quickSalesTodayCount","الطلبات المكتملة: "+todayCompleted.length.toLocaleString("ar-EG"));
+quickPut("quickSalesTodayCompare",comparisonText(sumRevenue(todayCompleted),sumRevenue(yesterdayCompleted)));
 quickPut("quickSalesWeek",quickMoney(sumRevenue(weekCompleted)));
 quickPut("quickSalesWeekCount","الطلبات المكتملة: "+weekCompleted.length.toLocaleString("ar-EG"));
+quickPut("quickSalesWeekCompare",comparisonText(sumRevenue(weekCompleted),sumRevenue(previousWeekCompleted)));
 quickPut("quickSalesMonth",quickMoney(sumRevenue(monthCompleted)));
 quickPut("quickSalesMonthCount","الطلبات المكتملة: "+monthCompleted.length.toLocaleString("ar-EG"));
+quickPut("quickSalesMonthCompare",comparisonText(sumRevenue(monthCompleted),sumRevenue(previousMonthCompleted)));
 const active=filtered.filter(order=>!["مكتمل","ملغي"].includes(order.status));
 const sum=(values)=>values.reduce((total,value)=>total+Number(value||0),0);
 const productTotal=order=>sum((order.order_items||[]).map(item=>Number(item.unit_price||0)*Number(item.quantity||0)));

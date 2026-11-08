@@ -48,6 +48,7 @@ main{max-width:1180px}
 .orderFilters select{background:#fcfbf8}
 .orderDateFilter{display:grid;gap:5px;color:#74664e;font-size:13px;font-weight:700}.orderDateFilter input{width:100%;min-width:0;margin:0}
 .orderQuickSummary{margin:12px 0 18px;max-width:760px}.orderQuickSummary .statCard{min-height:105px}.orderQuickSummary .statCard strong{font-variant-numeric:tabular-nums}
+.orderQuickCard{cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}.orderQuickCard:hover,.orderQuickCard:focus-visible{transform:translateY(-2px);border-color:#c5a15b;box-shadow:0 5px 16px rgba(75,55,20,.09)}.orderQuickCard:focus-visible{outline:3px solid #d6b36a;outline-offset:2px}
 .orderMeta{color:#766b58;font-size:13px}
 .orderActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .orderActions button{width:auto;min-width:130px;margin:0}
@@ -380,8 +381,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <section id="ordersSection">
 <h2>طلبات العملاء</h2>
 <div class="statsGrid orderQuickSummary" aria-label="ملخص متابعة الطلبات">
-<article class="statCard"><span>طلبات جديدة</span><strong id="quickNewOrders">—</strong><small>تحتاج مراجعة أولية</small></article>
-<article class="statCard"><span>طلبات تحتاج متابعة</span><strong id="quickFollowUpOrders">—</strong><small>جديد أو قيد التجهيز</small></article>
+<article class="statCard orderQuickCard" role="button" tabindex="0" aria-label="عرض الطلبات الجديدة" onclick="applyQuickOrderFilter('new')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();applyQuickOrderFilter('new')}"><span>طلبات جديدة</span><strong id="quickNewOrders">—</strong><small>اضغط لعرض الطلبات الجديدة</small></article>
+<article class="statCard orderQuickCard" role="button" tabindex="0" aria-label="عرض الطلبات التي تحتاج متابعة" onclick="applyQuickOrderFilter('followup')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();applyQuickOrderFilter('followup')}"><span>طلبات تحتاج متابعة</span><strong id="quickFollowUpOrders">—</strong><small>اضغط لعرض الجديد وقيد التجهيز</small></article>
 </div>
 <input id="adminOrderSearch" type="search" placeholder="ابحث برقم الطلب أو اسم العميل أو الهاتف..." aria-label="البحث في الطلبات" oninput="filterOrders()">
 <div class="orderFilters">
@@ -1743,6 +1744,15 @@ statusBox.textContent="تعذر تفعيل إشعارات الجهاز في هذ
 }
 }
 
+function applyQuickOrderFilter(type){
+const section=document.getElementById("ordersSection");
+if(!section)return;
+section.dataset.quickFilter=type==="new"?"new":type==="followup"?"followup":"";
+document.getElementById("adminOrderStatusFilter").value="";
+filterOrders();
+section.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
 function filterOrders(){
 const query=document.getElementById("adminOrderSearch").value.trim().toLocaleLowerCase("ar");
 const status=document.getElementById("adminOrderStatusFilter").value;
@@ -1758,11 +1768,13 @@ let visible=0;
 cards.forEach(card=>{
 const matchesText=!query||String(card.dataset.search||"").includes(query);
 const matchesStatus=!status||card.dataset.status===status;
+const quickFilter=document.getElementById("ordersSection")?.dataset.quickFilter||"";
+const matchesQuick=!quickFilter||(quickFilter==="new"?card.dataset.status==="جديد":["جديد","قيد التجهيز"].includes(card.dataset.status));
 const matchesGovernorate=!governorate||card.dataset.governorate===governorate;
 const orderDate=String(card.dataset.orderDate||"");
 const matchesFrom=!dateFrom||(orderDate&&orderDate>=dateFrom);
 const matchesTo=!dateTo||(orderDate&&orderDate<=dateTo);
-const show=matchesText&&matchesStatus&&matchesGovernorate&&matchesFrom&&matchesTo;
+const show=matchesText&&matchesStatus&&matchesQuick&&matchesGovernorate&&matchesFrom&&matchesTo;
 card.hidden=!show;
 if(show)visible++;
 });
@@ -1771,6 +1783,7 @@ if(counter)counter.textContent="عرض "+visible+" من "+cards.length+" طلب"
 }
 
 function resetOrderFilters(){
+document.getElementById("ordersSection").dataset.quickFilter="";
 ["adminOrderSearch","adminOrderStatusFilter","adminOrderGovernorateFilter","adminOrderDateFrom","adminOrderDateTo"].forEach(id=>{
 const field=document.getElementById(id);
 if(field)field.value="";

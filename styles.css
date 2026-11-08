@@ -2218,3 +2218,38 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
   .product-detail-lightbox-nav.prev { right: 2px; }
   .product-detail-lightbox-nav.next { left: 2px; }
 }
+
+
+/* إزالة دوائر أسهم معرض صور المنتج قبل فتح الصورة */
+.product-detail-image-nav {
+  width: 42px;
+  height: 58px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #a98243;
+  font-family: Arial, sans-serif;
+  font-size: 44px;
+  font-weight: 300;
+  line-height: 1;
+  text-shadow: 0 1px 8px #fff, 0 2px 12px #0002;
+  opacity: .82;
+  transition: color .2s ease, opacity .2s ease, transform .2s ease;
+}
+.product-detail-image-nav:hover {
+  background: transparent;
+  color: #171717;
+  opacity: 1;
+}
+.product-detail-image-nav.prev:hover { transform: translateY(-50%) translateX(-3px); }
+.product-detail-image-nav.next:hover { transform: translateY(-50%) translateX(3px); }
+@media(max-width:760px) {
+  .product-detail-image-nav {
+    width: 34px;
+    height: 50px;
+    font-size: 38px;
+  }
+  .product-detail-image-nav.prev { right: 3px; }
+  .product-detail-image-nav.next { left: 3px; }
+}

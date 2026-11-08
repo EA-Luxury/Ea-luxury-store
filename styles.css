@@ -2652,3 +2652,11 @@ body.size-guide-open{overflow:hidden}
 #collectionClearFilters{min-height:42px;border:1px solid #c8a65e;border-radius:9px;background:#fff;color:#755a27;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .collection-results-count{margin:12px 0 0;color:#777;font-size:12px}
 @media(max-width:640px){.collection-filters{padding:13px;border-radius:11px}.collection-filter-row,.collection-variant-filters{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.collection-filter-row>label{min-width:0}.collection-filter-search input,.collection-filter-row input[type=number],.collection-filter-row select{font-size:12px;min-height:40px}.collection-available-filter{grid-column:span 1}.collection-results-count{font-size:11px}}
+
+
+/* زر إظهار أدوات البحث والتصفية داخل الأقسام */
+.collection-filters-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;max-width:260px;min-height:44px;margin:0 0 12px auto;padding:10px 15px;border:1px solid #c8a65e;border-radius:10px;background:#fff;color:#755a27;font:700 13px Cairo,sans-serif;cursor:pointer;transition:background .2s,border-color .2s}
+.collection-filters-toggle:hover{background:#faf6ed;border-color:#a98745}
+.collection-filters-toggle[hidden]{display:none!important}
+.collection-filters-toggle-icon{font-size:18px;line-height:1}
+@media(max-width:600px){.collection-filters-toggle{max-width:none;margin-bottom:10px;min-height:42px}}

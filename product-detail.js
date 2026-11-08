@@ -83,10 +83,26 @@ let detailPinchStartDistance = 0;
 let detailPinchStartScale = 1;
 let detailTouchPan = null;
 
+function detailClampZoomPosition() {
+  const image = document.getElementById("detailLightboxImage");
+  const overlay = document.getElementById("detailLightbox");
+  if (!image || !overlay) return;
+  const style = window.getComputedStyle(overlay);
+  const availableWidth = Math.max(0, overlay.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0));
+  const availableHeight = Math.max(0, overlay.clientHeight - (parseFloat(style.paddingTop) || 0) - (parseFloat(style.paddingBottom) || 0));
+  const maxX = Math.max(0, (image.clientWidth * detailZoomScale - availableWidth) / 2);
+  const maxY = Math.max(0, (image.clientHeight * detailZoomScale - availableHeight) / 2);
+  detailZoomX = Math.max(-maxX, Math.min(maxX, detailZoomX));
+  detailZoomY = Math.max(-maxY, Math.min(maxY, detailZoomY));
+}
+
 function detailApplyZoom() {
   const image = document.getElementById("detailLightboxImage");
   const level = document.getElementById("detailZoomLevel");
-  if (image) image.style.transform = `translate(${detailZoomX}px, ${detailZoomY}px) scale(${detailZoomScale})`;
+  if (image) {
+    detailClampZoomPosition();
+    image.style.transform = `translate3d(${detailZoomX}px, ${detailZoomY}px, 0) scale(${detailZoomScale})`;
+  }
   if (level) level.textContent = Math.round(detailZoomScale * 100) + "%";
   const reset = document.getElementById("detailZoomReset");
   if (reset) reset.disabled = detailZoomScale === 1 && detailZoomX === 0 && detailZoomY === 0;

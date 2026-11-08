@@ -489,7 +489,7 @@ async function loadProducts() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    grid.innerHTML = "<p>تعذر تحميل المنتجات.</p>";
+    grid.innerHTML = '<div class="store-empty-state"><strong>تعذر تحميل المنتجات</strong><span>تفاصيل الخطأ: ' + escapeHTML(error?.message || String(error)) + '</span></div>';
     console.error(error);
     return;
   }

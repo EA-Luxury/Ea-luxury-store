@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=57">
+  <link rel="stylesheet" href="styles.css?v=59">
 </head>
 <body class="collection-page">
   <div class="announcement"><span>EA LUXURY</span><span>أناقة تليق بك - توصيل لجميع محافظات مصر</span></div>
@@ -23,11 +23,26 @@
       <button class="collection-back" id="collectionBackButton" type="button" hidden>← العودة إلى كل الماركات</button>
     </div>
     <div class="collection-heading"><span>EA LUXURY COLLECTION</span><h1 id="collectionTitle">تشكيلة EA Luxury</h1><p id="collectionSubtitle">اختار الماركة اللي تناسب ذوقك</p></div>
+    <section id="collectionFilters" class="collection-filters" hidden aria-label="البحث والتصفية">
+      <label class="collection-filter-search"><span>ابحث داخل القسم</span><input id="collectionSearch" type="search" placeholder="اسم المنتج أو الماركة أو اللون أو المقاس..." autocomplete="off"></label>
+      <div class="collection-filter-row">
+        <label><span>ترتيب حسب</span><select id="collectionSort"><option value="default">الموصى به</option><option value="newest">الأحدث</option><option value="price-asc">السعر: الأقل أولًا</option><option value="price-desc">السعر: الأعلى أولًا</option></select></label>
+        <label><span>السعر من (جنيه)</span><input id="collectionMinPrice" type="number" min="0" placeholder="بدون حد"></label>
+        <label><span>السعر إلى (جنيه)</span><input id="collectionMaxPrice" type="number" min="0" placeholder="بدون حد"></label>
+      </div>
+      <div class="collection-filter-row collection-variant-filters">
+        <label><span>المقاس</span><select id="collectionSize"><option value="">كل المقاسات</option></select></label>
+        <label><span>اللون</span><select id="collectionColor"><option value="">كل الألوان</option></select></label>
+        <label class="collection-available-filter"><input id="collectionAvailable" type="checkbox"><span>المتاح فقط</span></label>
+        <button type="button" id="collectionClearFilters">مسح التصفية</button>
+      </div>
+      <p id="collectionResultsCount" class="collection-results-count" aria-live="polite"></p>
+    </section>
     <section id="collectionBrandGrid" class="collection-brand-grid" aria-label="الماركات"><p class="collection-empty">جاري تحميل الماركات...</p></section>
     <section id="collectionProductGrid" class="collection-product-grid" hidden></section>
   </main>
   <footer><div class="footerLogo">EA <span>LUXURY</span></div><p>ملابس حريمي ورجالي - توصيل لجميع محافظات مصر</p><small>© EA Luxury - جميع الحقوق محفوظة</small></footer>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="collection.js?v=2"></script>
+  <script src="collection.js?v=3"></script>
 </body>
 </html>

@@ -453,63 +453,86 @@ async function detailLoadReviews() {
   if (error) {
     console.error("Product reviews load error:", error);
     list.textContent = "تعذر تحميل التقييمات حاليًا.";
+    summary.textContent = "تعذر تحميل التقييمات";
+    const previewText = document.getElementById("detailRatingPreviewText");
+    if (previewText) previewText.textContent = "التقييمات غير متاحة حاليًا";
     return;
   }
   const reviews = data || [];
-  const average = reviews.length
-    ? reviews.reduce((sum, item) => sum + Number(item.rating || 0), 0) / reviews.length
-    : 0;
-  summary.textContent = reviews.length
-    ? "★ " + average.toFixed(1) + " من 5 — " + reviews.length + " تقييم"
-    : "لا توجد تقييمات منشورة لهذا المنتج حتى الآن.";
-  if (!reviews.length) {
-    list.textContent = "كن أول من يشارك رأيه بعد إتمام الشراء.";
+  const count = reviews.length;
+  const average = count ? reviews.reduce((sum, item) => sum + Number(item.rating || 0), 0) / count : 0;
+  const stars = count ? "★".repeat(Math.round(average)) + "☆".repeat(5 - Math.round(average)) : "☆☆☆☆☆";
+  summary.textContent = count ? average.toFixed(1) + " من 5 — " + count + " تقييم" : "لا توجد تقييمات منشورة لهذا المنتج حتى الآن.";
+  const averageNode = document.getElementById("detailReviewsAverage");
+  const overviewStars = document.getElementById("detailReviewsOverviewStars");
+  const countNode = document.getElementById("detailReviewsCount");
+  if (averageNode) averageNode.textContent = count ? average.toFixed(1) : "—";
+  if (overviewStars) overviewStars.textContent = stars;
+  if (countNode) countNode.textContent = count ? count + " تقييم منشور" : "لا توجد تقييمات منشورة حتى الآن";
+  const previewStars = document.getElementById("detailRatingPreviewStars");
+  const previewText = document.getElementById("detailRatingPreviewText");
+  if (previewStars) previewStars.textContent = stars;
+  if (previewText) previewText.textContent = count ? average.toFixed(1) + " من 5 (" + count + (count === 1 ? " تقييم)" : " تقييمات)") : "لا توجد تقييمات بعد";
+  const breakdown = document.getElementById("detailReviewBreakdown");
+  if (breakdown) {
+    breakdown.innerHTML = [5,4,3,2,1].map(score => {
+      const number = reviews.filter(item => Number(item.rating) === score).length;
+      const percent = count ? Math.round(number / count * 100) : 0;
+      return '<div class="reviewBreakdownRow"><span>' + score + ' نجوم</span><span class="reviewBreakdownTrack"><i style="width:' + percent + '%"></i></span><b>' + number + '</b></div>';
+    }).join("");
+  }
+  if (!count) {
+    list.innerHTML = '<div class="reviewEmptyState"><span>☆</span><strong>لسه مفيش تقييمات للمنتج ده</strong><p>بعد إتمام الشراء، شاركنا رأيك وساعد العملاء الآخرين في الاختيار.</p></div>';
     return;
   }
   list.innerHTML = reviews.map(item => {
-    const date = item.created_at
-      ? new Date(item.created_at).toLocaleDateString("ar-EG")
-      : "";
-    return '<article style="padding:14px 0;border-bottom:1px solid #e9e1d3">' +
-      '<div style="color:#b18a45;font-size:20px;letter-spacing:2px">' +
-      "★".repeat(Number(item.rating)) + "☆".repeat(5 - Number(item.rating)) +
-      '</div><p style="margin:7px 0;white-space:pre-wrap">' + detailEscape(item.comment || "بدون تعليق") +
-      '</p><small style="color:#88795f">' + detailEscape(date) + " · مشتري موثّق" + '</small></article>';
+    const date = item.created_at ? new Date(item.created_at).toLocaleDateString("ar-EG") : "";
+    const rating = Math.max(1, Math.min(5, Number(item.rating) || 0));
+    return '<article class="customerReviewCard">' +
+      '<div class="customerReviewTop"><span class="customerReviewStars" aria-label="' + rating + ' من 5 نجوم">' +
+      "★".repeat(rating) + "☆".repeat(5 - rating) +
+      '</span><time>' + detailEscape(date) + '</time></div>' +
+      '<p>' + detailEscape(item.comment || "بدون تعليق مكتوب.") + '</p>' +
+      '<small><span>✓</span> مشتري موثّق</small></article>';
   }).join("");
 }
 
 function detailRenderReviews() {
   const section = document.createElement("section");
   section.id = "detailProductReviews";
-  section.style.cssText = "margin:28px 0;padding:22px;border:1px solid #e8dfce;border-radius:14px;background:#fff;direction:rtl";
+  section.className = "detailReviewsSection";
   section.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-      <div><span style="color:#b18a45;font-size:12px;letter-spacing:2px">EA LUXURY</span>
-      <h2 style="margin:5px 0;color:#171717">آراء العملاء</h2></div>
-      <strong id="detailReviewsSummary" style="color:#9b793e">جاري تحميل التقييمات...</strong>
+    <div class="detailReviewsHeading">
+      <div><span class="detailReviewsEyebrow">EA LUXURY</span><h2>آراء العملاء</h2>
+      <p>تجارب وآراء العملاء بعد الشراء</p></div>
+      <strong id="detailReviewsSummary">جاري تحميل التقييمات...</strong>
     </div>
-    <div id="detailReviewsList" style="margin:12px 0">جاري تحميل التقييمات...</div>
-    <div style="border-top:1px solid #eee5d5;padding-top:18px;margin-top:18px">
-      <h3 style="margin:0 0 8px;color:#9b793e">قيّم المنتج بعد الشراء</h3>
-      <p style="color:#766b58;font-size:13px">التقييم متاح فقط بعد اكتمال الطلب، باستخدام نفس البريد الإلكتروني المسجل في الطلب. كل طلب يمكنه تقييم المنتج مرة واحدة.</p>
+    <div class="detailReviewsOverview">
+      <div class="detailReviewsScore"><strong id="detailReviewsAverage">—</strong><span class="customerReviewStars" id="detailReviewsOverviewStars">☆☆☆☆☆</span><small id="detailReviewsCount">عدد التقييمات سيظهر هنا</small></div>
+      <div class="reviewBreakdown" id="detailReviewBreakdown"><p>جاري تجهيز ملخص التقييمات...</p></div>
+    </div>
+    <div id="detailReviewsList" class="detailReviewsList">جاري تحميل التقييمات...</div>
+    <div class="detailReviewFormArea">
+      <h3>قيّم المنتج بعد الشراء</h3>
+      <p>التقييم متاح فقط بعد اكتمال الطلب، باستخدام نفس البريد الإلكتروني المسجل في الطلب. كل طلب يمكنه تقييم المنتج مرة واحدة.</p>
       <div id="detailReviewLogin">
-        <input id="detailReviewEmail" type="email" autocomplete="email" placeholder="البريد الإلكتروني المستخدم عند الطلب" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font:inherit">
-        <button id="detailReviewLoginButton" type="button" style="margin-top:8px;padding:12px 18px;background:#171717;color:#d6b36a;border:0;border-radius:8px;font:inherit;font-weight:700">إرسال رابط دخول آمن</button>
-        <p id="detailReviewAuthMessage" role="status" style="color:#766b58"></p>
+        <input id="detailReviewEmail" type="email" autocomplete="email" placeholder="البريد الإلكتروني المستخدم عند الطلب">
+        <button id="detailReviewLoginButton" type="button">إرسال رابط دخول آمن</button>
+        <p id="detailReviewAuthMessage" role="status"></p>
       </div>
       <div id="detailReviewForm" hidden>
-        <p id="detailReviewAccount" style="font-size:13px;color:#766b58"></p>
+        <p id="detailReviewAccount"></p>
         <form>
-          <input id="detailReviewOrderId" type="number" min="1" step="1" required placeholder="رقم الطلب" style="width:100%;padding:12px;margin:6px 0;border:1px solid #ddd;border-radius:8px;font:inherit">
-          <label for="detailReviewRating" style="display:block;margin-top:8px">تقييمك</label>
-          <select id="detailReviewRating" required style="width:100%;padding:12px;margin:6px 0;border:1px solid #ddd;border-radius:8px;font:inherit">
+          <input id="detailReviewOrderId" type="number" min="1" step="1" required placeholder="رقم الطلب">
+          <label for="detailReviewRating">تقييمك</label>
+          <select id="detailReviewRating" required>
             <option value="5">★★★★★ — ممتاز</option><option value="4">★★★★☆ — جيد جدًا</option>
             <option value="3">★★★☆☆ — جيد</option><option value="2">★★☆☆☆ — مقبول</option><option value="1">★☆☆☆☆ — ضعيف</option>
           </select>
-          <textarea id="detailReviewComment" rows="4" maxlength="1000" placeholder="اكتب رأيك في المنتج (اختياري)" style="width:100%;padding:12px;margin:6px 0;border:1px solid #ddd;border-radius:8px;font:inherit"></textarea>
-          <button id="detailReviewSubmitButton" type="submit" style="padding:12px 18px;background:#171717;color:#d6b36a;border:0;border-radius:8px;font:inherit;font-weight:700">إرسال التقييم</button>
+          <textarea id="detailReviewComment" rows="4" maxlength="1000" placeholder="اكتب رأيك في المنتج (اختياري)"></textarea>
+          <button id="detailReviewSubmitButton" type="submit">إرسال التقييم</button>
         </form>
-        <p id="detailReviewSubmitMessage" role="status" style="color:#766b58"></p>
+        <p id="detailReviewSubmitMessage" role="status"></p>
       </div>
     </div>`;
   detailRoot.append(section);
@@ -599,6 +622,11 @@ function detailRender() {
       <div class="product-detail-info">
         <span class="product-detail-category">${detailEscape(p.category || "EA LUXURY")}</span>
         <h1>${detailEscape(p.name)}</h1>
+        <a class="detailRatingPreview" href="#detailProductReviews" aria-label="شاهد تقييمات العملاء">
+          <span id="detailRatingPreviewStars" class="customerReviewStars">☆☆☆☆☆</span>
+          <span id="detailRatingPreviewText">جاري تحميل التقييمات...</span>
+          <span class="detailRatingPreviewLink">شاهد الآراء</span>
+        </a>
         <button type="button" id="detailFavoriteButton" class="detail-favorite-button" aria-pressed="false" aria-label="أضف للمفضلة">♡<span>أضف إلى المفضلة</span></button>
         <div class="product-detail-price">${detailPriceMarkup(p)}</div>
         <p class="product-detail-description">${detailEscape(description)}</p>

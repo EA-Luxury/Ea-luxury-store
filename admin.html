@@ -47,6 +47,7 @@ main{max-width:1180px}
 .orderFilters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:760px}
 .orderFilters select{background:#fcfbf8}
 .orderDateFilter{display:grid;gap:5px;color:#74664e;font-size:13px;font-weight:700}.orderDateFilter input{width:100%;min-width:0;margin:0}
+.orderQuickSummary{margin:12px 0 18px;max-width:760px}.orderQuickSummary .statCard{min-height:105px}.orderQuickSummary .statCard strong{font-variant-numeric:tabular-nums}
 .orderMeta{color:#766b58;font-size:13px}
 .orderActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .orderActions button{width:auto;min-width:130px;margin:0}
@@ -378,6 +379,10 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <section id="returnRequestsSection" class="overviewSection"><h2>طلبات الاستبدال والمرتجعات</h2><p class="status-text">طلبات العملاء بعد استلام الطلب. لا تتم إعادة الكمية للمخزون إلا عند تسجيل استلام المنتج المرتجع فعليًا.</p><button type="button" class="secondary" onclick="loadReturnRequests()">تحديث الطلبات</button><div id="returnRequestsList">جاري تحميل طلبات الاستبدال والمرتجعات...</div></section>
 <section id="ordersSection">
 <h2>طلبات العملاء</h2>
+<div class="statsGrid orderQuickSummary" aria-label="ملخص متابعة الطلبات">
+<article class="statCard"><span>طلبات جديدة</span><strong id="quickNewOrders">—</strong><small>تحتاج مراجعة أولية</small></article>
+<article class="statCard"><span>طلبات تحتاج متابعة</span><strong id="quickFollowUpOrders">—</strong><small>جديد أو قيد التجهيز</small></article>
+</div>
 <input id="adminOrderSearch" type="search" placeholder="ابحث برقم الطلب أو اسم العميل أو الهاتف..." aria-label="البحث في الطلبات" oninput="filterOrders()">
 <div class="orderFilters">
 <select id="adminOrderStatusFilter" aria-label="فلترة حسب حالة الطلب" onchange="filterOrders()">
@@ -2310,6 +2315,8 @@ box.innerHTML="";
 document.getElementById("statOrders").textContent=String(data?.length||0);
 document.getElementById("statPendingOrders").textContent=String((data||[]).filter(o=>!["مكتمل","ملغي"].includes(o.status)).length);
 document.getElementById("statCancelledOrders").textContent=String((data||[]).filter(o=>o.status==="ملغي").length);
+document.getElementById("quickNewOrders").textContent=String((data||[]).filter(o=>o.status==="جديد").length);
+document.getElementById("quickFollowUpOrders").textContent=String((data||[]).filter(o=>["جديد","قيد التجهيز"].includes(o.status)).length);
 renderSalesReports(data||[]);
 renderCustomers(data||[]);
 

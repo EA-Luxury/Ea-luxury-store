@@ -111,6 +111,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <section id="lowStockSection" class="overviewSection"><h2>تنبيهات المخزون</h2><p class="status-text">يعرض هذا القسم المنتجات أو المقاسات والألوان التي وصلت إلى حد التنبيه أو نفدت. يمكنك تعديل حد التنبيه من بطاقة المنتج، ولا تؤثر هذه التنبيهات على الكميات.</p><div id="lowStockAlerts" aria-live="polite">جاري تحميل التنبيهات...</div></section>
 <section id="salesReportsSection" class="overviewSection">
 <h2>تقارير المبيعات والأداء</h2>
+<div class="statsGrid reportStats" aria-label="ملخص المبيعات السريع">
+<article class="statCard"><span>مبيعات اليوم</span><strong id="quickSalesToday">—</strong><small id="quickSalesTodayCount">الطلبات المكتملة: —</small></article>
+<article class="statCard"><span>مبيعات آخر 7 أيام</span><strong id="quickSalesWeek">—</strong><small id="quickSalesWeekCount">الطلبات المكتملة: —</small></article>
+<article class="statCard"><span>مبيعات الشهر الحالي</span><strong id="quickSalesMonth">—</strong><small id="quickSalesMonthCount">الطلبات المكتملة: —</small></article>
+</div>
 <div class="reportToolbar"><label for="salesReportPeriod">الفترة الزمنية</label><select id="salesReportPeriod"><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يومًا</option><option value="90">آخر 90 يومًا</option><option value="all">كل الفترات</option></select><button type="button" class="secondary" onclick="loadOrders()">تحديث التقرير</button></div>
 <div class="statsGrid reportStats">
 <article class="statCard"><span>قيمة الطلبات المكتملة</span><strong id="reportCompletedRevenue">—</strong><small>شاملة الشحن</small></article>
@@ -1846,6 +1851,24 @@ const date=new Date(order.created_at);
 return period==="all"||date>=start;
 });
 const completed=filtered.filter(order=>order.status==="مكتمل");
+// مؤشرات سريعة ثابتة النطاق: اليوم، آخر 7 أيام، والشهر الحالي بتوقيت القاهرة.
+const cairoDay=value=>new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Cairo",year:"numeric",month:"2-digit",day:"2-digit"}).format(value);
+const todayKey=cairoDay(now);
+const monthKey=todayKey.slice(0,7);
+const weekStartKey=cairoDay(new Date(now.getTime()-6*86400000));
+const completedAll=reportOrders.filter(order=>order.status==="مكتمل"&&order.created_at);
+const sumRevenue=items=>items.reduce((total,order)=>total+Number(order.total||0),0);
+const todayCompleted=completedAll.filter(order=>cairoDay(new Date(order.created_at))===todayKey);
+const weekCompleted=completedAll.filter(order=>{const key=cairoDay(new Date(order.created_at));return key>=weekStartKey&&key<=todayKey;});
+const monthCompleted=completedAll.filter(order=>cairoDay(new Date(order.created_at)).slice(0,7)===monthKey);
+const quickMoney=value=>Number(value||0).toLocaleString("ar-EG",{maximumFractionDigits:2})+" ج.م";
+const quickPut=(id,value)=>{const node=document.getElementById(id);if(node)node.textContent=value;};
+quickPut("quickSalesToday",quickMoney(sumRevenue(todayCompleted)));
+quickPut("quickSalesTodayCount","الطلبات المكتملة: "+todayCompleted.length.toLocaleString("ar-EG"));
+quickPut("quickSalesWeek",quickMoney(sumRevenue(weekCompleted)));
+quickPut("quickSalesWeekCount","الطلبات المكتملة: "+weekCompleted.length.toLocaleString("ar-EG"));
+quickPut("quickSalesMonth",quickMoney(sumRevenue(monthCompleted)));
+quickPut("quickSalesMonthCount","الطلبات المكتملة: "+monthCompleted.length.toLocaleString("ar-EG"));
 const active=filtered.filter(order=>!["مكتمل","ملغي"].includes(order.status));
 const sum=(values)=>values.reduce((total,value)=>total+Number(value||0),0);
 const productTotal=order=>sum((order.order_items||[]).map(item=>Number(item.unit_price||0)*Number(item.quantity||0)));

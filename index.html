@@ -389,9 +389,48 @@
 
 <button id="backToTopButton" class="back-to-top" type="button" aria-label="العودة إلى أعلى الصفحة" title="العودة لأعلى الصفحة">↑</button>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@5/dist/email.min.js"></script>
-  <script src="app.js?v=64"></script>
+  <script>
+    // تحميل Supabase أولًا، مع مصدر احتياطي، ثم تشغيل المتجر بعد التأكد من جاهزية المكتبة.
+    (function () {
+      const sources = [
+        "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
+        "https://unpkg.com/@supabase/supabase-js@2"
+      ];
+      function loadSupabase(index) {
+        if (window.supabase && typeof window.supabase.createClient === "function") {
+          const app = document.createElement("script");
+          app.src = "app.js?v=65";
+          document.body.appendChild(app);
+          return;
+        }
+        if (index >= sources.length) {
+          const grid = document.getElementById("productGrid");
+          if (grid) grid.innerHTML = '<p>تعذر الاتصال بمكتبة المتجر. تأكد من الإنترنت ثم أعد فتح التطبيق.</p>';
+          const nav = document.getElementById("categoryNavigation");
+          if (nav) nav.innerHTML = '<span>تعذر تحميل الأقسام. أعد المحاولة بعد التأكد من الاتصال.</span>';
+          console.error("تعذر تحميل Supabase SDK من مصادر CDN.");
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = sources[index];
+        script.onload = function () {
+          if (window.supabase && typeof window.supabase.createClient === "function") {
+            loadSupabase(index + 1);
+          } else {
+            script.remove();
+            loadSupabase(index + 1);
+          }
+        };
+        script.onerror = function () {
+          script.remove();
+          loadSupabase(index + 1);
+        };
+        document.head.appendChild(script);
+      }
+      loadSupabase(0);
+    })();
+  </script>
   <script>
     (() => {
       const installButton = document.getElementById("installAppButton");

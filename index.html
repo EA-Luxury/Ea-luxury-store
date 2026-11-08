@@ -465,6 +465,36 @@
   </script>
 
   <script>
+    // ضمان فتح تعليمات التثبيت على iPhone حتى لو تعطل مستمع الزر الأساسي
+    document.addEventListener("click", event => {
+      const target = event.target && event.target.closest
+        ? event.target.closest("#installAppButton") : null;
+      if (!target) return;
+      const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      if (!ios) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      let overlay = document.getElementById("eaIosInstallSheet");
+      if (overlay) {
+        overlay.hidden = false;
+        overlay.style.display = "flex";
+        return;
+      }
+      overlay = document.createElement("div");
+      overlay.id = "eaIosInstallSheet";
+      overlay.className = "ea-ios-install-overlay";
+      overlay.setAttribute("role", "presentation");
+      overlay.style.cssText = "position:fixed;inset:0;z-index:2147483000;display:flex;align-items:flex-end;justify-content:center;padding:16px;background:rgba(0,0,0,.72);";
+      overlay.innerHTML = '<section role="dialog" aria-modal="true" aria-labelledby="eaIosInstallTitle" style="position:relative;width:100%;max-width:460px;max-height:88vh;overflow:auto;padding:26px 20px 20px;border-radius:22px;background:#faf9f6;color:#202020;text-align:center;box-shadow:0 18px 60px #0008"><button type="button" data-close style="position:absolute;top:10px;left:12px;border:0;border-radius:50%;width:36px;height:36px;font-size:24px;background:#eee">×</button><div style="color:#b99550;font:800 25px Georgia,serif;letter-spacing:2px">EA <small style="display:block;font:700 10px Arial;letter-spacing:5px">LUXURY</small></div><h2 id="eaIosInstallTitle" style="font-size:20px;margin:16px 0 8px">تطبيق EA Luxury على الآيفون</h2><p style="font-size:13px;line-height:1.8;color:#666">ثبّت المتجر على شاشتك الرئيسية وافتحه في أي وقت مثل التطبيقات العادية.</p><ol style="text-align:right;line-height:2.1;padding-right:24px;font-size:14px"><li><b>اضغط على مشاركة</b><br><small>زر المربع والسهم لأعلى في Safari</small></li><li><b>اختر إضافة إلى الشاشة الرئيسية</b><br><small>Add to Home Screen</small></li><li><b>اضغط إضافة</b><br><small>سيظهر EA Luxury بجوار تطبيقاتك</small></li></ol><p style="padding:10px;border-radius:10px;background:#f0ece3;color:#62543a;font-size:12px">تأكد أنك تفتح المتجر باستخدام Safari على الآيفون.</p><button type="button" data-close style="width:100%;padding:13px;border:0;border-radius:12px;background:#111;color:#d6b36a;font-weight:800">حسنًا، فهمت</button></section>';
+      document.body.appendChild(overlay);
+      const close = () => { overlay.hidden = true; overlay.style.display = "none"; };
+      overlay.querySelectorAll("[data-close]").forEach(button => button.addEventListener("click", close));
+      overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+    }, true);
+  </script>
+
+  <script>
     (() => {
       const button = document.getElementById("backToTopButton");
       if (!button) return;

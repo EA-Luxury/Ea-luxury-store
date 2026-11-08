@@ -52,6 +52,7 @@
     </nav>
 
     <button id="currencyToggleButton" class="currencyToggleButton" type="button" aria-label="تغيير العملة">عرض: EGP</button>
+    <button id="installAppButton" class="installAppButton" type="button" hidden>تنزيل التطبيق</button>
     <button id="cartButton" class="cartButton" type="button">
       <span>🛒</span>
       <span>السلة</span>
@@ -391,6 +392,47 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@5/dist/email.min.js"></script>
   <script src="app.js?v=63"></script>
+  <script>
+    (() => {
+      const installButton = document.getElementById("installAppButton");
+      if (!installButton) return;
+
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+      if (!isAndroid || isStandalone) return;
+
+      installButton.hidden = false;
+      let deferredPrompt = null;
+
+      window.addEventListener("beforeinstallprompt", event => {
+        event.preventDefault();
+        deferredPrompt = event;
+        installButton.textContent = "تثبيت التطبيق";
+      });
+
+      installButton.addEventListener("click", async () => {
+        if (!deferredPrompt) {
+          alert("لتثبيت EA Luxury: افتح قائمة Chrome (⋮) ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».");
+          return;
+        }
+
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        if (choice && choice.outcome === "accepted") {
+          installButton.hidden = true;
+        } else {
+          installButton.textContent = "حاول تثبيت التطبيق مرة أخرى";
+        }
+      });
+
+      window.addEventListener("appinstalled", () => {
+        installButton.hidden = true;
+        deferredPrompt = null;
+      });
+    })();
+  </script>
+
   <script>
     (() => {
       const button = document.getElementById("backToTopButton");

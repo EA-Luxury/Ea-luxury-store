@@ -118,10 +118,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 <div id="dashboard" hidden>
 
-<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#lowStockSection">تنبيهات المخزون</a><a href="#inventoryValuationSection">قيمة المخزون</a><a href="#salesReportsSection">تقارير المبيعات</a><a href="#expensesSection">المصروفات</a><a href="#couponsSection">كوبونات الخصم</a><a href="#customersSection">العملاء</a><a href="#reviewsSection">تقييمات العملاء</a><a href="#bulkImportSection">استيراد بالجملة</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#bulkShoePricingSection">تعديل أسعار الأحذية</a><a href="#settingsSection">إعدادات المتجر</a><a href="#returnRequestsSection">الاستبدال والمرتجعات</a><a href="#ordersSection">الطلبات</a></nav>
+<nav class="adminNav" aria-label="أقسام لوحة الإدارة"><a href="#overviewSection">نظرة عامة</a><a href="#lowStockSection">تنبيهات المخزون</a><a href="#salesReportsSection">تقارير المبيعات</a><a href="#expensesSection">المصروفات</a><a href="#couponsSection">كوبونات الخصم</a><a href="#customersSection">العملاء</a><a href="#reviewsSection">تقييمات العملاء</a><a href="#bulkImportSection">استيراد بالجملة</a><a href="#addProductSection">إضافة منتج</a><a href="#productsSection">المنتجات</a><a href="#variantsSection">المقاسات والمخزون</a><a href="#bulkShoePricingSection">تعديل أسعار الأحذية</a><a href="#settingsSection">إعدادات المتجر</a><a href="#returnRequestsSection">الاستبدال والمرتجعات</a><a href="#ordersSection">الطلبات</a></nav>
 <section id="overviewSection" class="overviewSection"><h2>ملخص المتجر</h2><div class="statsGrid"><article class="statCard"><span>إجمالي المنتجات</span><strong id="statProducts">—</strong></article><article class="statCard"><span>منتجات/تركيبات منخفضة المخزون</span><strong id="statLowStock">—</strong></article><article class="statCard"><span>منتجات/تركيبات نافدة</span><strong id="statOutOfStock">—</strong></article><article class="statCard"><span>إجمالي الطلبات</span><strong id="statOrders">—</strong></article><article class="statCard"><span>طلبات تحتاج متابعة</span><strong id="statPendingOrders">—</strong></article><article class="statCard"><span>الطلبات الملغاة</span><strong id="statCancelledOrders">—</strong></article></div><p class="status-text">الأرقام تتحدث عند تحميل المنتجات والطلبات.</p></section>
 <section id="lowStockSection" class="overviewSection"><h2>تنبيهات المخزون</h2><p class="status-text">يعرض هذا القسم المنتجات أو المقاسات والألوان التي وصلت إلى حد التنبيه أو نفدت. يمكنك تعديل حد التنبيه من بطاقة المنتج، ولا تؤثر هذه التنبيهات على الكميات.</p><div id="lowStockAlerts" aria-live="polite">جاري تحميل التنبيهات...</div></section>
-<section id="inventoryValuationSection" class="overviewSection"><h2>قيمة البضاعة الموجودة في المخزون</h2><p class="status-text">تقييم تقديري للمخزون الحالي حسب تكلفة الشراء المسجلة وسعر البيع الأساسي. تكلفة الشراء المسجلة في النظام بالجنيه المصري.</p><div id="inventoryValuationReport" aria-live="polite">جاري حساب قيمة المخزون...</div></section>
 <section id="salesReportsSection" class="overviewSection">
 <h2>تقارير المبيعات والأداء</h2>
 <div class="statsGrid reportStats" aria-label="ملخص المبيعات السريع">
@@ -977,85 +976,6 @@ await loadProducts();
 alert("تم حفظ حد التنبيه بنجاح. لم يتم تغيير كمية المخزون.");
 }
 
-function renderInventoryValuation(products,variants,purchaseCosts){
-const box=document.getElementById("inventoryValuationReport");
-if(!box)return;
-box.replaceChildren();
-const variantMap=new Map();
-(variants||[]).forEach(variant=>{
-const key=String(variant.product_id);
-if(!variantMap.has(key))variantMap.set(key,[]);
-variantMap.get(key).push(variant);
-});
-const rows=(products||[]).map(product=>{
-const productVariants=variantMap.get(String(product.id))||[];
-const hasVariants=productVariants.length>0;
-const quantity=hasVariants?productVariants.filter(v=>v.is_active).reduce((sum,v)=>sum+Math.max(0,Number(v.stock)||0),0):Math.max(0,Number(product.stock)||0);
-const costValue=purchaseCosts.get(String(product.id));
-const cost=costValue===null||costValue===undefined||costValue===""?null:Number(costValue);
-const unitPrice=Number(product.price)||0;
-const currency=product.currency==="AED"?"AED":"EGP";
-return {product,quantity,cost:Number.isFinite(cost)&&cost>=0?cost:null,unitPrice,currency,costTotal:Number.isFinite(cost)&&cost>=0?cost*quantity:null,retailTotal:unitPrice*quantity};
-}).filter(row=>row.quantity>0);
-const totalUnits=rows.reduce((sum,row)=>sum+row.quantity,0);
-const knownCostRows=rows.filter(row=>row.costTotal!==null);
-const knownCost=knownCostRows.reduce((sum,row)=>sum+row.costTotal,0);
-const missingCostRows=rows.filter(row=>row.costTotal===null);
-const missingUnits=missingCostRows.reduce((sum,row)=>sum+row.quantity,0);
-const retailEGP=rows.filter(row=>row.currency==="EGP").reduce((sum,row)=>sum+row.retailTotal,0);
-const retailAED=rows.filter(row=>row.currency==="AED").reduce((sum,row)=>sum+row.retailTotal,0);
-const money=(value,currency)=>Number(value||0).toLocaleString("ar-EG",{minimumFractionDigits:2,maximumFractionDigits:2})+" "+(currency==="AED"?"درهم":"جنيه");
-const stats=document.createElement("div");stats.className="statsGrid reportStats";
-const addStat=(label,value,detail)=>{
-const card=document.createElement("article");card.className="statCard";
-const name=document.createElement("span");name.textContent=label;
-const amount=document.createElement("strong");amount.textContent=value;
-const note=document.createElement("small");note.textContent=detail;
-card.append(name,amount,note);stats.append(card);
-};
-addStat("إجمالي القطع المتاحة",totalUnits.toLocaleString("ar-EG")+" قطعة",rows.length.toLocaleString("ar-EG")+" منتج لديه مخزون");
-addStat("تكلفة المخزون المسجلة",money(knownCost,"EGP"),knownCostRows.length.toLocaleString("ar-EG")+" منتج بتكلفة مسجلة");
-addStat("مخزون بلا تكلفة مسجلة",missingUnits.toLocaleString("ar-EG")+" قطعة",missingCostRows.length.toLocaleString("ar-EG")+" منتج يحتاج تسجيل التكلفة");
-addStat("قيمة البيع الأساسية بالجنيه",money(retailEGP,"EGP"),"قبل الخصومات والعروض");
-addStat("قيمة البيع الأساسية بالدرهم",money(retailAED,"AED"),"قبل الخصومات والعروض");
-box.append(stats);
-const rateWrap=document.createElement("div");rateWrap.style.display="flex";rateWrap.style.flexWrap="wrap";rateWrap.style.alignItems="center";rateWrap.style.gap="10px";rateWrap.style.margin="14px 0";
-const rateLabel=document.createElement("label");rateLabel.textContent="سعر الدرهم بالجنيه لتحويل تكلفة المخزون:";
-rateLabel.style.flex="1 1 240px";
-const rateInput=document.createElement("input");rateInput.type="number";rateInput.min="0.01";rateInput.step="0.01";rateInput.placeholder="أدخل سعر 1 درهم بالجنيه";rateInput.style.maxWidth="230px";rateInput.style.margin="0";
-rateLabel.append(rateInput);rateWrap.append(rateLabel);
-const converted=document.createElement("p");converted.className="reportNotice";converted.textContent="أدخل سعر الصرف الذي تريد استخدامه لعرض القيمة المكافئة بالدرهم. لن يتم افتراض سعر صرف تلقائي.";
-rateWrap.append(converted);box.append(rateWrap);
-rateInput.addEventListener("input",()=>{
-const rate=Number(rateInput.value);
-converted.textContent=rateInput.value&&Number.isFinite(rate)&&rate>0?"التكلفة المسجلة المكافئة: "+money(knownCost/rate,"AED")+" — وفق سعر "+money(rate,"EGP")+" لكل درهم.":"أدخل سعر صرف صحيحًا لعرض القيمة المكافئة بالدرهم.";
-});
-const exportButton=document.createElement("button");exportButton.type="button";exportButton.textContent="تصدير تقييم المخزون إلى Excel";exportButton.style.maxWidth="340px";box.append(exportButton);
-exportButton.addEventListener("click",()=>{
-const cell=value=>'"'+String(value??"").replace(/"/g,'""')+'"';
-const data=[["المنتج","الماركة","القسم","العملة","الكمية المتاحة","تكلفة القطعة بالجنيه","إجمالي التكلفة بالجنيه","سعر البيع الأساسي","قيمة البيع الأساسية"]];
-rows.forEach(row=>data.push([row.product.name||"",row.product.brand||"غير محدد",row.product.category||"غير محدد",row.currency,row.quantity,row.cost===null?"غير مسجل":row.cost,row.costTotal===null?"غير محسوب":row.costTotal,row.unitPrice,row.retailTotal]));
-data.push(["الإجمالي","","","",totalUnits,"",knownCost,"",""]);
-const csv="\\uFEFF"+data.map(row=>row.map(cell).join(",")).join("\\r\\n");
-const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
-const link=document.createElement("a");link.href=url;link.download="EA-Luxury-inventory-valuation.csv";document.body.append(link);link.click();link.remove();URL.revokeObjectURL(url);
-});
-const table=document.createElement("table");table.className="reportTable";
-const head=document.createElement("thead"),headRow=document.createElement("tr");
-["المنتج","الكمية","تكلفة القطعة (جنيه)","إجمالي التكلفة (جنيه)","سعر البيع الأساسي","قيمة البيع"].forEach(label=>{const th=document.createElement("th");th.textContent=label;headRow.append(th);});
-head.append(headRow);table.append(head);
-const body=document.createElement("tbody");
-rows.sort((a,b)=>(b.costTotal||0)-(a.costTotal||0)).forEach(row=>{
-const tr=document.createElement("tr");
-const values=[row.product.name||"—",row.quantity.toLocaleString("ar-EG"),row.cost===null?"غير مسجل":money(row.cost,"EGP"),row.costTotal===null?"غير محسوب":money(row.costTotal,"EGP"),money(row.unitPrice,row.currency),money(row.retailTotal,row.currency)];
-values.forEach(value=>{const td=document.createElement("td");td.textContent=String(value);tr.append(td);});
-body.append(tr);
-});
-table.append(body);box.append(table);
-if(!rows.length)box.append(document.createTextNode("لا توجد منتجات لديها مخزون متاح حاليًا."));
-if(missingCostRows.length){const note=document.createElement("p");note.className="reportNotice";note.textContent="ملاحظة: لم تدخل تكلفة الشراء في إجمالي التكلفة للمنتجات الناقصة. سجّل تكلفتها من بطاقة المنتج حتى يصبح التقييم أشمل.";box.append(note);}
-}
-
 function renderLowStockAlerts(products,variants){
 const box=document.getElementById("lowStockAlerts");
 if(!box)return;
@@ -1173,7 +1093,6 @@ return;
 box.innerHTML="";
 document.getElementById("statProducts").textContent=String(data?.length||0);
 renderLowStockAlerts(data||[],variantRows||[]);
-renderInventoryValuation(data||[],variantRows||[],purchaseCosts);
 
 const select=document.getElementById("variantProduct");
 const oldValue=select.value;

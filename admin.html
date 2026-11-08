@@ -144,6 +144,17 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <div class="reportNotice"><strong>تنبيه محاسبي:</strong> مجمل الربح المعروض محسوب فقط لبنود الطلبات التي سُجلت لها تكلفة شراء وقت الطلب. لا يشمل مصاريف التشغيل أو تكلفة الشحن الفعلية أو الضرائب، ولا يمثل صافي الربح. الطلبات القديمة التي لا تحتوي على تكلفة ستظهر كبيانات ناقصة دون تخمين.</div>
 <h3>مبيعات آخر 7 أيام</h3><div id="salesTrend" class="salesTrend" aria-live="polite">جاري تجهيز التقرير...</div>
 <h3>أفضل أيام الأسبوع في المبيعات</h3><div id="weekdaySalesReport" class="weekdaySalesReport" aria-live="polite">جاري تجهيز التقرير...</div>
+<h3>الربح المتوقع من المخزون الحالي</h3>
+<div class="reportToolbar"><label for="inventoryAedRate">سعر الدرهم بالجنيه (لتحويل المبيعات بالدرهم)</label><input id="inventoryAedRate" type="number" min="0" step="0.01" inputmode="decimal" placeholder="أدخل سعر الدرهم بالجنيه"><button type="button" class="secondary" onclick="renderInventoryProfitReport()">تحديث الحساب</button></div>
+<div class="statsGrid reportStats">
+<article class="statCard"><span>تكلفة المخزون المسجلة</span><strong id="inventoryCostTotal">—</strong><small>بالجنيه المصري</small></article>
+<article class="statCard"><span>قيمة البيع المتوقعة بالجنيه</span><strong id="inventoryRevenueEgp">—</strong></article>
+<article class="statCard"><span>قيمة البيع المتوقعة بالدرهم</span><strong id="inventoryRevenueAed">—</strong></article>
+<article class="statCard"><span>مجمل الربح المتوقع بالجنيه</span><strong id="inventoryProfitEgp">—</strong><small>بعد تحويل مبيعات الدرهم بالسعر المدخل</small></article>
+<article class="statCard"><span>منتجات بلا تكلفة مسجلة</span><strong id="inventoryMissingCostCount">—</strong></article>
+</div>
+<div id="inventoryProfitTable" class="reportTableWrap" aria-live="polite">جاري تجهيز التقرير...</div>
+<p class="status-text">تقدير افتراضي يفترض بيع كل الكمية بالسعر الحالي أو سعر العرض الساري. تكلفة الشراء مخزنة بالجنيه. المنتجات بلا تكلفة لا تدخل في حساب الربح، ولا يتم تخمين تكلفتها. لا يشمل التقدير المصروفات أو الشحن أو الضرائب.</p>
 <h3>المخزون الراكد — منتجات بلا مبيعات في الفترة المختارة</h3><div id="stagnantInventoryReport" class="reportTableWrap" aria-live="polite">جاري تجهيز التقرير...</div>
 <h3>المبيعات حسب الماركة</h3><div id="salesByBrandReport" class="reportTableWrap">جاري تجهيز التقرير...</div>
 <h3>المبيعات حسب القسم</h3><div id="salesByCategoryReport" class="reportTableWrap">جاري تجهيز التقرير...</div>
@@ -452,6 +463,7 @@ let adminReady=false;
 let reportOrders=[];
 let reportProductCatalog=[];
 let reportVariantCatalog=[];
+let reportPurchaseCostCatalog=new Map();
 let reportExpenses=[];
 let reportCustomers=[];
 let reportCoupons=[];
@@ -1084,6 +1096,7 @@ box.textContent="تعذر تحميل تكاليف الشراء: "+costLoadError.
 return;
 }
 const purchaseCosts=new Map((costRows||[]).map(row=>[String(row.product_id),row.purchase_cost]));
+reportPurchaseCostCatalog=purchaseCosts;
 const {data:variantRows,error:variantLoadError}=await client.from("product_variants").select("id,product_id,size,color,stock,is_active");
 reportVariantCatalog=Array.isArray(variantRows)?variantRows:[];
 if(variantLoadError){
@@ -1095,6 +1108,7 @@ return;
 box.innerHTML="";
 document.getElementById("statProducts").textContent=String(data?.length||0);
 renderLowStockAlerts(data||[],variantRows||[]);
+renderInventoryProfitReport();
 
 const select=document.getElementById("variantProduct");
 const oldValue=select.value;
@@ -1905,6 +1919,59 @@ const popup=window.open("","_blank","width=850,height=900");
 if(!popup){alert("اسمح بفتح النوافذ المنبثقة لطباعة ورقة التجهيز.");return;}
 const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>تجهيز طلب EA Luxury - #'+escapeInvoiceText(order.id)+'</title><style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#222;padding:28px}.sheet{max-width:800px;margin:auto}.head{display:flex;justify-content:space-between;border-bottom:3px solid #c5a15b;padding-bottom:15px}.brand{font-size:26px;font-weight:bold}.muted{color:#777}.customer{line-height:2;margin:20px 0;padding:14px;background:#f8f6f1;border-radius:8px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{padding:15px;border:1px solid #ccc;text-align:right}th{background:#f5f2eb}.check{text-align:center;font-size:24px;width:80px}td small{display:block;color:#777;margin-top:7px}.notes{margin-top:35px;border:1px dashed #aaa;padding:15px;min-height:90px}@media print{body{padding:0}}</style></head><body><main class="sheet"><div class="head"><div><div class="brand">EA Luxury</div><div class="muted">ورقة تجهيز الطلب — للمخزن</div></div><h2>طلب #'+escapeInvoiceText(order.id)+'</h2></div><section class="customer"><strong>بيانات الشحن</strong><div>العميل: '+escapeInvoiceText(order.customer_name||"—")+'</div><div>الهاتف: '+escapeInvoiceText(order.phone||"—")+'</div><div>المحافظة: '+escapeInvoiceText(order.governorate||"—")+'</div><div>العنوان: '+escapeInvoiceText(order.address||"—")+'</div></section><h3>قائمة مراجعة المنتجات</h3><table><thead><tr><th>المنتج والاختيارات</th><th>الكمية المطلوبة</th><th>تم التجهيز</th></tr></thead><tbody>'+(rows||'<tr><td colspan="3">لا توجد منتجات</td></tr>')+'</tbody></table><div class="notes"><strong>ملاحظات التجهيز / التغليف:</strong></div><p class="muted">مراجعة عدد القطع والمقاس واللون قبل إغلاق الشحنة.</p></main><script>window.addEventListener("load",()=>window.print());<\\/script></body></html>';
 popup.document.open();popup.document.write(html);popup.document.close();
+}
+
+function renderInventoryProfitReport(){
+const products=Array.isArray(reportProductCatalog)?reportProductCatalog:[];
+const variants=Array.isArray(reportVariantCatalog)?reportVariantCatalog:[];
+const costs=reportPurchaseCostCatalog instanceof Map?reportPurchaseCostCatalog:new Map();
+const rateInput=document.getElementById("inventoryAedRate");
+const aedRate=Number(rateInput?.value);
+const validRate=Number.isFinite(aedRate)&&aedRate>0;
+const totals={qty:0,cost:0,revenueEgp:0,revenueAed:0,profitEgp:0,missing:0};
+const rows=[];
+const now=Date.now();
+products.forEach(p=>{
+const activeVariants=variants.filter(v=>String(v.product_id)===String(p.id)&&v.is_active!==false);
+const quantity=activeVariants.length?activeVariants.reduce((sum,v)=>sum+Math.max(0,Number(v.stock)||0),0):Math.max(0,Number(p.stock)||0);
+if(quantity<=0)return;
+const currency=String(p.currency||"EGP").toUpperCase()==="AED"?"AED":"EGP";
+const saleStart=p.sale_starts_at?new Date(p.sale_starts_at).getTime():null;
+const saleEnd=p.sale_ends_at?new Date(p.sale_ends_at).getTime():null;
+const salePrice=Number(p.sale_price);
+const hasSale=Number.isFinite(salePrice)&&salePrice>0&&(!saleStart||now>=saleStart)&&(!saleEnd||now<=saleEnd);
+const unitPrice=hasSale?salePrice:Number(p.price)||0;
+const revenue=quantity*unitPrice;
+const hasCost=costs.has(String(p.id))&&Number.isFinite(Number(costs.get(String(p.id))))&&Number(costs.get(String(p.id)))>=0;
+const unitCost=hasCost?Number(costs.get(String(p.id))):null;
+const cost=hasCost?quantity*unitCost:null;
+totals.qty+=quantity;
+if(currency==="EGP")totals.revenueEgp+=revenue;else totals.revenueAed+=revenue;
+if(hasCost){totals.cost+=cost;totals.profitEgp+=currency==="EGP"?revenue-cost:(validRate?revenue*aedRate-cost:0);}
+else totals.missing++;
+rows.push({name:p.name||"منتج بدون اسم",brand:p.brand||"—",quantity,currency,unitPrice,revenue,unitCost,cost,hasCost,profit:hasCost?(currency==="EGP"?revenue-cost:(validRate?revenue*aedRate-cost:null)):null});
+});
+const money=(n,c="EGP")=>Number(n||0).toLocaleString("ar-EG",{maximumFractionDigits:2})+(c==="AED"?" د.إ":" ج.م");
+const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
+set("inventoryCostTotal",money(totals.cost));
+set("inventoryRevenueEgp",money(totals.revenueEgp));
+set("inventoryRevenueAed",money(totals.revenueAed,"AED"));
+set("inventoryProfitEgp",validRate?money(totals.profitEgp):"أدخل سعر الدرهم");
+set("inventoryMissingCostCount",String(totals.missing));
+const sorted=rows.sort((a,b)=>(b.profit??-Infinity)-(a.profit??-Infinity));
+const box=document.getElementById("inventoryProfitTable");
+if(!box)return;
+if(!sorted.length){box.textContent="لا توجد كميات متاحة حاليًا.";return;}
+const table=document.createElement("table");
+table.innerHTML="<thead><tr><th>المنتج</th><th>الكمية</th><th>سعر البيع</th><th>قيمة البيع</th><th>تكلفة الشراء</th><th>الربح المتوقع</th></tr></thead>";
+const body=document.createElement("tbody");
+sorted.slice(0,50).forEach(item=>{
+const tr=document.createElement("tr");
+const vals=[item.name,String(item.quantity),money(item.unitPrice,item.currency),money(item.revenue,item.currency),item.hasCost?money(item.cost):"غير مسجلة",!item.hasCost?"غير محسوب":item.profit===null?"أدخل سعر الدرهم":money(item.profit)];
+vals.forEach(value=>{const td=document.createElement("td");td.textContent=value;tr.appendChild(td);});
+body.appendChild(tr);
+});
+table.appendChild(body);box.replaceChildren(table);
 }
 
 function renderSalesReports(orders){
@@ -3098,6 +3165,7 @@ window.login=login;
 window.addProduct=addProduct;
 window.loadOrders=loadOrders;
 window.renderSalesReports=renderSalesReports;
+window.renderInventoryProfitReport=renderInventoryProfitReport;
 window.saveExpense=saveExpense;
 window.loadExpenses=loadExpenses;
 window.saveCoupon=saveCoupon;

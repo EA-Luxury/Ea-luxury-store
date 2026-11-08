@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=54">
+  <link rel="stylesheet" href="styles.css?v=58">
 </head>
 
 <body>
@@ -250,6 +250,7 @@
     <div class="cartSummary">
       <h3>إجمالي المنتجات: <span id="cartTotal">0</span> جنيه</h3>
       <p class="cartSummaryNote">الشحن: <strong id="cartShippingFee">يُحدد بعد اختيار المحافظة</strong></p>
+      <p class="cartSummaryNote">الخصم: <strong id="cartDiscount">0 جنيه</strong></p>
       <h3>الإجمالي شامل الشحن: <span id="cartGrandTotal">0</span> جنيه</h3>
       <p id="shippingQuote" class="cartSummaryNote">اختار المحافظة لمعرفة تكلفة الشحن.</p>
     </div>
@@ -270,6 +271,11 @@
         <input name="customer_name" placeholder="الاسم بالكامل" autocomplete="name" required>
         <input name="phone" type="tel" placeholder="رقم الموبايل" autocomplete="tel" required>
         <input name="customer_email" type="email" placeholder="البريد الإلكتروني لاستلام تأكيد الطلب" autocomplete="email" required>
+        <div class="couponEntry">
+          <label for="couponCode">كود الخصم (اختياري)</label>
+          <div class="couponControls"><input id="couponCode" name="coupon_code" maxlength="40" placeholder="اكتب كود الخصم" autocomplete="off"><button type="button" id="applyCouponButton">تطبيق الكود</button></div>
+          <p id="couponMessage" class="cartSummaryNote" role="status" aria-live="polite"></p>
+        </div>
         <select name="governorate" autocomplete="address-level1" required>
           <option value="">اختر المحافظة</option>
           <option value="القاهرة">القاهرة</option>

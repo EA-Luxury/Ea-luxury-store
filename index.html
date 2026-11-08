@@ -398,38 +398,69 @@
       if (!installButton) return;
 
       const isAndroid = /Android/i.test(navigator.userAgent);
-      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-      if (!isAndroid || isStandalone) return;
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+      if (isStandalone || (!isAndroid && !isIOS)) return;
 
       installButton.hidden = false;
-      let deferredPrompt = null;
 
-      window.addEventListener("beforeinstallprompt", event => {
-        event.preventDefault();
-        deferredPrompt = event;
+      if (isAndroid) {
+        let deferredPrompt = null;
         installButton.textContent = "تثبيت التطبيق";
-      });
-
-      installButton.addEventListener("click", async () => {
-        if (!deferredPrompt) {
-          alert("لتثبيت EA Luxury: افتح قائمة Chrome (⋮) ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».");
-          return;
-        }
-
-        deferredPrompt.prompt();
-        const choice = await deferredPrompt.userChoice;
-        deferredPrompt = null;
-        if (choice && choice.outcome === "accepted") {
+        window.addEventListener("beforeinstallprompt", event => {
+          event.preventDefault();
+          deferredPrompt = event;
+        });
+        installButton.addEventListener("click", async () => {
+          if (!deferredPrompt) {
+            alert("لتثبيت EA Luxury: افتح قائمة Chrome (⋮) ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».");
+            return;
+          }
+          deferredPrompt.prompt();
+          const choice = await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          if (choice && choice.outcome === "accepted") installButton.hidden = true;
+        });
+        window.addEventListener("appinstalled", () => {
           installButton.hidden = true;
-        } else {
-          installButton.textContent = "حاول تثبيت التطبيق مرة أخرى";
-        }
-      });
+          deferredPrompt = null;
+        });
+      }
 
-      window.addEventListener("appinstalled", () => {
-        installButton.hidden = true;
-        deferredPrompt = null;
-      });
+      if (isIOS) {
+        installButton.textContent = "احصل على تطبيق EA Luxury";
+        installButton.addEventListener("click", () => {
+          let sheet = document.getElementById("eaIosInstallSheet");
+          if (sheet) {
+            sheet.hidden = false;
+            return;
+          }
+          sheet = document.createElement("div");
+          sheet.id = "eaIosInstallSheet";
+          sheet.className = "ea-ios-install-overlay";
+          sheet.innerHTML = `
+            <section class="ea-ios-install-sheet" role="dialog" aria-modal="true" aria-labelledby="eaIosInstallTitle">
+              <button type="button" class="ea-ios-install-close" aria-label="إغلاق">×</button>
+              <div class="ea-ios-install-mark">EA <span>LUXURY</span></div>
+              <h2 id="eaIosInstallTitle">تطبيق EA Luxury على الآيفون</h2>
+              <p>ثبّت المتجر على شاشتك الرئيسية وافتحه في أي وقت مثل التطبيقات العادية.</p>
+              <ol class="ea-ios-install-steps">
+                <li><span>1</span><div><strong>اضغط على مشاركة</strong><small>زر المربع والسهم لأعلى في Safari</small></div><b class="ea-ios-share-symbol">↑</b></li>
+                <li><span>2</span><div><strong>اختر إضافة إلى الشاشة الرئيسية</strong><small>Add to Home Screen</small></div><b class="ea-ios-home-symbol">＋</b></li>
+                <li><span>3</span><div><strong>اضغط إضافة</strong><small>سيظهر EA Luxury بجوار تطبيقاتك</small></div><b class="ea-ios-done-symbol">✓</b></li>
+              </ol>
+              <div class="ea-ios-install-note">لأفضل تجربة، افتح المتجر باستخدام Safari على الآيفون.</div>
+              <button type="button" class="ea-ios-install-ok">حسنًا، فهمت</button>
+            </section>`;
+          document.body.appendChild(sheet);
+          const close = () => { sheet.hidden = true; };
+          sheet.querySelector(".ea-ios-install-close").addEventListener("click", close);
+          sheet.querySelector(".ea-ios-install-ok").addEventListener("click", close);
+          sheet.addEventListener("click", event => { if (event.target === sheet) close(); });
+        });
+      }
     })();
   </script>
 

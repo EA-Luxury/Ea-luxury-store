@@ -1,4 +1,4 @@
-const CACHE_NAME = "ea-luxury-shell-v77";
+const CACHE_NAME = "ea-luxury-shell-v78";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -7,8 +7,8 @@ const APP_SHELL = [
   "./cart.html",
   "./favorites.html",
   "./styles.css?v=60",
-  "./app.js?v=67",
-  "./collection.js?v=7",
+  "./app.js?v=68",
+  "./collection.js?v=8",
   "./product-detail.js?v=27",
   "./favorites.js?v=2",
   "./ea-icon.svg",
@@ -22,10 +22,13 @@ self.addEventListener("install", event => {
     caches.open(CACHE_NAME)
       .then(async cache => {
         await Promise.all(APP_SHELL.map(async path => {
-          const request = new Request(path, { cache: "reload" });
-          const response = await fetch(request);
-          if (!response.ok) throw new Error("Failed to cache " + path);
-          await cache.put(path, response);
+          try {
+            const request = new Request(path, { cache: "reload" });
+            const response = await fetch(request);
+            if (response.ok) await cache.put(request, response);
+          } catch (error) {
+            console.warn("تعذر تخزين ملف مؤقتًا:", path, error);
+          }
         }));
       })
       .then(() => self.skipWaiting())
@@ -50,34 +53,23 @@ self.addEventListener("fetch", event => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then(response => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(async () => {
-          const cached = await caches.match(request);
-          return cached || caches.match("./index.html");
-        })
-    );
-    return;
-  }
-
+  // الشبكة أولًا لصفحات HTML وملفات التشغيل والتنسيق؛ والنسخة المخزنة احتياط عند انقطاع الإنترنت.
   event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached;
-      return fetch(request).then(response => {
+    fetch(request)
+      .then(response => {
         if (response.ok && response.type === "basic") {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+          event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(request, copy)));
         }
         return response;
-      });
-    })
+      })
+      .catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        if (request.mode === "navigate") {
+          return (await caches.match("./index.html")) || Response.error();
+        }
+        return Response.error();
+      })
   );
 });

@@ -2372,3 +2372,67 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
   .ea-contact-icon svg { width: 17px; height: 17px; }
   .ea-contact-arrow { display: none; }
 }
+
+
+/* EA Luxury contact — minimal luxury links */
+.ea-contact-section {
+  padding: 30px 18px 24px;
+  background: #101010;
+  border-top: 1px solid rgba(214,179,106,.22);
+  border-bottom: 0;
+}
+.ea-contact-inner { max-width: 760px; }
+.ea-contact-eyebrow { font-size: 9px; letter-spacing: 2.4px; color: #aa8d5b; }
+.ea-contact-inner h2 { font-size: 22px; color: #eee5d5; font-weight: 500; }
+.ea-contact-subtitle { margin-bottom: 16px; color: #99948b; font-size: 12px; }
+.ea-contact-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+}
+.ea-contact-link {
+  min-width: 0;
+  min-height: 0;
+  padding: 7px 22px;
+  gap: 7px;
+  color: #d8d0c2;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.ea-contact-link + .ea-contact-link {
+  border-right: 1px solid rgba(214,179,106,.25);
+}
+.ea-contact-link:hover {
+  color: #e3c58f;
+  background: transparent;
+  border-color: rgba(214,179,106,.25);
+  transform: none;
+}
+.ea-contact-icon,
+.ea-contact-facebook-mark {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  color: #b99a63;
+  background: transparent;
+  border-radius: 0;
+  font-size: 13px;
+  line-height: 14px;
+}
+.ea-contact-icon svg { width: 14px; height: 14px; stroke-width: 1.7; }
+.ea-contact-arrow { display: none; }
+.ea-contact-note { margin-top: 12px; color: #716b62; font-size: 10px; }
+@media (max-width: 520px) {
+  .ea-contact-section { padding: 25px 12px 20px; }
+  .ea-contact-subtitle { margin-bottom: 13px; }
+  .ea-contact-links { gap: 0; }
+  .ea-contact-link { flex: 0 0 auto; padding: 7px 13px; gap: 6px; font-size: 11px; }
+  .ea-contact-icon, .ea-contact-icon svg { width: 13px; height: 13px; }
+  .ea-contact-icon { flex-basis: 13px; }
+}

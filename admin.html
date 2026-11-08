@@ -1980,8 +1980,17 @@ table.append(tbody);topBox.append(table);
 
 
 const soldProductIds=new Set();
+const lastSaleByProduct=new Map();
 completed.forEach(order=>(order.order_items||[]).forEach(item=>{
  if(item.product_id!==null&&item.product_id!==undefined)soldProductIds.add(String(item.product_id));
+}));
+completedAll.forEach(order=>(order.order_items||[]).forEach(item=>{
+ if(item.product_id===null||item.product_id===undefined)return;
+ const key=String(item.product_id);
+ const saleDate=order.created_at?new Date(order.created_at):null;
+ if(!saleDate||!Number.isFinite(saleDate.getTime()))return;
+ const previous=lastSaleByProduct.get(key);
+ if(!previous||saleDate>previous)lastSaleByProduct.set(key,saleDate);
 }));
 const variantsByProduct=new Map();
 reportVariantCatalog.forEach(variant=>{
@@ -2011,12 +2020,14 @@ if(stagnantBox){
  }else{
   const table=document.createElement("table");table.className="reportTable";
   const head=document.createElement("thead"),row=document.createElement("tr");
-  ["المنتج","الماركة","القسم","المخزون المتاح"].forEach(label=>{const th=document.createElement("th");th.textContent=label;row.append(th);});
+  ["المنتج","الماركة","القسم","المخزون المتاح","آخر بيع مكتمل"].forEach(label=>{const th=document.createElement("th");th.textContent=label;row.append(th);});
   head.append(row);table.append(head);
   const body=document.createElement("tbody");
   stagnantProducts.slice(0,30).forEach(entry=>{
    const tr=document.createElement("tr");
-   [entry.product.name||"—",entry.product.brand||"غير محدد",entry.product.category||"غير محدد",entry.stock.toLocaleString("ar-EG")+" قطعة"].forEach(value=>{const td=document.createElement("td");td.textContent=String(value);tr.append(td);});
+   const lastSale=lastSaleByProduct.get(String(entry.product.id));
+   const lastSaleLabel=lastSale?lastSale.toLocaleDateString("ar-EG",{timeZone:"Africa/Cairo",year:"numeric",month:"short",day:"numeric"}):"لم يسجل بيع مكتمل من قبل";
+   [entry.product.name||"—",entry.product.brand||"غير محدد",entry.product.category||"غير محدد",entry.stock.toLocaleString("ar-EG")+" قطعة",lastSaleLabel].forEach(value=>{const td=document.createElement("td");td.textContent=String(value);tr.append(td);});
    body.append(tr);
   });
   table.append(body);stagnantBox.append(table);

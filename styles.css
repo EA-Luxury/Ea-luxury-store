@@ -2438,12 +2438,14 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 }
 
 
-/* ملابس حريمي: مساحة مستقلة وأكبر للصورة مع إظهار الصورة كاملة */
+/* ملابس حريمي: صور أعرض وأقرب للمربّع مع إظهار القطعة كاملة */
 .product.product-womens-clothing .product-image-link {
-  height: 300px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1 !important;
   background: #faf9f6 !important;
   overflow: hidden;
 }
@@ -2453,12 +2455,10 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
   height: 100% !important;
   max-width: 100% !important;
   margin: 0 auto !important;
-  padding: 0 !important;
+  padding: 8px !important;
+  box-sizing: border-box !important;
   object-fit: contain !important;
   object-position: center !important;
   mix-blend-mode: normal !important;
   transform: none !important;
-}
-@media (max-width: 650px) {
-  .product.product-womens-clothing .product-image-link { height: 230px !important; }
 }

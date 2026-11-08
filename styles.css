@@ -2670,3 +2670,35 @@ body.size-guide-open{overflow:hidden}
 .detail-option-chip.selected { background:#171717; border-color:#171717; color:#d6b36a; box-shadow:0 0 0 1px #171717; }
 .detail-option-chip.unavailable, .detail-option-chip:disabled { color:#aaa; background:#f6f5f2; border-color:#e7e4de; cursor:not-allowed; text-decoration:line-through; opacity:.85; }
 @media (max-width:760px) { .detail-option-chip { min-width:45px; min-height:41px; padding:7px 10px; } }
+
+
+/* زر تثبيت تطبيق EA Luxury على أندرويد */
+.installAppButton {
+  border: 1px solid #d6b36a;
+  background: transparent;
+  color: #d6b36a;
+  border-radius: 24px;
+  padding: 8px 13px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease, transform .2s ease;
+}
+.installAppButton:hover {
+  background: #d6b36a;
+  color: #111;
+}
+.installAppButton:active {
+  transform: scale(.97);
+}
+.installAppButton[hidden] {
+  display: none !important;
+}
+@media (max-width: 760px) {
+  .installAppButton {
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+}

@@ -2341,7 +2341,13 @@ const packingButton=document.createElement("button");
 packingButton.type="button";packingButton.className="secondary";
 packingButton.textContent="طباعة ورقة التجهيز";
 packingButton.onclick=()=>printOrderPackingSlip(o);
-actions.append(invoiceButton,packingButton);
+
+const whatsappButton=document.createElement("button");
+whatsappButton.type="button";whatsappButton.className="secondary";
+whatsappButton.textContent="مراسلة العميل واتساب";
+whatsappButton.onclick=()=>messageOrderCustomerWhatsApp(o);
+
+actions.append(invoiceButton,packingButton,whatsappButton);
 
 const cancellationReason=document.createElement("p");
 cancellationReason.className="orderCancellationReason";
@@ -2354,6 +2360,25 @@ div.append(title,date,details,address,shipping,total,items,status,cancellationRe
 box.append(div);
 });
 filterOrders();
+}
+
+function messageOrderCustomerWhatsApp(order){
+const raw=String(order?.phone||"").replace(/[^0-9]/g,"");
+let phone=raw;
+if(phone.startsWith("00"))phone=phone.slice(2);
+if(phone.startsWith("0"))phone="20"+phone.slice(1);
+if(!phone.startsWith("20")&&phone.length===10)phone="20"+phone;
+if(phone.length<11){alert("رقم هاتف العميل غير صالح لمراسلة واتساب.");return;}
+const items=(order.order_items||[]).map(item=>"• "+item.product_name+" × "+item.quantity).join("\n");
+const message=[
+"مرحبًا "+(order.customer_name||"بك"),
+"بخصوص طلبك رقم #"+order.id+" من EA Luxury",
+"حالة الطلب الحالية: "+(order.status||"جديد"),
+items?"المنتجات:\n"+items:"",
+"الإجمالي شامل الشحن: "+Number(order.total||0).toLocaleString("ar-EG")+" جنيه",
+"شكرًا لثقتك في EA Luxury."
+].filter(Boolean).join("\n\n");
+window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(message),"_blank","noopener");
 }
 
 async function updateOrder(id,status){

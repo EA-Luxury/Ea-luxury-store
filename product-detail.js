@@ -81,19 +81,12 @@ let detailZoomY = 0;
 let detailZoomDrag = null;
 let detailPinchStartDistance = 0;
 let detailPinchStartScale = 1;
-let detailPinchStartMidpoint = null;
 let detailTouchPan = null;
-let detailZoomFrame = 0;
 
 function detailApplyZoom() {
+  const image = document.getElementById("detailLightboxImage");
   const level = document.getElementById("detailZoomLevel");
-  if (!detailZoomFrame) {
-    detailZoomFrame = requestAnimationFrame(() => {
-      detailZoomFrame = 0;
-      const image = document.getElementById("detailLightboxImage");
-      if (image) image.style.transform = `translate3d(${detailZoomX}px, ${detailZoomY}px, 0) scale(${detailZoomScale})`;
-    });
-  }
+  if (image) image.style.transform = `translate(${detailZoomX}px, ${detailZoomY}px) scale(${detailZoomScale})`;
   if (level) level.textContent = Math.round(detailZoomScale * 100) + "%";
   const reset = document.getElementById("detailZoomReset");
   if (reset) reset.disabled = detailZoomScale === 1 && detailZoomX === 0 && detailZoomY === 0;
@@ -116,10 +109,6 @@ function detailZoomDistance(touches) {
   const dx = touches[0].clientX - touches[1].clientX;
   const dy = touches[0].clientY - touches[1].clientY;
   return Math.hypot(dx, dy);
-}
-
-function detailZoomMidpoint(touches) {
-  return { x: (touches[0].clientX + touches[1].clientX) / 2, y: (touches[0].clientY + touches[1].clientY) / 2 };
 }
 
 function detailBindZoomControls(overlay) {
@@ -156,7 +145,6 @@ function detailBindZoomControls(overlay) {
       detailTouchPan = null;
       detailPinchStartDistance = detailZoomDistance(event.touches);
       detailPinchStartScale = detailZoomScale;
-      detailPinchStartMidpoint = detailZoomMidpoint(event.touches);
     } else if (event.touches.length === 1 && detailZoomScale > 1) {
       const touch = event.touches[0];
       detailTouchPan = {
@@ -170,17 +158,7 @@ function detailBindZoomControls(overlay) {
   image.addEventListener("touchmove", event => {
     if (event.touches.length === 2 && detailPinchStartDistance > 0) {
       event.preventDefault();
-      const nextScale = Math.max(1, Math.min(4, detailPinchStartScale * detailZoomDistance(event.touches) / detailPinchStartDistance));
-      const midpoint = detailZoomMidpoint(event.touches);
-      const bounds = overlay.getBoundingClientRect();
-      const centerX = bounds.left + bounds.width / 2;
-      const centerY = bounds.top + bounds.height / 2;
-      const ratio = nextScale / detailPinchStartScale;
-      detailZoomX = midpoint.x - centerX - (detailPinchStartMidpoint.x - centerX - detailZoomX) * ratio;
-      detailZoomY = midpoint.y - centerY - (detailPinchStartMidpoint.y - centerY - detailZoomY) * ratio;
-      detailZoomScale = nextScale;
-      if (detailZoomScale === 1) { detailZoomX = 0; detailZoomY = 0; }
-      detailApplyZoom();
+      detailSetZoom(detailPinchStartScale * detailZoomDistance(event.touches) / detailPinchStartDistance);
     } else if (event.touches.length === 1 && detailTouchPan && detailZoomScale > 1) {
       event.preventDefault();
       const touch = event.touches[0];
@@ -190,7 +168,7 @@ function detailBindZoomControls(overlay) {
     }
   }, { passive: false });
   image.addEventListener("touchend", event => {
-    if (event.touches.length < 2) { detailPinchStartDistance = 0; detailPinchStartMidpoint = null; }
+    if (event.touches.length < 2) detailPinchStartDistance = 0;
     if (event.touches.length === 1 && detailZoomScale > 1) {
       const touch = event.touches[0];
       detailTouchPan = {
@@ -206,7 +184,6 @@ function detailBindZoomControls(overlay) {
   image.addEventListener("touchcancel", () => {
     detailTouchPan = null;
     detailPinchStartDistance = 0;
-    detailPinchStartMidpoint = null;
   });
 }
 

@@ -46,6 +46,7 @@ main{max-width:1180px}
 .orderAdminCard,.productAdminCard{padding:16px;margin:12px 0;border:1px solid #eee7da;border-radius:10px;background:#fff}
 .orderFilters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:760px}
 .orderFilters select{background:#fcfbf8}
+.orderDateFilter{display:grid;gap:5px;color:#74664e;font-size:13px;font-weight:700}.orderDateFilter input{width:100%;min-width:0;margin:0}
 .orderMeta{color:#766b58;font-size:13px}
 .orderActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .orderActions button{width:auto;min-width:130px;margin:0}
@@ -377,16 +378,19 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <section id="returnRequestsSection" class="overviewSection"><h2>طلبات الاستبدال والمرتجعات</h2><p class="status-text">طلبات العملاء بعد استلام الطلب. لا تتم إعادة الكمية للمخزون إلا عند تسجيل استلام المنتج المرتجع فعليًا.</p><button type="button" class="secondary" onclick="loadReturnRequests()">تحديث الطلبات</button><div id="returnRequestsList">جاري تحميل طلبات الاستبدال والمرتجعات...</div></section>
 <section id="ordersSection">
 <h2>طلبات العملاء</h2>
-<input id="adminOrderSearch" type="search" placeholder="ابحث برقم الطلب أو اسم العميل أو الهاتف..." aria-label="البحث في الطلبات">
+<input id="adminOrderSearch" type="search" placeholder="ابحث برقم الطلب أو اسم العميل أو الهاتف..." aria-label="البحث في الطلبات" oninput="filterOrders()">
 <div class="orderFilters">
-<select id="adminOrderStatusFilter" aria-label="فلترة حسب حالة الطلب">
+<select id="adminOrderStatusFilter" aria-label="فلترة حسب حالة الطلب" onchange="filterOrders()">
 <option value="">كل حالات الطلبات</option>
 <option value="جديد">جديد</option><option value="قيد التجهيز">قيد التجهيز</option><option value="تم الشحن">تم الشحن</option><option value="مكتمل">مكتمل</option><option value="ملغي">ملغي</option>
 </select>
-<select id="adminOrderGovernorateFilter" aria-label="فلترة حسب المحافظة">
+<select id="adminOrderGovernorateFilter" aria-label="فلترة حسب المحافظة" onchange="filterOrders()">
 <option value="">كل المحافظات</option>
 <option value="القاهرة">القاهرة</option><option value="الجيزة">الجيزة</option><option value="الإسكندرية">الإسكندرية</option><option value="الدقهلية">الدقهلية</option><option value="دمياط">دمياط</option><option value="الشرقية">الشرقية</option><option value="القليوبية">القليوبية</option><option value="كفر الشيخ">كفر الشيخ</option><option value="الغربية">الغربية</option><option value="المنوفية">المنوفية</option><option value="البحيرة">البحيرة</option><option value="بورسعيد">بورسعيد</option><option value="الإسماعيلية">الإسماعيلية</option><option value="السويس">السويس</option><option value="بني سويف">بني سويف</option><option value="الفيوم">الفيوم</option><option value="المنيا">المنيا</option><option value="أسيوط">أسيوط</option><option value="سوهاج">سوهاج</option><option value="قنا">قنا</option><option value="الأقصر">الأقصر</option><option value="أسوان">أسوان</option><option value="البحر الأحمر">البحر الأحمر</option><option value="مطروح">مطروح</option><option value="الوادي الجديد">الوادي الجديد</option><option value="شمال سيناء">شمال سيناء</option><option value="جنوب سيناء">جنوب سيناء</option>
 </select>
+<label class="orderDateFilter">من تاريخ <input id="adminOrderDateFrom" type="date" aria-label="من تاريخ" onchange="filterOrders()"></label>
+<label class="orderDateFilter">إلى تاريخ <input id="adminOrderDateTo" type="date" aria-label="إلى تاريخ" onchange="filterOrders()"></label>
+<button type="button" class="secondary" onclick="resetOrderFilters()">مسح كل الفلاتر</button>
 </div>
 <p id="ordersFilterCount" class="status-text" aria-live="polite"></p>
 <div id="newOrderNotice" class="order-notice" hidden></div>
@@ -1738,18 +1742,35 @@ function filterOrders(){
 const query=document.getElementById("adminOrderSearch").value.trim().toLocaleLowerCase("ar");
 const status=document.getElementById("adminOrderStatusFilter").value;
 const governorate=document.getElementById("adminOrderGovernorateFilter").value;
+const dateFrom=document.getElementById("adminOrderDateFrom").value;
+const dateTo=document.getElementById("adminOrderDateTo").value;
+if(dateFrom&&dateTo&&dateFrom>dateTo){
+document.getElementById("ordersFilterCount").textContent="تاريخ البداية يجب أن يكون قبل تاريخ النهاية.";
+return;
+}
 const cards=[...document.querySelectorAll("#ordersList .orderAdminCard")];
 let visible=0;
 cards.forEach(card=>{
 const matchesText=!query||String(card.dataset.search||"").includes(query);
 const matchesStatus=!status||card.dataset.status===status;
 const matchesGovernorate=!governorate||card.dataset.governorate===governorate;
-const show=matchesText&&matchesStatus&&matchesGovernorate;
+const orderDate=String(card.dataset.orderDate||"");
+const matchesFrom=!dateFrom||(orderDate&&orderDate>=dateFrom);
+const matchesTo=!dateTo||(orderDate&&orderDate<=dateTo);
+const show=matchesText&&matchesStatus&&matchesGovernorate&&matchesFrom&&matchesTo;
 card.hidden=!show;
 if(show)visible++;
 });
 const counter=document.getElementById("ordersFilterCount");
 if(counter)counter.textContent="عرض "+visible+" من "+cards.length+" طلب";
+}
+
+function resetOrderFilters(){
+["adminOrderSearch","adminOrderStatusFilter","adminOrderGovernorateFilter","adminOrderDateFrom","adminOrderDateTo"].forEach(id=>{
+const field=document.getElementById(id);
+if(field)field.value="";
+});
+filterOrders();
 }
 
 function escapeInvoiceText(value){
@@ -2304,6 +2325,7 @@ div.className="order orderAdminCard";
 div.dataset.search=(String(o.id||"")+" "+String(o.customer_name||"")+" "+String(o.phone||"")+" "+String(o.cancellation_reason||"")).toLocaleLowerCase("ar");
 div.dataset.status=String(o.status||"");
 div.dataset.governorate=String(o.governorate||"");
+div.dataset.orderDate=o.created_at?new Date(o.created_at).toLocaleDateString("en-CA",{timeZone:"Africa/Cairo"}):"";
 
 const title=document.createElement("b");
 title.textContent="طلب #"+o.id+" من: "+o.customer_name;

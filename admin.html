@@ -2054,61 +2054,96 @@ if(stagnantBox){
  summary.className="reportNotice";
  summary.textContent="عدد المنتجات التي لم تسجل مبيعات مكتملة: "+stagnantProducts.length.toLocaleString("ar-EG")+" — إجمالي القطع المتاحة بها: "+totalUnits.toLocaleString("ar-EG")+". الفترة: "+(period==="all"?"كل الفترات":"آخر "+period+" يومًا")+".";
  stagnantBox.append(summary);
- const exportButton=document.createElement("button");
- exportButton.type="button";
- exportButton.textContent="تصدير تقرير المخزون الراكد إلى Excel";
- exportButton.style.maxWidth="360px";
- exportButton.addEventListener("click",()=>{
-  const csvCell=value=>'"'+String(value??"").replace(/"/g,'""')+'"';
-  const rows=[["المنتج","الماركة","القسم","المخزون المتاح","آخر بيع مكتمل","مدة عدم البيع"]];
-  stagnantProducts.forEach(entry=>{
-   const lastSale=lastSaleByProduct.get(String(entry.product.id));
-   const lastSaleKey=lastSale?cairoDay(lastSale):"";
-   const lastSaleLabel=lastSale?lastSale.toLocaleDateString("en-CA",{timeZone:"Africa/Cairo"}):"لم يسجل بيع مكتمل من قبل";
-   let ageLabel="لم يُبع من قبل";
-   if(lastSaleKey){
-    const lastDate=new Date(lastSaleKey+"T12:00:00Z");
-    const ageDays=Math.max(0,Math.floor((todayCairoDate-lastDate)/86400000));
-    ageLabel=ageDays.toLocaleString("ar-EG")+" يوم";
-   }
-   rows.push([entry.product.name||"",entry.product.brand||"غير محدد",entry.product.category||"غير محدد",entry.stock,lastSaleLabel,ageLabel]);
+ const prioritizedStagnant=[...stagnantProducts].map(entry=>{
+  const lastSale=lastSaleByProduct.get(String(entry.product.id));
+  const days=lastSale?Math.max(0,Math.floor((todayCairoDate-new Date(cairoDay(lastSale)+"T12:00:00Z"))/86400000)):Number.POSITIVE_INFINITY;
+  return {...entry,lastSale,days};
+ }).sort((a,b)=>b.days-a.days||b.stock-a.stock);
+ const filterPanel=document.createElement("div");
+ filterPanel.className="reportFilters";
+ filterPanel.style.display="flex";
+ filterPanel.style.flexWrap="wrap";
+ filterPanel.style.gap="10px";
+ filterPanel.style.alignItems="center";
+ filterPanel.style.margin="12px 0";
+ const makeFilter=(labelText,values)=>{
+  const label=document.createElement("label");
+  label.style.display="grid";label.style.gap="5px";label.style.minWidth="160px";
+  label.textContent=labelText;
+  const select=document.createElement("select");
+  select.style.minWidth="160px";select.style.padding="9px";select.style.borderRadius="8px";
+  const all=document.createElement("option");all.value="";all.textContent="كل "+labelText;select.append(all);
+  values.forEach(value=>{const option=document.createElement("option");option.value=value;option.textContent=value;select.append(option);});
+  label.append(select);filterPanel.append(label);return select;
+ };
+ const brands=[...new Set(prioritizedStagnant.map(entry=>String(entry.product.brand||"غير محدد").trim()||"غير محدد"))].sort((a,b)=>a.localeCompare(b,"ar"));
+ const categories=[...new Set(prioritizedStagnant.map(entry=>String(entry.product.category||"غير محدد").trim()||"غير محدد"))].sort((a,b)=>a.localeCompare(b,"ar"));
+ const brandFilter=makeFilter("الماركة",brands);
+ const categoryFilter=makeFilter("القسم",categories);
+ const searchLabel=document.createElement("label");
+ searchLabel.style.display="grid";searchLabel.style.gap="5px";searchLabel.style.minWidth="200px";
+ searchLabel.textContent="بحث باسم المنتج";
+ const searchInput=document.createElement("input");
+ searchInput.type="search";searchInput.placeholder="اكتب اسم المنتج";searchInput.style.padding="9px";searchInput.style.borderRadius="8px";
+ searchLabel.append(searchInput);filterPanel.append(searchLabel);
+ stagnantBox.append(filterPanel);
+ const resultCount=document.createElement("p");resultCount.className="reportNotice";
+ const table=document.createElement("table");table.className="reportTable";
+ const head=document.createElement("thead"),row=document.createElement("tr");
+ ["المنتج","الماركة","القسم","المخزون المتاح","آخر بيع مكتمل","مدة عدم البيع"].forEach(label=>{const th=document.createElement("th");th.textContent=label;row.append(th);});
+ head.append(row);table.append(head);
+ const body=document.createElement("tbody");table.append(body);
+ const renderStagnantRows=()=>{
+  const brand=brandFilter.value,category=categoryFilter.value,term=searchInput.value.trim().toLocaleLowerCase("ar");
+  const filtered=prioritizedStagnant.filter(entry=>{
+   const itemBrand=String(entry.product.brand||"غير محدد").trim()||"غير محدد";
+   const itemCategory=String(entry.product.category||"غير محدد").trim()||"غير محدد";
+   const name=String(entry.product.name||"").toLocaleLowerCase("ar");
+   return (!brand||itemBrand===brand)&&(!category||itemCategory===category)&&(!term||name.includes(term));
   });
-  const csv="\uFEFF"+rows.map(row=>row.map(csvCell).join(",")).join("\r\n");
-  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
-  const url=URL.createObjectURL(blob);
-  const link=document.createElement("a");
-  link.href=url;
-  link.download="EA-Luxury-stagnant-inventory.csv";
-  document.body.append(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
- });
- stagnantBox.append(exportButton);
- if(!stagnantProducts.length){
-  const empty=document.createElement("p");empty.textContent="لا توجد منتجات متاحة بالمخزون بلا مبيعات مكتملة في الفترة المختارة.";stagnantBox.append(empty);
- }else{
-  const table=document.createElement("table");table.className="reportTable";
-  const head=document.createElement("thead"),row=document.createElement("tr");
-  ["المنتج","الماركة","القسم","المخزون المتاح","آخر بيع مكتمل","مدة عدم البيع"].forEach(label=>{const th=document.createElement("th");th.textContent=label;row.append(th);});
-  head.append(row);table.append(head);
-  const body=document.createElement("tbody");
-  const prioritizedStagnant=[...stagnantProducts].map(entry=>{
-   const lastSale=lastSaleByProduct.get(String(entry.product.id));
-   const days=lastSale?Math.max(0,Math.floor((todayCairoDate-new Date(cairoDay(lastSale)+"T12:00:00Z"))/86400000)):Number.POSITIVE_INFINITY;
-   return {...entry,lastSale,days};
-  }).sort((a,b)=>b.days-a.days||b.stock-a.stock);
-  prioritizedStagnant.slice(0,30).forEach(entry=>{
+  body.replaceChildren();
+  filtered.slice(0,30).forEach(entry=>{
    const tr=document.createElement("tr");
    const lastSaleLabel=entry.lastSale?entry.lastSale.toLocaleDateString("ar-EG",{timeZone:"Africa/Cairo",year:"numeric",month:"short",day:"numeric"}):"لم يسجل بيع مكتمل من قبل";
    const ageLabel=Number.isFinite(entry.days)?entry.days.toLocaleString("ar-EG")+" يوم":"لم يُبع من قبل";
    [entry.product.name||"—",entry.product.brand||"غير محدد",entry.product.category||"غير محدد",entry.stock.toLocaleString("ar-EG")+" قطعة",lastSaleLabel,ageLabel].forEach(value=>{const td=document.createElement("td");td.textContent=String(value);tr.append(td);});
    body.append(tr);
   });
-  table.append(body);stagnantBox.append(table);
-  if(stagnantProducts.length>30){const more=document.createElement("small");more.textContent="يتم عرض أول 30 منتجًا حسب أطول مدة عدم بيع، وإجمالي المنتجات "+stagnantProducts.length.toLocaleString("ar-EG")+".";
-   stagnantBox.append(more);}
- }
+  resultCount.textContent="نتائج التصفية: "+filtered.length.toLocaleString("ar-EG")+" منتج — "+filtered.reduce((total,entry)=>total+entry.stock,0).toLocaleString("ar-EG")+" قطعة بالمخزون.";
+  if(filtered.length>30)resultCount.textContent+=" يتم عرض أول 30 منتجًا حسب أطول مدة عدم بيع.";
+  if(!filtered.length)resultCount.textContent="لا توجد منتجات مطابقة لخيارات التصفية.";
+ };
+ brandFilter.addEventListener("change",renderStagnantRows);
+ categoryFilter.addEventListener("change",renderStagnantRows);
+ searchInput.addEventListener("input",renderStagnantRows);
+ const exportButton=document.createElement("button");
+ exportButton.type="button";
+ exportButton.textContent="تصدير النتائج الظاهرة إلى Excel";
+ exportButton.style.maxWidth="360px";
+ exportButton.addEventListener("click",()=>{
+  const brand=brandFilter.value,category=categoryFilter.value,term=searchInput.value.trim().toLocaleLowerCase("ar");
+  const filtered=prioritizedStagnant.filter(entry=>{
+   const itemBrand=String(entry.product.brand||"غير محدد").trim()||"غير محدد";
+   const itemCategory=String(entry.product.category||"غير محدد").trim()||"غير محدد";
+   return (!brand||itemBrand===brand)&&(!category||itemCategory===category)&&(!term||String(entry.product.name||"").toLocaleLowerCase("ar").includes(term));
+  });
+  const csvCell=value=>'"'+String(value??"").replace(/"/g,'""')+'"';
+  const rows=[["المنتج","الماركة","القسم","المخزون المتاح","آخر بيع مكتمل","مدة عدم البيع"]];
+  filtered.forEach(entry=>{
+   const lastSaleLabel=entry.lastSale?entry.lastSale.toLocaleDateString("en-CA",{timeZone:"Africa/Cairo"}):"لم يسجل بيع مكتمل من قبل";
+   const ageLabel=Number.isFinite(entry.days)?entry.days.toLocaleString("ar-EG")+" يوم":"لم يُبع من قبل";
+   rows.push([entry.product.name||"",entry.product.brand||"غير محدد",entry.product.category||"غير محدد",entry.stock,lastSaleLabel,ageLabel]);
+  });
+  const csv="\\uFEFF"+rows.map(row=>row.map(csvCell).join(",")).join("\\r\\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement("a");link.href=url;link.download="EA-Luxury-stagnant-inventory.csv";
+  document.body.append(link);link.click();link.remove();URL.revokeObjectURL(url);
+ });
+ stagnantBox.append(exportButton,resultCount,table);
+ renderStagnantRows();
+ if(!stagnantProducts.length){const empty=document.createElement("p");empty.textContent="لا توجد منتجات متاحة بالمخزون بلا مبيعات مكتملة في الفترة المختارة.";stagnantBox.append(empty);}
+
 }
 
 const catalogById=new Map(reportProductCatalog.map(product=>[String(product.id),product]));

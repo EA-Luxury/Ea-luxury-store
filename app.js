@@ -1782,8 +1782,9 @@ document.querySelectorAll('a[href="#trackOrder"]').forEach(link => {
 // تسجيل نسخة EA Luxury القابلة للتثبيت مع دعم محدود لفتح الواجهة دون اتصال.
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js")
-      .catch(error => console.warn("تعذر تسجيل تطبيق EA Luxury:", error));
+    navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" })
+      .then(registration => registration.update())
+      .catch(error => console.warn("تعذر تحديث تطبيق EA Luxury:", error));
   });
 }
 

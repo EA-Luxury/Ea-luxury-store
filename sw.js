@@ -12,6 +12,8 @@ const APP_SHELL = [
   "./product-detail.js?v=27",
   "./favorites.js?v=2",
   "./ea-icon.svg",
+  "./ea-icon-192.svg",
+  "./ea-icon-512.svg",
   "./manifest.webmanifest"
 ];
 

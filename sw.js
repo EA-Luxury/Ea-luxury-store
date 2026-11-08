@@ -1,4 +1,4 @@
-const CACHE_NAME = "ea-luxury-shell-v72";
+const CACHE_NAME = "ea-luxury-shell-v73";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -7,7 +7,7 @@ const APP_SHELL = [
   "./cart.html",
   "./favorites.html",
   "./styles.css?v=60",
-  "./app.js?v=63",
+  "./app.js?v=64",
   "./collection.js?v=2",
   "./product-detail.js?v=27",
   "./favorites.js?v=2",
@@ -20,7 +20,14 @@ const APP_SHELL = [
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
+      .then(async cache => {
+        await Promise.all(APP_SHELL.map(async path => {
+          const request = new Request(path, { cache: "reload" });
+          const response = await fetch(request);
+          if (!response.ok) throw new Error("Failed to cache " + path);
+          await cache.put(path, response);
+        }));
+      })
       .then(() => self.skipWaiting())
   );
 });

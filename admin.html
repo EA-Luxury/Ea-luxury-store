@@ -144,6 +144,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <div class="reportNotice"><strong>تنبيه محاسبي:</strong> مجمل الربح المعروض محسوب فقط لبنود الطلبات التي سُجلت لها تكلفة شراء وقت الطلب. لا يشمل مصاريف التشغيل أو تكلفة الشحن الفعلية أو الضرائب، ولا يمثل صافي الربح. الطلبات القديمة التي لا تحتوي على تكلفة ستظهر كبيانات ناقصة دون تخمين.</div>
 <h3>مبيعات آخر 7 أيام</h3><div id="salesTrend" class="salesTrend" aria-live="polite">جاري تجهيز التقرير...</div>
 <h3>أفضل أيام الأسبوع في المبيعات</h3><div id="weekdaySalesReport" class="weekdaySalesReport" aria-live="polite">جاري تجهيز التقرير...</div>
+<h3>المخزون الراكد — منتجات بلا مبيعات في الفترة المختارة</h3><div id="stagnantInventoryReport" class="reportTableWrap" aria-live="polite">جاري تجهيز التقرير...</div>
 <h3>المبيعات حسب الماركة</h3><div id="salesByBrandReport" class="reportTableWrap">جاري تجهيز التقرير...</div>
 <h3>المبيعات حسب القسم</h3><div id="salesByCategoryReport" class="reportTableWrap">جاري تجهيز التقرير...</div>
 <h3>أفضل المنتجات مبيعًا</h3><div id="topProductsReport" class="reportTableWrap">لا توجد بيانات كافية.</div>
@@ -450,6 +451,7 @@ const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let adminReady=false;
 let reportOrders=[];
 let reportProductCatalog=[];
+let reportVariantCatalog=[];
 let reportExpenses=[];
 let reportCustomers=[];
 let reportCoupons=[];
@@ -1034,6 +1036,7 @@ return;
 }
 const purchaseCosts=new Map((costRows||[]).map(row=>[String(row.product_id),row.purchase_cost]));
 const {data:variantRows,error:variantLoadError}=await client.from("product_variants").select("id,product_id,size,color,stock,is_active");
+reportVariantCatalog=Array.isArray(variantRows)?variantRows:[];
 if(variantLoadError){
 box.textContent="تعذر تحميل مخزون المقاسات والألوان: "+variantLoadError.message;
 document.getElementById("lowStockAlerts").textContent="تعذر تحميل تنبيهات المخزون حسب المقاس واللون.";
@@ -1974,6 +1977,53 @@ table.append(tbody);topBox.append(table);
 }
 }
 
+
+
+const soldProductIds=new Set();
+completed.forEach(order=>(order.order_items||[]).forEach(item=>{
+ if(item.product_id!==null&&item.product_id!==undefined)soldProductIds.add(String(item.product_id));
+}));
+const variantsByProduct=new Map();
+reportVariantCatalog.forEach(variant=>{
+ const key=String(variant.product_id);
+ if(!variantsByProduct.has(key))variantsByProduct.set(key,[]);
+ variantsByProduct.get(key).push(variant);
+});
+const stagnantProducts=reportProductCatalog.map(product=>{
+ const variants=variantsByProduct.get(String(product.id))||[];
+ const hasVariants=variants.length>0;
+ const stock=hasVariants
+  ?variants.filter(variant=>variant.is_active).reduce((total,variant)=>total+Math.max(0,Number(variant.stock)||0),0)
+  :Math.max(0,Number(product.stock)||0);
+ return {product,stock,hasVariants};
+}).filter(entry=>entry.stock>0&&!soldProductIds.has(String(entry.product.id)))
+ .sort((a,b)=>b.stock-a.stock||String(a.product.name||"").localeCompare(String(b.product.name||""),"ar"));
+const stagnantBox=document.getElementById("stagnantInventoryReport");
+if(stagnantBox){
+ stagnantBox.replaceChildren();
+ const summary=document.createElement("p");
+ const totalUnits=stagnantProducts.reduce((total,entry)=>total+entry.stock,0);
+ summary.className="reportNotice";
+ summary.textContent="عدد المنتجات التي لم تسجل مبيعات مكتملة: "+stagnantProducts.length.toLocaleString("ar-EG")+" — إجمالي القطع المتاحة بها: "+totalUnits.toLocaleString("ar-EG")+". الفترة: "+(period==="all"?"كل الفترات":"آخر "+period+" يومًا")+".";
+ stagnantBox.append(summary);
+ if(!stagnantProducts.length){
+  const empty=document.createElement("p");empty.textContent="لا توجد منتجات متاحة بالمخزون بلا مبيعات مكتملة في الفترة المختارة.";stagnantBox.append(empty);
+ }else{
+  const table=document.createElement("table");table.className="reportTable";
+  const head=document.createElement("thead"),row=document.createElement("tr");
+  ["المنتج","الماركة","القسم","المخزون المتاح"].forEach(label=>{const th=document.createElement("th");th.textContent=label;row.append(th);});
+  head.append(row);table.append(head);
+  const body=document.createElement("tbody");
+  stagnantProducts.slice(0,30).forEach(entry=>{
+   const tr=document.createElement("tr");
+   [entry.product.name||"—",entry.product.brand||"غير محدد",entry.product.category||"غير محدد",entry.stock.toLocaleString("ar-EG")+" قطعة"].forEach(value=>{const td=document.createElement("td");td.textContent=String(value);tr.append(td);});
+   body.append(tr);
+  });
+  table.append(body);stagnantBox.append(table);
+  if(stagnantProducts.length>30){const more=document.createElement("small");more.textContent="يتم عرض أول 30 منتجًا حسب كمية المخزون، وإجمالي المنتجات "+stagnantProducts.length.toLocaleString("ar-EG")+".";
+   stagnantBox.append(more);}
+ }
+}
 
 const catalogById=new Map(reportProductCatalog.map(product=>[String(product.id),product]));
 const aggregateSalesBy=(field)=>{

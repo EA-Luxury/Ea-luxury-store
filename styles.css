@@ -2624,3 +2624,14 @@ body.size-guide-open{overflow:hidden}
 .collection-women-card .collection-product-info{min-height:94px;align-content:start}
 .collection-women-card .collection-product-info strong{font-size:13px;line-height:1.7}
 @media(max-width:600px){.collection-women-card .collection-product-image{height:clamp(205px,64vw,285px);padding:7px}.collection-women-card .collection-product-image img{padding:2px}.collection-women-card .collection-product-info{min-height:86px}}
+
+
+/* كوبون الخصم في سلة الصفحة الرئيسية وصفحة السلة */
+#checkoutForm .couponEntry{grid-column:1/-1;padding:14px;border:1px solid #e8dfcf;background:#fff}
+#checkoutForm .couponEntry label{display:block;margin-bottom:8px;color:#75603b;font-size:12px;font-weight:800}
+#checkoutForm .couponControls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+#checkoutForm .couponControls input{min-width:0}
+#checkoutForm .couponControls button{grid-column:auto;min-height:45px;padding:8px 16px;border:1px solid #b89550;background:#f7f2e8;color:#604c2c;font-size:12px}
+#checkoutForm .couponControls button:disabled{opacity:.6;cursor:wait}
+#checkoutForm #couponMessage{margin:8px 0 0;line-height:1.7}
+@media(max-width:600px){#checkoutForm .couponControls{grid-template-columns:1fr}#checkoutForm .couponControls button{width:100%}}

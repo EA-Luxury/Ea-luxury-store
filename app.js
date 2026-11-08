@@ -900,10 +900,14 @@ document.getElementById("brandShowcaseGrid")?.addEventListener("click", event =>
 document.getElementById("categoryShowcaseGrid")?.addEventListener("click", event => {
   const card = event.target.closest("[data-showcase-category]");
   if (!card) return;
-  const target = document.querySelector('#categoryNavigation [data-category="' + CSS.escape(card.dataset.showcaseCategory) + '"]');
+  const category = card.dataset.showcaseCategory;
+  if (category === "أحذية" || category === "ملابس حريمي") {
+    window.location.href = "collection.html?category=" + encodeURIComponent(category);
+    return;
+  }
+  const target = document.querySelector('#categoryNavigation [data-category="' + CSS.escape(category) + '"]');
   target?.click();
-  const destination = card.dataset.showcaseCategory === "أحذية" ? document.getElementById("brandsSection") : document.getElementById("products");
-  destination?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 // الضغط على الصور الصغيرة أو الكبيرة
@@ -1154,7 +1158,12 @@ if (categoryNavigation) {
   categoryNavigation.addEventListener("click", event => {
     const button = event.target.closest(".category");
     if (!button || !categoryNavigation.contains(button)) return;
-    selectedCategory = button.dataset.category || "الكل";
+    const category = button.dataset.category || "الكل";
+    if (category === "أحذية" || category === "ملابس حريمي") {
+      window.location.href = "collection.html?category=" + encodeURIComponent(category);
+      return;
+    }
+    selectedCategory = category;
     selectedBrand = "الكل";
     document.querySelectorAll("[data-showcase-brand]").forEach(item => { item.classList.remove("active"); item.setAttribute("aria-pressed","false"); });
     categoryNavigation.querySelectorAll(".category").forEach(item =>

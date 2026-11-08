@@ -399,6 +399,15 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 </main>
 
 <script>
+/* نقطة دخول احتياطية: تظل دالة الدخول متاحة حتى لو تعطل تهيئة بقية لوحة الإدارة. */
+window.login=function(){
+  const msg=document.getElementById("loginMsg");
+  if(typeof window.__eaAdminLogin!=="function"){
+    if(msg)msg.textContent="تعذر تشغيل لوحة الإدارة بالكامل. أعد تحميل الصفحة، وإذا استمرت المشكلة فهناك خطأ في تحميل أحد مكوناتها.";
+    return;
+  }
+  return window.__eaAdminLogin();
+};
 (function(){
 
 const SUPABASE_URL="https://jezqohivdiziuzfmllvq.supabase.co";
@@ -478,6 +487,7 @@ console.error(error);
 msg.textContent="فشل تسجيل الدخول: "+error.message;
 }
 }
+window.__eaAdminLogin=login;
 
 async function checkAdmin(userId){
 try{

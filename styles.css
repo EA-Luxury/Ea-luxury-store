@@ -2436,29 +2436,3 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
   .ea-contact-icon, .ea-contact-icon svg { width: 13px; height: 13px; }
   .ea-contact-icon { flex-basis: 13px; }
 }
-
-
-/* ملابس حريمي: صور أعرض وأقرب للمربّع مع إظهار القطعة كاملة */
-.product.product-womens-clothing .product-image-link {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 100% !important;
-  height: auto !important;
-  aspect-ratio: 1 / 1 !important;
-  background: #faf9f6 !important;
-  overflow: hidden;
-}
-.product.product-womens-clothing img.product-main-image {
-  display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  max-width: 100% !important;
-  margin: 0 auto !important;
-  padding: 8px !important;
-  box-sizing: border-box !important;
-  object-fit: contain !important;
-  object-position: center !important;
-  mix-blend-mode: normal !important;
-  transform: none !important;
-}

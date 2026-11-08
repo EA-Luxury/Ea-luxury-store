@@ -77,6 +77,17 @@ main{max-width:1180px}
 
 .reportTable td:last-child{white-space:nowrap}.reportTable{min-width:560px}
 .reportComparison{font-size:12px;color:#766b58;line-height:1.5}
+
+.weekdaySalesReport{display:grid;gap:10px;margin:12px 0;padding:14px;border:1px solid #eee5d5;border-radius:10px;background:#fcfaf6}
+.weekdaySalesRow{display:grid;grid-template-columns:72px minmax(0,1fr) auto;align-items:center;gap:10px}
+.weekdaySalesName{font-weight:700;color:#51452f}
+.weekdaySalesTrack{height:12px;border-radius:20px;background:#eee8dc;overflow:hidden}
+.weekdaySalesFill{height:100%;border-radius:20px;background:linear-gradient(90deg,#d6b36a,#8d6b32)}
+.weekdaySalesValue{text-align:left;font-size:12px;color:#66583e;white-space:nowrap}
+.weekdaySalesMeta{grid-column:2/-1;color:#766b58;font-size:11px;margin-top:-7px}
+.weekdaySalesBest{border:1px solid #d6b36a;background:#fffaf0;border-radius:8px;padding:10px;font-weight:700;color:#765a27}
+@media(max-width:560px){.weekdaySalesRow{grid-template-columns:58px minmax(0,1fr) auto;gap:7px}.weekdaySalesValue{font-size:10px}.weekdaySalesMeta{font-size:10px}}
+
 @media print{body{background:#fff}}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #d6b36a;outline-offset:2px}
 @media(max-width:760px){main{margin:10px auto;padding:10px}section{padding:15px}.statsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.statCard{padding:13px}.statCard strong{font-size:23px}.adminNav{margin-inline:-10px}}
@@ -132,6 +143,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 </div>
 <div class="reportNotice"><strong>تنبيه محاسبي:</strong> مجمل الربح المعروض محسوب فقط لبنود الطلبات التي سُجلت لها تكلفة شراء وقت الطلب. لا يشمل مصاريف التشغيل أو تكلفة الشحن الفعلية أو الضرائب، ولا يمثل صافي الربح. الطلبات القديمة التي لا تحتوي على تكلفة ستظهر كبيانات ناقصة دون تخمين.</div>
 <h3>مبيعات آخر 7 أيام</h3><div id="salesTrend" class="salesTrend" aria-live="polite">جاري تجهيز التقرير...</div>
+<h3>أفضل أيام الأسبوع في المبيعات</h3><div id="weekdaySalesReport" class="weekdaySalesReport" aria-live="polite">جاري تجهيز التقرير...</div>
 <h3>أفضل المنتجات مبيعًا</h3><div id="topProductsReport" class="reportTableWrap">لا توجد بيانات كافية.</div>
 <h3>توزيع الطلبات حسب الحالة</h3><div id="orderStatusReport" class="statusReportGrid"></div>
 <p class="status-text">التقرير يعتمد على الطلبات المسجلة في المتجر. المبيعات المكتملة تشمل الطلبات التي حالتها «مكتمل» فقط، والطلبات الملغاة مستبعدة.</p>
@@ -1991,6 +2003,53 @@ const label=document.createElement("small");label.textContent=day.date.toLocaleD
 col.append(wrap,value,label);trend.append(col);
 });
 }
+
+const weekdayBox=document.getElementById("weekdaySalesReport");
+if(weekdayBox){
+weekdayBox.replaceChildren();
+const weekdayOrder=[6,0,1,2,3,4,5];
+const weekdayNames=["السبت","الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة"];
+const validOrderKeys=reportOrders.filter(order=>order.created_at).map(order=>cairoDay(new Date(order.created_at))).filter(key=>key<=todayKey).sort();
+const weekdayStartKey=period==="all"?(validOrderKeys[0]||todayKey):shiftDayKey(todayKey,-(Number(period)-1));
+const weekdayStats=weekdayOrder.map((weekday,index)=>({weekday,name:weekdayNames[index],revenue:0,orders:0,occurrences:0}));
+const weekdayByNumber=new Map(weekdayStats.map(item=>[item.weekday,item]));
+const startUtc=new Date(weekdayStartKey+"T12:00:00Z");
+const endUtc=new Date(todayKey+"T12:00:00Z");
+for(let cursor=new Date(startUtc);cursor<=endUtc;cursor.setUTCDate(cursor.getUTCDate()+1)){
+ const stat=weekdayByNumber.get(cursor.getUTCDay());
+ if(stat)stat.occurrences++;
+}
+completedAll.forEach(order=>{
+ const key=keyOf(order);
+ if(key<weekdayStartKey||key>todayKey)return;
+ const date=new Date(key+"T12:00:00Z");
+ const stat=weekdayByNumber.get(date.getUTCDay());
+ if(stat){stat.orders++;stat.revenue+=Number(order.total||0);}
+});
+weekdayStats.forEach(stat=>stat.average=stat.occurrences?stat.revenue/stat.occurrences:0);
+const maxAverage=Math.max(0,...weekdayStats.filter(stat=>stat.occurrences>0).map(stat=>stat.average));
+const maxRevenue=Math.max(1,...weekdayStats.map(stat=>stat.revenue));
+const bestDays=weekdayStats.filter(stat=>stat.occurrences>0&&stat.average===maxAverage&&maxAverage>0);
+if(bestDays.length){
+ const best=document.createElement("div");best.className="weekdaySalesBest";
+ best.textContent="أفضل يوم حسب متوسط المبيعات اليومية: "+bestDays.map(stat=>stat.name).join(" و ")+" — "+money(maxAverage)+" في اليوم";
+ weekdayBox.append(best);
+}
+weekdayStats.forEach(stat=>{
+ const row=document.createElement("div");row.className="weekdaySalesRow";
+ const name=document.createElement("span");name.className="weekdaySalesName";name.textContent=stat.name;
+ const track=document.createElement("div");track.className="weekdaySalesTrack";
+ const fill=document.createElement("div");fill.className="weekdaySalesFill";
+ fill.style.width=(stat.revenue/maxRevenue*100)+"%";
+ track.append(fill);
+ const value=document.createElement("span");value.className="weekdaySalesValue";value.textContent=money(stat.revenue);
+ const meta=document.createElement("small");meta.className="weekdaySalesMeta";
+ meta.textContent="متوسط اليوم: "+money(stat.average)+" • "+stat.orders.toLocaleString("ar-EG")+" طلب مكتمل • ظهر "+stat.occurrences.toLocaleString("ar-EG")+" مرة في الفترة";
+ row.append(name,track,value,meta);weekdayBox.append(row);
+});
+if(!weekdayStats.some(stat=>stat.orders>0))weekdayBox.textContent="لا توجد طلبات مكتملة في الفترة المحددة.";
+}
+
 }
 
 function expenseMoney(value){

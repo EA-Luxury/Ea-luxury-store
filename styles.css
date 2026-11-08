@@ -2536,3 +2536,14 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 .collection-empty{grid-column:1/-1;text-align:center;padding:35px;background:#fff;color:#777}
 @media(max-width:900px){.collection-brand-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.collection-product-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:600px){.collection-main{padding:22px 4% 50px}.collection-brand-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.collection-brand-image{height:135px}.collection-product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.collection-product-image{height:175px}.collection-product-info{padding:9px}.collection-product-info strong{font-size:12px}.collection-topline{margin-bottom:15px}}
+
+
+/* سجل التحديثات الزمني لتتبع طلبات العملاء */
+.trackingHistory{display:grid;gap:0;margin:22px 0;padding:4px 0}
+.trackingHistoryItem{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;position:relative;min-height:65px}
+.trackingHistoryItem:not(:last-child)::before{content:"";position:absolute;right:16px;top:34px;bottom:-2px;width:2px;background:#d9c9a8}
+.trackingHistoryMarker{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#f0e8d8;border:1px solid #c7aa70;color:#765b2c;font-weight:800;z-index:1}
+.trackingHistoryDetails{display:grid;gap:4px;padding:3px 0 18px}
+.trackingHistoryDetails strong{font-size:14px;color:#28231b}
+.trackingHistoryDetails time{font-size:12px;color:#8a8174}
+@media(max-width:600px){.trackingHistoryItem{min-height:60px}.trackingHistoryDetails strong{font-size:13px}}

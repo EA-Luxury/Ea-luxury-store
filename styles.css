@@ -2550,7 +2550,7 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 
 
 /* دليل مقاسات EA Luxury */
-.sizeGuideOpenButton{display:inline-flex;align-items:center;gap:8px;margin:0 0 12px;padding:9px 15px;border:1px solid #d8c49a;border-radius:7px;background:#fbf8f1;color:#8a682c;font:700 13px inherit;cursor:pointer;transition:background .2s,border-color .2s}
+.sizeGuideOpenButton{display:inline-flex;align-items:center;gap:8px;margin:0 0 12px;padding:9px 15px;border:1px solid #d8c49a;border-radius:7px;background:#fbf8f1;color:#8a682c;font:700 13px "Cairo",sans-serif;cursor:pointer;transition:background .2s,border-color .2s}
 .sizeGuideOpenButton:hover{background:#f4eddf;border-color:#b99550}
 .sizeGuideOpenButton span{font-size:17px}
 .sizeGuideOverlay{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;padding:18px;background:#111a}
@@ -2561,7 +2561,7 @@ body { background: var(--ea-paper); color: var(--ea-ink); }
 .sizeGuideDialog h2{margin:7px 0;color:#171717;font-size:24px}
 .sizeGuideIntro,.sizeGuidePanel p,.sizeGuideFootnote{color:#777;font-size:12px;line-height:1.9}
 .sizeGuideTabs{display:flex;gap:8px;margin:18px 0 16px}
-.sizeGuideTabs button{flex:1;min-height:42px;border:1px solid #e4ddcf;border-radius:7px;background:#faf9f6;color:#555;font:700 13px inherit;cursor:pointer}
+.sizeGuideTabs button{flex:1;min-height:42px;border:1px solid #e4ddcf;border-radius:7px;background:#faf9f6;color:#555;font:700 13px "Cairo",sans-serif;cursor:pointer}
 .sizeGuideTabs button.active{border-color:#b99550;background:#f8f1e3;color:#795b2c}
 .sizeGuidePanel[hidden]{display:none}
 .sizeGuidePanel h3{margin:0 0 5px;font-size:16px}

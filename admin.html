@@ -266,6 +266,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <input id="photo" type="file" accept="image/*" multiple>
 <small>يمكنك اختيار حتى 5 صور للمنتج الواحد.</small>
 <button type="button" onclick="addProduct()">حفظ المنتج</button>
+<button type="button" class="secondary" onclick="clearProductForm()">مسح بيانات النموذج</button>
+<small>بعد حفظ المنتج سيظل القسم والماركة والسعر والوصف والمقاسات والألوان وباقي البيانات محفوظة. سيتم تفريغ الاسم والصور فقط لأنهما يختلفان من منتج لآخر. يمكنك مسح النموذج بالكامل وقتما تريد.</small>
 <p id="productMsg"></p>
 </section>
 
@@ -879,6 +881,15 @@ if(failed===0){bulkImportRows=[];document.getElementById("bulkProductsFile").val
 finally{button.disabled=false;}
 }
 
+function clearProductForm(){
+["name","brand","price","salePrice","saleStartAt","saleEndAt","purchaseCost","stock","description","sizes","colors","photo"].forEach(id=>{
+const field=document.getElementById(id);
+if(field)field.value="";
+});
+const msg=document.getElementById("productMsg");
+if(msg)msg.textContent="تم مسح بيانات النموذج.";
+}
+
 async function addProduct(){
 if(!adminReady)return;
 
@@ -964,18 +975,18 @@ if(error)throw error;
 
 const {error:costError}=await client.from("product_costs").upsert({product_id:createdProduct.id,purchase_cost:purchaseCost,updated_at:new Date().toISOString()},{onConflict:"product_id"});
 if(costError){
-msg.textContent="تم إنشاء المنتج ورفع الصور، لكن تعذر حفظ تكلفة الشراء. افتح بطاقة المنتج وأعد إدخال التكلفة. السبب: "+costError.message;
-["name","brand","price","salePrice","saleStartAt","saleEndAt","purchaseCost","stock","description","sizes","colors","photo"].forEach(id=>{document.getElementById(id).value="";});
+msg.textContent="تم إنشاء المنتج ورفع الصور، لكن تعذر حفظ تكلفة الشراء. احتفظنا ببيانات النموذج؛ افتح بطاقة المنتج وأعد إدخال التكلفة. السبب: "+costError.message;
+document.getElementById("name").value="";
+document.getElementById("photo").value="";
 await loadProducts();
 return;
 }
 
-msg.textContent="تم إضافة المنتج بنجاح وحفظ التكلفة و"+imageUrls.length+" صور.";
+msg.textContent="تم إضافة المنتج بنجاح وحفظ التكلفة و"+imageUrls.length+" صور. بيانات النوع ما زالت محفوظة لإضافة المنتج التالي.";
 
-["name","price","salePrice","purchaseCost","stock","description","sizes","colors","photo"].forEach(id=>{
-document.getElementById(id).value="";
-});
-
+ // الاسم والصور تخص كل منتج، أما باقي البيانات فتظل كما هي لتسهيل إضافة منتجات من نفس النوع.
+document.getElementById("name").value="";
+document.getElementById("photo").value="";
 await loadProducts();
 
 }catch(error){

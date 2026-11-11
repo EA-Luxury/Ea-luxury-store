@@ -881,7 +881,9 @@ function renderCategoryShowcase() {
 
   showcase.innerHTML = categoryNames.map(name => {
     const product = products.find(item => item.category === name && getProductImages(item).length);
-    const image = product ? getProductImages(product)[0] : "";
+    const savedCategoryImage = storefrontSettings && storefrontSettings.categoryImages
+      ? storefrontSettings.categoryImages[name] : "";
+    const image = savedCategoryImage || (product ? getProductImages(product)[0] : "");
     const count = products.filter(item => item.category === name).length;
     return `
       <button class="category-showcase-card" type="button" data-showcase-category="${escapeHTML(name)}">

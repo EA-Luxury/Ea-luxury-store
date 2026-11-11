@@ -348,7 +348,23 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 <section id="settingsSection">
 <h2>⚙️ إعدادات المتجر</h2>
-<h3>إدارة أقسام المنتجات</h3>
+<h3>إدارة الأقسام</h3>
+<p class="status-text">أضف قسمًا أو غيّر اسمه وصورته. لن يُحذف قسم يحتوي على منتجات قبل نقلها إلى قسم آخر.</p>
+<div id="categoryManagerList"></div>
+<div class="orderAdminCard">
+  <h4>إضافة قسم جديد</h4>
+  <input id="newCategoryName" maxlength="60" placeholder="اسم القسم الجديد">
+  <button type="button" onclick="addStoreCategory()">إضافة القسم</button>
+</div>
+<div class="orderAdminCard">
+  <h4>نقل منتجات من قسم إلى آخر</h4>
+  <label>من القسم</label><select id="moveProductsFrom"></select>
+  <label>إلى القسم</label><select id="moveProductsTo"></select>
+  <button type="button" onclick="moveCategoryProducts()">نقل المنتجات</button>
+  <p id="categoryManagerMsg" class="status-text" aria-live="polite"></p>
+</div>
+<hr>
+<h3>قائمة الأقسام (إعداد متقدم)</h3>
 <label>أسماء الأقسام (افصل بين كل قسم بفاصلة)</label>
 <textarea id="productCategories" rows="3" placeholder="حريمي, رجالي, أحذية, شنط, إكسسوارات"></textarea>
 <small>الأقسام هنا هي التي تظهر للعملاء ويمكنك اختيارها عند إضافة أي منتج.</small>
@@ -471,6 +487,8 @@ let couponRedemptions=[];
 let ordersChannel=null;
 let logoUrl="";
 let coverUrl="";
+let categoryNamesState=[];
+let categoryImagesState={};
 
 const MAX_IMAGE_SIZE=10*1024*1024;
 const ALLOWED_IMAGE_TYPES=["image/jpeg","image/png","image/webp","image/avif","image/heic","image/heif","image/gif"];
@@ -2945,6 +2963,87 @@ const {data}=client.storage.from("product-images").getPublicUrl(path);
 return data.publicUrl;
 }
 
+function renderCategoryManager(){
+ const host=document.getElementById("categoryManagerList");
+ if(!host)return;
+ host.innerHTML="";
+ categoryNamesState.forEach((name,index)=>{
+  const row=document.createElement("div");row.className="orderAdminCard";
+  const title=document.createElement("strong");title.textContent="القسم: "+name;row.appendChild(title);
+  const count=reportProductCatalog.filter(p=>String(p.category||"")===name).length;
+  const countText=document.createElement("small");countText.textContent=count+" منتج";row.appendChild(countText);
+  const nameInput=document.createElement("input");nameInput.maxLength=60;nameInput.value=name;nameInput.setAttribute("aria-label","اسم القسم");row.appendChild(nameInput);
+  const image=document.createElement("img");image.className="image-preview";image.alt="صورة "+name;
+  if(categoryImagesState[name]){image.src=categoryImagesState[name];image.style.display="block";}
+  row.appendChild(image);
+  const file=document.createElement("input");file.type="file";file.accept="image/*";row.appendChild(file);
+  file.addEventListener("change",async()=>{
+   const chosen=file.files&&file.files[0];if(!chosen)return;
+   const msg=document.getElementById("categoryManagerMsg");
+   try{msg.textContent="جاري رفع صورة القسم...";const url=await uploadImage(chosen,"categories");categoryImagesState[name]=url;await persistCategoryManager();image.src=url;image.style.display="block";msg.textContent="تم حفظ صورة القسم.";}
+   catch(error){msg.textContent="تعذر حفظ الصورة: "+error.message;}
+  });
+  const actions=document.createElement("div");actions.className="orderActions";
+  const rename=document.createElement("button");rename.type="button";rename.textContent="حفظ الاسم";rename.addEventListener("click",()=>renameStoreCategory(name,nameInput.value.trim()));
+  actions.appendChild(rename);
+  const remove=document.createElement("button");remove.type="button";remove.className="danger";remove.textContent="حذف القسم";remove.disabled=count>0;remove.title=count>0?"انقل المنتجات أولًا":"";remove.addEventListener("click",()=>deleteStoreCategory(name));
+  actions.appendChild(remove);row.appendChild(actions);host.appendChild(row);
+ });
+ const from=document.getElementById("moveProductsFrom"),to=document.getElementById("moveProductsTo");
+ [from,to].forEach(select=>{if(!select)return;const old=select.value;select.innerHTML="";categoryNamesState.forEach(name=>{const o=document.createElement("option");o.value=name;o.textContent=name;select.appendChild(o);});if(categoryNamesState.includes(old))select.value=old;});
+ if(to&&categoryNamesState.length>1&&to.value===from?.value)to.selectedIndex=1;
+}
+async function persistCategoryManager(){
+ const {data,error:readError}=await client.from("store_settings").select("settings").eq("id",1).maybeSingle();
+ if(readError)throw readError;
+ const settings={...(data?.settings||{}),productCategories:[...categoryNamesState],categoryImages:{...categoryImagesState}};
+ const {error}=await client.from("store_settings").upsert({id:1,settings,updated_at:new Date().toISOString()});
+ if(error)throw error;
+ document.getElementById("productCategories").value=categoryNamesState.join(", ");
+ updateProductCategoryOptions(categoryNamesState);
+}
+async function addStoreCategory(){
+ const input=document.getElementById("newCategoryName"),name=input.value.trim(),msg=document.getElementById("categoryManagerMsg");
+ if(!name){msg.textContent="اكتب اسم القسم.";return;}
+ if(categoryNamesState.some(x=>x.toLocaleLowerCase("ar")===name.toLocaleLowerCase("ar"))){msg.textContent="هذا القسم موجود بالفعل.";return;}
+ if(name.length>60){msg.textContent="اسم القسم لا يزيد عن 60 حرفًا.";return;}
+ try{categoryNamesState.push(name);await persistCategoryManager();input.value="";renderCategoryManager();msg.textContent="تمت إضافة القسم."; }
+ catch(error){categoryNamesState=categoryNamesState.filter(x=>x!==name);msg.textContent="تعذرت إضافة القسم: "+error.message;}
+}
+async function renameStoreCategory(oldName,newName){
+ const msg=document.getElementById("categoryManagerMsg");
+ if(!newName||newName.length>60){msg.textContent="اكتب اسمًا صحيحًا لا يزيد عن 60 حرفًا.";return;}
+ if(newName!==oldName&&categoryNamesState.some(x=>x.toLocaleLowerCase("ar")===newName.toLocaleLowerCase("ar"))){msg.textContent="يوجد قسم بهذا الاسم بالفعل.";return;}
+ try{
+  if(newName!==oldName){
+   const {error}=await client.from("products").update({category:newName}).eq("category",oldName);
+   if(error)throw error;
+   categoryNamesState=categoryNamesState.map(x=>x===oldName?newName:x);
+   if(categoryImagesState[oldName]){categoryImagesState[newName]=categoryImagesState[oldName];delete categoryImagesState[oldName];}
+  }
+  await persistCategoryManager();await loadProducts();renderCategoryManager();msg.textContent="تم تحديث اسم القسم والمنتجات المرتبطة به.";
+ }catch(error){msg.textContent="تعذر تغيير الاسم: "+error.message;await loadProducts();}
+}
+async function deleteStoreCategory(name){
+ const count=reportProductCatalog.filter(p=>String(p.category||"")===name).length;
+ const msg=document.getElementById("categoryManagerMsg");
+ if(count){msg.textContent="لا يمكن حذف القسم قبل نقل منتجاته.";return;}
+ if(!confirm("هل تريد حذف قسم "+name+"؟"))return;
+ const old=[...categoryNamesState];categoryNamesState=categoryNamesState.filter(x=>x!==name);delete categoryImagesState[name];
+ try{await persistCategoryManager();renderCategoryManager();msg.textContent="تم حذف القسم.";}
+ catch(error){categoryNamesState=old;msg.textContent="تعذر حذف القسم: "+error.message;}
+}
+async function moveCategoryProducts(){
+ const from=document.getElementById("moveProductsFrom").value,to=document.getElementById("moveProductsTo").value,msg=document.getElementById("categoryManagerMsg");
+ if(!from||!to||from===to){msg.textContent="اختر قسمين مختلفين.";return;}
+ const count=reportProductCatalog.filter(p=>String(p.category||"")===from).length;
+ if(!count){msg.textContent="لا توجد منتجات في القسم المحدد.";return;}
+ if(!confirm("سيتم نقل "+count+" منتج من «"+from+"» إلى «"+to+"». هل تريد المتابعة؟"))return;
+ const {error}=await client.from("products").update({category:to}).eq("category",from);
+ if(error){msg.textContent="تعذر نقل المنتجات: "+error.message;return;}
+ await loadProducts();renderCategoryManager();msg.textContent="تم نقل "+count+" منتج بنجاح.";
+}
+
 function updateProductCategoryOptions(names){
 const select=document.getElementById("category");
 if(!select)return;
@@ -3024,6 +3123,9 @@ const s=data?.settings||{};
 renderShippingRatesEditor(s.shippingRates||{});
 
 const categoryNames=Array.isArray(s.productCategories)&&s.productCategories.length?s.productCategories:["حريمي","رجالي"];
+categoryNamesState=[...categoryNames];
+categoryImagesState={...(s.categoryImages||{})};
+renderCategoryManager();
 document.getElementById("productCategories").value=categoryNames.join(", ");
 updateProductCategoryOptions(categoryNames);
 
@@ -3100,6 +3202,7 @@ const aedToEgpRate=Number(document.getElementById("aedToEgpRate").value);
 if(!Number.isFinite(aedToEgpRate)||aedToEgpRate<=0)throw new Error("أدخل سعر صرف صحيحًا للدرهم مقابل الجنيه.");
 const settings={
 productCategories:categoryNames,
+categoryImages:{...categoryImagesState},
 storeAnnouncement:document.getElementById("storeAnnouncement").value.trim(),
 announcementEnabled:document.getElementById("announcementEnabled").value==="true",
 storeName:document.getElementById("storeName").value,

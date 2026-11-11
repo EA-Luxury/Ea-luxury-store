@@ -976,7 +976,6 @@ if(error)throw error;
 const {error:costError}=await client.from("product_costs").upsert({product_id:createdProduct.id,purchase_cost:purchaseCost,updated_at:new Date().toISOString()},{onConflict:"product_id"});
 if(costError){
 msg.textContent="تم إنشاء المنتج ورفع الصور، لكن تعذر حفظ تكلفة الشراء. احتفظنا ببيانات النموذج؛ افتح بطاقة المنتج وأعد إدخال التكلفة. السبب: "+costError.message;
-document.getElementById("name").value="";
 document.getElementById("photo").value="";
 await loadProducts();
 return;
@@ -984,8 +983,7 @@ return;
 
 msg.textContent="تم إضافة المنتج بنجاح وحفظ التكلفة و"+imageUrls.length+" صور. بيانات النوع ما زالت محفوظة لإضافة المنتج التالي.";
 
- // الاسم والصور تخص كل منتج، أما باقي البيانات فتظل كما هي لتسهيل إضافة منتجات من نفس النوع.
-document.getElementById("name").value="";
+ // تظل كل البيانات بما فيها اسم المنتج محفوظة، ولا يتم تفريغ إلا الصور لاختيار صور المنتج التالي.
 document.getElementById("photo").value="";
 await loadProducts();
 
